@@ -248,14 +248,6 @@ export const getDateRangeReport = async (req, res, next) => {
   try {
     const { start_date, end_date } = req.query;
 
-    if (!start_date || !end_date) {
-      return res.status(400).json({
-        success: false,
-        error: 'Bad Request',
-        message: 'start_date and end_date are required'
-      });
-    }
-
     if (isSupabaseConfigured()) {
       const { data: payments, error } = await supabase
         .from('payments')

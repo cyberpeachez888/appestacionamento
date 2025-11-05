@@ -100,6 +100,12 @@ export const dateRangeValidator = [
   validate
 ];
 
+export const requiredDateRangeValidator = [
+  query('start_date').notEmpty().withMessage('start_date is required').isISO8601().withMessage('Invalid start date format'),
+  query('end_date').notEmpty().withMessage('end_date is required').isISO8601().withMessage('Invalid end date format'),
+  validate
+];
+
 export const uuidParamValidator = [
   param('id').isUUID().withMessage('Invalid ID format'),
   validate

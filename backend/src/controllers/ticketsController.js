@@ -32,9 +32,9 @@ export const createTicket = async (req, res, next) => {
         data
       });
     } else {
-      // In-memory fallback
+      // In-memory fallback - use timestamp + random to avoid collisions
       const ticket = {
-        id: Date.now().toString(),
+        id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
         ...ticketData,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()

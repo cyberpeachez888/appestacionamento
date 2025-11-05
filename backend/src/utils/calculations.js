@@ -33,8 +33,8 @@ export const generateTicketNumber = () => {
   const year = date.getFullYear().toString().slice(-2);
   const month = String(date.getMonth() + 1).padStart(2, '0');
   const day = String(date.getDate()).padStart(2, '0');
-  const random = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
-  return `TKT${year}${month}${day}${random}`;
+  const timestamp = Date.now().toString().slice(-6);
+  return `TKT${year}${month}${day}${timestamp}`;
 };
 
 /**
@@ -45,16 +45,20 @@ export const generateReceiptNumber = () => {
   const year = date.getFullYear().toString().slice(-2);
   const month = String(date.getMonth() + 1).padStart(2, '0');
   const day = String(date.getDate()).padStart(2, '0');
-  const random = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
-  return `RCP${year}${month}${day}${random}`;
+  const timestamp = Date.now().toString().slice(-6);
+  return `RCP${year}${month}${day}${timestamp}`;
 };
 
 /**
  * Format currency for display
+ * Defaults to Brazilian Real but can be configured via environment variables
  */
-export const formatCurrency = (amount) => {
-  return new Intl.NumberFormat('pt-BR', {
+export const formatCurrency = (amount, locale = 'pt-BR', currency = 'BRL') => {
+  const userLocale = process.env.CURRENCY_LOCALE || locale;
+  const userCurrency = process.env.CURRENCY_CODE || currency;
+  
+  return new Intl.NumberFormat(userLocale, {
     style: 'currency',
-    currency: 'BRL'
+    currency: userCurrency
   }).format(amount);
 };

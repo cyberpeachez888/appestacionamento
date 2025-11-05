@@ -90,30 +90,33 @@ app.delete('/vehicles/:id', (req, res) => {
   res.sendStatus(204);
 });
 
-// Legacy rates endpoint
-app.get('/rates', async (req, res) => {
-  // Forward to new API
-  try {
-    const response = await fetch(`http://localhost:${process.env.PORT || 3000}/api/rates`);
-    const data = await response.json();
-    if (data.success && data.data) {
-      // Transform to old format
-      const oldFormat = data.data.map(r => ({
-        id: r.id,
-        vehicleType: r.vehicle_type === 'car' ? 'Carro' : r.vehicle_type === 'motorcycle' ? 'Moto' : 'Caminhão',
-        rateType: r.rate_type === 'hourly' ? 'Hora/Fração' : r.rate_type === 'daily' ? 'Diária' : 'Mensal',
-        value: parseFloat(r.amount),
-        unit: r.rate_type === 'hourly' ? 'hora' : r.rate_type === 'daily' ? 'dia' : 'mês',
-        courtesyMinutes: 10
-      }));
-      res.json(oldFormat);
-    } else {
-      res.json([]);
-    }
-  } catch (error) {
-    console.error('Error fetching rates:', error);
-    res.json([]);
-  }
+// Import rates controller for legacy endpoint
+import { getRates as getRatesController } from './controllers/ratesController.js';
+
+// Legacy rates endpoint - transforms new API format to old format
+app.get('/rates', async (req, res, next) => {
+  // Create mock response object to capture controller output
+  const mockRes = {
+    json: (data) => {
+      if (data.success && data.data) {
+        // Transform to old format
+        const oldFormat = data.data.map(r => ({
+          id: r.id,
+          vehicleType: r.vehicle_type === 'car' ? 'Carro' : r.vehicle_type === 'motorcycle' ? 'Moto' : 'Caminhão',
+          rateType: r.rate_type === 'hourly' ? 'Hora/Fração' : r.rate_type === 'daily' ? 'Diária' : 'Mensal',
+          value: parseFloat(r.amount),
+          unit: r.rate_type === 'hourly' ? 'hora' : r.rate_type === 'daily' ? 'dia' : 'mês',
+          courtesyMinutes: 10
+        }));
+        res.json(oldFormat);
+      } else {
+        res.json([]);
+      }
+    },
+    status: (code) => mockRes
+  };
+  
+  await getRatesController(req, mockRes, next);
 });
 
 // Legacy monthly customers routes
