@@ -120,35 +120,54 @@ export const initialize = async (req, res) => {
     // 1. Clean test data first
     await cleanupTestDataInternal();
 
-    // 2. Create/Update company settings
-    const { error: companyError } = await supabase
+    // 2. Get existing company settings record (there should be only one)
+    const { data: existingSettings } = await supabase
       .from('company_settings')
-      .upsert({
-        company_name: companyName,
-        cnpj: cnpj || null,
-        address: address || null,
-        city: city || null,
-        state: state || null,
-        zip_code: zipCode || null,
-        phone: phone || null,
-        email: email || null,
-        setup_completed: true,
-        setup_completed_at: new Date().toISOString()
-      }, {
-        onConflict: 'id'
-      });
+      .select('id')
+      .limit(1)
+      .single();
+
+    // 3. Update company settings (or insert if somehow doesn't exist)
+    const settingsData = {
+      company_name: companyName,
+      cnpj: cnpj || null,
+      address: address || null,
+      city: city || null,
+      state: state || null,
+      zip_code: zipCode || null,
+      phone: phone || null,
+      email: email || null,
+      setup_completed: true,
+      setup_completed_at: new Date().toISOString()
+    };
+
+    let companyError;
+    if (existingSettings?.id) {
+      // Update existing record
+      const result = await supabase
+        .from('company_settings')
+        .update(settingsData)
+        .eq('id', existingSettings.id);
+      companyError = result.error;
+    } else {
+      // Insert new record (fallback)
+      const result = await supabase
+        .from('company_settings')
+        .insert(settingsData);
+      companyError = result.error;
+    }
 
     if (companyError) {
       throw new Error(`Failed to save company settings: ${companyError.message}`);
     }
 
-    // 3. Delete existing test admin user
+    // 4. Delete existing test admin user
     await supabase
       .from('users')
       .delete()
       .eq('login', 'admin');
 
-    // 4. Create new admin user
+    // 5. Create new admin user
     const passwordHash = await bcrypt.hash(adminPassword, 10);
     
     const { data: adminUser, error: adminError } = await supabase
@@ -168,7 +187,7 @@ export const initialize = async (req, res) => {
       throw new Error(`Failed to create admin user: ${adminError.message}`);
     }
 
-    // 5. Create default vehicle types
+    // 6. Create default vehicle types
     const vehicleTypes = [
       { name: 'Carro', icon: 'car', color: '#3b82f6' },
       { name: 'Moto', icon: 'motorcycle', color: '#10b981' },

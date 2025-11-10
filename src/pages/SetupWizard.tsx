@@ -150,7 +150,7 @@ export default function SetupWizard() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
-      <Card className="w-full max-w-2xl shadow-2xl mx-auto">
+      <Card className="w-full max-w-2xl shadow-2xl">
         <CardHeader className="text-center">
           <div className="mb-4">
             <div className="mx-auto w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center">
@@ -427,10 +427,27 @@ export default function SetupWizard() {
                   value={formData.adminPasswordConfirm}
                   onChange={(e) => updateField('adminPasswordConfirm', e.target.value)}
                   placeholder="Digite a senha novamente"
-                  className={errors.adminPasswordConfirm ? 'border-red-500' : ''}
+                  className={
+                    errors.adminPasswordConfirm 
+                      ? 'border-red-500' 
+                      : formData.adminPasswordConfirm && formData.adminPassword === formData.adminPasswordConfirm
+                      ? 'border-green-500'
+                      : ''
+                  }
                 />
                 {errors.adminPasswordConfirm && (
                   <p className="text-sm text-red-500">{errors.adminPasswordConfirm}</p>
+                )}
+                {formData.adminPasswordConfirm && formData.adminPassword === formData.adminPasswordConfirm && (
+                  <p className="text-sm text-green-600 flex items-center gap-1">
+                    <CheckCircle2 className="w-4 h-4" />
+                    As senhas coincidem
+                  </p>
+                )}
+                {formData.adminPasswordConfirm && formData.adminPassword !== formData.adminPasswordConfirm && (
+                  <p className="text-sm text-red-500">
+                    As senhas não coincidem
+                  </p>
                 )}
               </div>
 
