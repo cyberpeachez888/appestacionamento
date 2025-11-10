@@ -1,0 +1,22 @@
+nohup: ignoring input
+Backend running on http://localhost:3000
+Supabase insert error: {
+  code: '23505',
+  details: 'Key (parking_slot)=(5) already exists.',
+  hint: null,
+  message: 'duplicate key value violates unique constraint "idx_monthly_customers_active_slot"'
+}
+Payload sent: {
+  id: 'd9466407-c3dd-461b-90eb-c402479fe28b',
+  name: 'gabriel',
+  cpf: '313.342.368-10',
+  phone: '(16) 99329-4231',
+  plates: '["ADF4567"]',
+  parking_slot: 5,
+  value: 150,
+  operator_name: null,
+  contract_date: '2025-11-07T12:47:23.088Z',
+  status: 'active',
+  last_payment: '2025-11-07T12:47:23.088Z',
+  due_date: '2025-12-07T12:47:23.088Z'
+}

@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Limpar Cache - Sistema de Estacionamento</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .container {
+            background: white;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            max-width: 500px;
+            text-align: center;
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+        p {
+            color: #666;
+            line-height: 1.6;
+            margin-bottom: 30px;
+        }
+        button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 600;
+        }
+        button:hover {
+            background: #764ba2;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+        .status {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 6px;
+            display: none;
+        }
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+            display: block;
+        }
+        .status.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+            display: block;
+        }
+        .icon {
+            font-size: 48px;
+            margin-bottom: 20px;
+        }
+        .redirect-link {
+            display: inline-block;
+            margin-top: 15px;
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 600;
+        }
+        .redirect-link:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="icon">🧹</div>
+        <h1>Limpar Cache do Sistema</h1>
+        <p>Esta ferramenta irá limpar todos os dados armazenados localmente (localStorage e sessionStorage) e corrigir problemas de autenticação.</p>
+        
+        <button onclick="clearCache()">Limpar Cache Agora</button>
+        
+        <div id="status" class="status"></div>
+    </div>
+
+    <script>
+        function clearCache() {
+            const statusDiv = document.getElementById('status');
+            
+            try {
+                // Limpar localStorage
+                localStorage.clear();
+                console.log('✅ localStorage limpo');
+                
+                // Limpar sessionStorage
+                sessionStorage.clear();
+                console.log('✅ sessionStorage limpo');
+                
+                // Mostrar mensagem de sucesso
+                statusDiv.className = 'status success';
+                statusDiv.innerHTML = `
+                    <strong>✅ Cache limpo com sucesso!</strong><br>
+                    Redirecionando para a página de login em 3 segundos...<br>
+                    <a href="/login" class="redirect-link">Ou clique aqui para ir agora</a>
+                `;
+                
+                // Redirecionar após 3 segundos
+                setTimeout(() => {
+                    window.location.href = '/login';
+                }, 3000);
+                
+            } catch (error) {
+                statusDiv.className = 'status info';
+                statusDiv.innerHTML = `
+                    <strong>⚠️ Erro ao limpar cache</strong><br>
+                    ${error.message}<br>
+                    Por favor, tente manualmente:<br>
+                    1. Pressione F12<br>
+                    2. Vá em Application > Storage<br>
+                    3. Clique em "Clear site data"
+                `;
+            }
+        }
+
+        // Verificar se há token e mostrar aviso
+        window.addEventListener('DOMContentLoaded', () => {
+            const hasToken = localStorage.getItem('auth:token') || sessionStorage.getItem('auth:token');
+            if (hasToken) {
+                const statusDiv = document.getElementById('status');
+                statusDiv.className = 'status info';
+                statusDiv.innerHTML = `
+                    <strong>ℹ️ Sessão ativa detectada</strong><br>
+                    Há dados de autenticação armazenados.<br>
+                    Limpe o cache para fazer login novamente.
+                `;
+            }
+        });
+    </script>
+</body>
+</html>

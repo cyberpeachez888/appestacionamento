@@ -7,14 +7,16 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
+import { VehicleTypeSelect } from '@/components/VehicleTypeSelect';
 
 interface VehicleDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   vehicle?: Vehicle;
+  onSaved?: () => void;
 }
 
-export const VehicleDialog = ({ open, onOpenChange, vehicle }: VehicleDialogProps) => {
+export const VehicleDialog = ({ open, onOpenChange, vehicle, onSaved }: VehicleDialogProps) => {
   const { addVehicle, updateVehicle, rates, calculateRate } = useParking();
   const { toast } = useToast();
   
@@ -58,7 +60,7 @@ export const VehicleDialog = ({ open, onOpenChange, vehicle }: VehicleDialogProp
     return calculateRate(vehicle, selectedRate, exitDate, exitTime);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!plate || !rateId || !entryDate || !entryTime) {
@@ -83,21 +85,30 @@ export const VehicleDialog = ({ open, onOpenChange, vehicle }: VehicleDialogProp
       contractedDays: contractedDays ? parseInt(contractedDays) : undefined,
     };
 
-    if (vehicle) {
-      updateVehicle(vehicle.id, vehicleData);
+    try {
+      if (vehicle) {
+        await updateVehicle(vehicle.id, vehicleData);
+        toast({
+          title: 'Veículo atualizado',
+          description: 'As informações foram atualizadas com sucesso',
+        });
+      } else {
+        await addVehicle(vehicleData);
+        toast({
+          title: 'Veículo adicionado',
+          description: 'O veículo foi registrado com sucesso',
+        });
+      }
+      
+      onSaved?.(); // Notify parent to refresh data
+      onOpenChange(false);
+    } catch (error) {
       toast({
-        title: 'Veículo atualizado',
-        description: 'As informações foram atualizadas com sucesso',
-      });
-    } else {
-      addVehicle(vehicleData);
-      toast({
-        title: 'Veículo adicionado',
-        description: 'O veículo foi registrado com sucesso',
+        title: 'Erro ao salvar veículo',
+        description: 'Tente novamente',
+        variant: 'destructive',
       });
     }
-
-    onOpenChange(false);
   };
 
   const requiresContractedDays = selectedRate && ['Semanal', 'Quinzenal', 'Mensal'].includes(selectedRate.rateType);
@@ -124,18 +135,10 @@ export const VehicleDialog = ({ open, onOpenChange, vehicle }: VehicleDialogProp
 
             <div>
               <Label htmlFor="vehicleType">Tipo de Veículo *</Label>
-              <Select value={vehicleType} onValueChange={(v) => setVehicleType(v as VehicleType)}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Carro">Carro</SelectItem>
-                  <SelectItem value="Moto">Moto</SelectItem>
-                  <SelectItem value="Caminhonete">Caminhonete</SelectItem>
-                  <SelectItem value="Van">Van</SelectItem>
-                  <SelectItem value="Ônibus">Ônibus</SelectItem>
-                </SelectContent>
-              </Select>
+              <VehicleTypeSelect
+                value={vehicleType}
+                onValueChange={(v) => setVehicleType(v as VehicleType)}
+              />
             </div>
           </div>
 

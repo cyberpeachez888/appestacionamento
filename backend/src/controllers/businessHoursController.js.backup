@@ -1,0 +1,620 @@
+import { supabase } from '../config/supabase.js';
+import { v4 as uuid } from 'uuid';
+import { logEvent } from '../middleware/auditLogger.js';
+
+const hoursTable = 'business_hours';
+const holidaysTable = 'holidays';
+const eventsTable = 'special_events';
+const statusLogTable = 'operational_status_log';
+
+// Transform snake_case to camelCase
+function toFrontendFormat(item, type) {
+  if (!item) return null;
+  
+  if (type === 'hours') {
+    return {
+      id: item.id,
+      dayOfWeek: item.day_of_week,
+      isOpen: item.is_open,
+      openTime: item.open_time,
+      closeTime: item.close_time,
+      allowAfterHours: item.allow_after_hours,
+      afterHoursSurchargeType: item.after_hours_surcharge_type,
+      afterHoursSurchargeValue: parseFloat(item.after_hours_surcharge_value),
+      hasBreak: item.has_break,
+      breakStartTime: item.break_start_time,
+      breakEndTime: item.break_end_time,
+      notes: item.notes,
+      createdAt: item.created_at,
+      updatedAt: item.updated_at
+    };
+  }
+  
+  if (type === 'holiday') {
+    return {
+      id: item.id,
+      holidayName: item.holiday_name,
+      holidayDate: item.holiday_date,
+      isRecurring: item.is_recurring,
+      recurringMonth: item.recurring_month,
+      recurringDay: item.recurring_day,
+      isClosed: item.is_closed,
+      specialHours: item.special_hours,
+      specialOpenTime: item.special_open_time,
+      specialCloseTime: item.special_close_time,
+      hasSpecialPricing: item.has_special_pricing,
+      specialPricingType: item.special_pricing_type,
+      specialPricingValue: parseFloat(item.special_pricing_value),
+      description: item.description,
+      createdAt: item.created_at,
+      updatedAt: item.updated_at
+    };
+  }
+  
+  if (type === 'event') {
+    return {
+      id: item.id,
+      eventName: item.event_name,
+      startDate: item.start_date,
+      endDate: item.end_date,
+      startTime: item.start_time,
+      endTime: item.end_time,
+      isClosed: item.is_closed,
+      hasSpecialPricing: item.has_special_pricing,
+      specialPricingType: item.special_pricing_type,
+      specialPricingValue: parseFloat(item.special_pricing_value),
+      description: item.description,
+      requiresReservation: item.requires_reservation,
+      maxCapacity: item.max_capacity,
+      isActive: item.is_active,
+      createdAt: item.created_at,
+      updatedAt: item.updated_at
+    };
+  }
+  
+  return item;
+}
+
+// Transform camelCase to snake_case
+function toDbFormat(item, type) {
+  if (type === 'hours') {
+    return {
+      day_of_week: item.dayOfWeek,
+      is_open: item.isOpen,
+      open_time: item.openTime,
+      close_time: item.closeTime,
+      allow_after_hours: item.allowAfterHours,
+      after_hours_surcharge_type: item.afterHoursSurchargeType,
+      after_hours_surcharge_value: item.afterHoursSurchargeValue,
+      has_break: item.hasBreak,
+      break_start_time: item.breakStartTime,
+      break_end_time: item.breakEndTime,
+      notes: item.notes
+    };
+  }
+  
+  if (type === 'holiday') {
+    return {
+      holiday_name: item.holidayName,
+      holiday_date: item.holidayDate,
+      is_recurring: item.isRecurring,
+      recurring_month: item.recurringMonth,
+      recurring_day: item.recurringDay,
+      is_closed: item.isClosed,
+      special_hours: item.specialHours,
+      special_open_time: item.specialOpenTime,
+      special_close_time: item.specialCloseTime,
+      has_special_pricing: item.hasSpecialPricing,
+      special_pricing_type: item.specialPricingType,
+      special_pricing_value: item.specialPricingValue,
+      description: item.description
+    };
+  }
+  
+  if (type === 'event') {
+    return {
+      event_name: item.eventName,
+      start_date: item.startDate,
+      end_date: item.endDate,
+      start_time: item.startTime,
+      end_time: item.endTime,
+      is_closed: item.isClosed,
+      has_special_pricing: item.hasSpecialPricing,
+      special_pricing_type: item.specialPricingType,
+      special_pricing_value: item.specialPricingValue,
+      description: item.description,
+      requires_reservation: item.requiresReservation,
+      max_capacity: item.maxCapacity,
+      is_active: item.isActive
+    };
+  }
+  
+  return item;
+}
+
+export default {
+  // ===== BUSINESS HOURS =====
+  
+  // List all business hours
+  async list(req, res) {
+    try {
+      const { data, error } = await supabase
+        .from(hoursTable)
+        .select('*')
+        .order('day_of_week');
+      
+      if (error) throw error;
+      
+      res.json({
+        success: true,
+        data
+      });
+    } catch (err) {
+      res.status(500).json({ 
+        success: false,
+        message: 'Failed to list business hours',
+        error: err.message || err 
+      });
+    }
+  },
+
+  // Get business hour by ID
+  async getById(req, res) {
+    try {
+      const { id } = req.params;
+      const { data, error } = await supabase
+        .from(hoursTable)
+        .select('*')
+        .eq('id', id)
+        .single();
+      
+      if (error) throw error;
+      
+      res.json({
+        success: true,
+        data
+      });
+    } catch (err) {
+      res.status(500).json({ 
+        success: false,
+        message: 'Failed to get business hour',
+        error: err.message || err 
+      });
+    }
+  },
+
+  // Update business hours
+  async update(req, res) {
+    try {
+      const { id } = req.params;
+      const payload = req.body;
+      payload.updated_at = new Date().toISOString();
+      
+      const { data, error } = await supabase
+        .from(hoursTable)
+        .update(payload)
+        .eq('id', id)
+        .select()
+        .single();
+      
+      if (error) throw error;
+      
+      await logEvent({
+        actor: req.user,
+        action: 'business_hours.update',
+        targetType: 'business_hours',
+        targetId: data.id,
+        details: { dayOfWeek: data.day_of_week }
+      });
+      
+      res.json({
+        success: true,
+        data,
+        message: 'Business hours updated successfully'
+      });
+    } catch (err) {
+      res.status(500).json({ 
+        success: false,
+        message: 'Failed to update business hours',
+        error: err.message || err 
+      });
+    }
+  },
+
+  // Get current operational status
+  async getCurrentStatus(req, res) {
+    try {
+      const now = new Date();
+      const dayOfWeek = now.getDay(); // 0 = Sunday
+      const currentTime = now.toTimeString().slice(0, 8); // HH:MM:SS
+      const today = now.toISOString().split('T')[0];
+
+      // Get today's business hours
+      const { data: todayHours, error: hoursError } = await supabase
+        .from(hoursTable)
+        .select('*')
+        .eq('day_of_week', dayOfWeek)
+        .single();
+
+      if (hoursError) throw hoursError;
+
+      // Check if today is a holiday
+      const { data: holidays, error: holidayError } = await supabase
+        .from(holidaysTable)
+        .select('*')
+        .or(`holiday_date.eq.${today},and(is_recurring.eq.true,recurring_month.eq.${now.getMonth() + 1},recurring_day.eq.${now.getDate()})`);
+
+      const isHoliday = holidays && holidays.length > 0;
+
+      // Check for active special events
+      const { data: events, error: eventsError } = await supabase
+        .from(eventsTable)
+        .select('*')
+        .eq('is_active', true)
+        .lte('start_date', today)
+        .gte('end_date', today);
+
+      const activeEvents = events || [];
+
+      // Determine if open
+      let isOpen = false;
+      let reason = '';
+      
+      if (isHoliday && holidays[0].is_closed) {
+        isOpen = false;
+        reason = `Fechado - Feriado: ${holidays[0].holiday_name}`;
+      } else if (!todayHours.is_open) {
+        isOpen = false;
+        reason = 'Fechado - Dia não operacional';
+      } else if (currentTime >= todayHours.open_time && currentTime < todayHours.close_time) {
+        isOpen = true;
+        reason = 'Aberto - Horário normal';
+      } else if (todayHours.allow_after_hours) {
+        isOpen = true;
+        reason = `Aberto - Fora do horário (+${todayHours.after_hours_surcharge_value}% acréscimo)`;
+      } else {
+        isOpen = false;
+        reason = 'Fechado - Fora do horário';
+      }
+
+      res.json({
+        success: true,
+        data: {
+          isOpen,
+          reason,
+          currentDay: dayOfWeek,
+          currentTime,
+          todayHours,
+          isHoliday,
+          holidays: holidays || [],
+          activeEvents
+        }
+      });
+    } catch (err) {
+      res.status(500).json({ 
+        success: false,
+        message: 'Failed to get current status',
+        error: err.message || err 
+      });
+    }
+  },
+
+  // Legacy method names for backward compatibility
+  async getBusinessHours(req, res) {
+    return this.list(req, res);
+  },
+
+  async updateBusinessHours(req, res) {
+    try {
+      const { dayOfWeek } = req.params;
+      const payload = toDbFormat(req.body, 'hours');
+      payload.updated_at = new Date().toISOString();
+      
+      const { data, error } = await supabase
+        .from(hoursTable)
+        .update(payload)
+        .eq('day_of_week', dayOfWeek)
+        .select()
+        .single();
+      
+      if (error) return res.status(500).json({ error });
+      
+      await logEvent({
+        actor: req.user,
+        action: 'business_hours.update',
+        targetType: 'business_hours',
+        targetId: data.id,
+        details: { dayOfWeek }
+      });
+      
+      res.json(toFrontendFormat(data, 'hours'));
+    } catch (err) {
+      res.status(500).json({ error: err.message || err });
+    }
+  },
+
+  // ===== HOLIDAYS =====
+  
+  async getHolidays(req, res) {
+    try {
+      const { year, upcoming } = req.query;
+      let query = supabase.from(holidaysTable).select('*');
+      
+      if (year) {
+        const startDate = `${year}-01-01`;
+        const endDate = `${year}-12-31`;
+        query = query.gte('holiday_date', startDate).lte('holiday_date', endDate);
+      }
+      
+      if (upcoming === 'true') {
+        query = query.gte('holiday_date', new Date().toISOString().split('T')[0]);
+      }
+      
+      const { data, error } = await query.order('holiday_date');
+      
+      if (error) return res.status(500).json({ error });
+      res.json(data.map(item => toFrontendFormat(item, 'holiday')));
+    } catch (err) {
+      res.status(500).json({ error: err.message || err });
+    }
+  },
+
+  async createHoliday(req, res) {
+    try {
+      const payload = toDbFormat(req.body, 'holiday');
+      payload.id = uuid();
+      
+      const { data, error } = await supabase
+        .from(holidaysTable)
+        .insert(payload)
+        .select()
+        .single();
+      
+      if (error) return res.status(500).json({ error });
+      
+      await logEvent({
+        actor: req.user,
+        action: 'holiday.create',
+        targetType: 'holiday',
+        targetId: data.id,
+        details: { name: data.holiday_name, date: data.holiday_date }
+      });
+      
+      res.status(201).json(toFrontendFormat(data, 'holiday'));
+    } catch (err) {
+      res.status(500).json({ error: err.message || err });
+    }
+  },
+
+  async updateHoliday(req, res) {
+    try {
+      const { id } = req.params;
+      const payload = toDbFormat(req.body, 'holiday');
+      payload.updated_at = new Date().toISOString();
+      
+      const { data, error } = await supabase
+        .from(holidaysTable)
+        .update(payload)
+        .eq('id', id)
+        .select()
+        .single();
+      
+      if (error) return res.status(500).json({ error });
+      
+      await logEvent({
+        actor: req.user,
+        action: 'holiday.update',
+        targetType: 'holiday',
+        targetId: id,
+        details: { name: data.holiday_name }
+      });
+      
+      res.json(toFrontendFormat(data, 'holiday'));
+    } catch (err) {
+      res.status(500).json({ error: err.message || err });
+    }
+  },
+
+  async deleteHoliday(req, res) {
+    try {
+      const { id } = req.params;
+      
+      const { error } = await supabase
+        .from(holidaysTable)
+        .delete()
+        .eq('id', id);
+      
+      if (error) return res.status(500).json({ error });
+      
+      await logEvent({
+        actor: req.user,
+        action: 'holiday.delete',
+        targetType: 'holiday',
+        targetId: id
+      });
+      
+      res.status(204).send();
+    } catch (err) {
+      res.status(500).json({ error: err.message || err });
+    }
+  },
+
+  // ===== SPECIAL EVENTS =====
+  
+  async getEvents(req, res) {
+    try {
+      const { active, current } = req.query;
+      let query = supabase.from(eventsTable).select('*');
+      
+      if (active === 'true') {
+        query = query.eq('is_active', true);
+      }
+      
+      if (current === 'true') {
+        const today = new Date().toISOString().split('T')[0];
+        query = query.lte('start_date', today).gte('end_date', today);
+      }
+      
+      const { data, error } = await query.order('start_date', { ascending: false });
+      
+      if (error) return res.status(500).json({ error });
+      res.json(data.map(item => toFrontendFormat(item, 'event')));
+    } catch (err) {
+      res.status(500).json({ error: err.message || err });
+    }
+  },
+
+  async createEvent(req, res) {
+    try {
+      const payload = toDbFormat(req.body, 'event');
+      payload.id = uuid();
+      
+      const { data, error } = await supabase
+        .from(eventsTable)
+        .insert(payload)
+        .select()
+        .single();
+      
+      if (error) return res.status(500).json({ error });
+      
+      await logEvent({
+        actor: req.user,
+        action: 'special_event.create',
+        targetType: 'special_event',
+        targetId: data.id,
+        details: { name: data.event_name, dates: `${data.start_date} - ${data.end_date}` }
+      });
+      
+      res.status(201).json(toFrontendFormat(data, 'event'));
+    } catch (err) {
+      res.status(500).json({ error: err.message || err });
+    }
+  },
+
+  async updateEvent(req, res) {
+    try {
+      const { id } = req.params;
+      const payload = toDbFormat(req.body, 'event');
+      payload.updated_at = new Date().toISOString();
+      
+      const { data, error } = await supabase
+        .from(eventsTable)
+        .update(payload)
+        .eq('id', id)
+        .select()
+        .single();
+      
+      if (error) return res.status(500).json({ error });
+      
+      await logEvent({
+        actor: req.user,
+        action: 'special_event.update',
+        targetType: 'special_event',
+        targetId: id,
+        details: { name: data.event_name }
+      });
+      
+      res.json(toFrontendFormat(data, 'event'));
+    } catch (err) {
+      res.status(500).json({ error: err.message || err });
+    }
+  },
+
+  async deleteEvent(req, res) {
+    try {
+      const { id } = req.params;
+      
+      const { error } = await supabase
+        .from(eventsTable)
+        .delete()
+        .eq('id', id);
+      
+      if (error) return res.status(500).json({ error });
+      
+      await logEvent({
+        actor: req.user,
+        action: 'special_event.delete',
+        targetType: 'special_event',
+        targetId: id
+      });
+      
+      res.status(204).send();
+    } catch (err) {
+      res.status(500).json({ error: err.message || err });
+    }
+  },
+
+  // ===== OPERATIONAL STATUS =====
+  
+  async getCurrentStatus(req, res) {
+    try {
+      const { data, error } = await supabase
+        .rpc('get_operational_status');
+      
+      if (error) return res.status(500).json({ error });
+      
+      // Convert result to camelCase
+      const status = data && data.length > 0 ? {
+        status: data[0].status,
+        isOpen: data[0].is_open,
+        reason: data[0].reason,
+        surchargeType: data[0].surcharge_type,
+        surchargeValue: data[0].surcharge_value ? parseFloat(data[0].surcharge_value) : 0,
+        specialPricing: data[0].special_pricing,
+        pricingType: data[0].pricing_type,
+        pricingValue: data[0].pricing_value ? parseFloat(data[0].pricing_value) : 0
+      } : {
+        status: 'unknown',
+        isOpen: false,
+        reason: 'Unable to determine status'
+      };
+      
+      res.json(status);
+    } catch (err) {
+      res.status(500).json({ error: err.message || err });
+    }
+  },
+
+  async logStatusChange(req, res) {
+    try {
+      const { status, reason, holidayId, eventId } = req.body;
+      
+      const { data, error } = await supabase
+        .from(statusLogTable)
+        .insert({
+          id: uuid(),
+          status,
+          reason,
+          user_id: req.user?.id,
+          holiday_id: holidayId,
+          event_id: eventId,
+          metadata: req.body.metadata || {}
+        })
+        .select()
+        .single();
+      
+      if (error) return res.status(500).json({ error });
+      
+      res.status(201).json(data);
+    } catch (err) {
+      res.status(500).json({ error: err.message || err });
+    }
+  },
+
+  async getStatusLog(req, res) {
+    try {
+      const { limit = 50 } = req.query;
+      
+      const { data, error } = await supabase
+        .from(statusLogTable)
+        .select('*')
+        .order('status_time', { ascending: false })
+        .limit(parseInt(limit));
+      
+      if (error) return res.status(500).json({ error });
+      res.json(data);
+    } catch (err) {
+      res.status(500).json({ error: err.message || err });
+    }
+  }
+};

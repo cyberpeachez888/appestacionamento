@@ -10,6 +10,27 @@ import { Printer } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
+interface ReceiptTemplate {
+  showCompanyName?: boolean;
+  showCompanyDetails?: boolean;
+  showReceiptNumber?: boolean;
+  showDate?: boolean;
+  showPlate?: boolean;
+  showValue?: boolean;
+  showPaymentMethod?: boolean;
+  showSignatureLine?: boolean;
+  termsAndConditions?: string;
+  footerText?: string;
+  primaryColor?: string;
+  customFields?: Array<{
+    name: string;
+    label: string;
+    type: string;
+    required: boolean;
+    defaultValue: string;
+  }>;
+}
+
 interface PaymentDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -27,6 +48,8 @@ export const PaymentDialog = ({ open, onOpenChange, customer, onSaved }: Payment
   const [amountReceived, setAmountReceived] = useState('');
   const [showReceipt, setShowReceipt] = useState(false);
   const [receiptNumber, setReceiptNumber] = useState(0);
+  const [template, setTemplate] = useState<ReceiptTemplate | null>(null);
+  const [customFieldValues, setCustomFieldValues] = useState<Record<string, string>>({});
 
   useEffect(() => {
     if (open) {
@@ -34,18 +57,44 @@ export const PaymentDialog = ({ open, onOpenChange, customer, onSaved }: Payment
       setPaymentMethod('Dinheiro');
       setAmountReceived('');
       setShowReceipt(false);
+      fetchTemplate();
     }
   }, [open]);
+
+  const fetchTemplate = async () => {
+    try {
+      const res = await fetch('http://localhost:3000/receipt-templates/default/monthly_payment', {
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setTemplate(data);
+        
+        // Initialize custom field values
+        const initialValues: Record<string, string> = {};
+        if (data.customFields) {
+          data.customFields.forEach((field: any) => {
+            initialValues[field.name] = field.defaultValue || '';
+          });
+        }
+        // Set reference month to current month
+        initialValues.referenceMonth = format(new Date(), 'MMMM/yyyy', { locale: ptBR });
+        setCustomFieldValues(initialValues);
+      }
+    } catch (err) {
+      console.error('Error fetching template:', err);
+    }
+  };
 
   const calculateChange = () => {
     if (!customer || !amountReceived) return 0;
     return parseFloat(amountReceived) - customer.value;
   };
 
-  const handleConfirm = () => {
+  const handleConfirm = async () => {
     if (!customer || !paymentDate) return;
 
-    const receiptNum = registerPayment(customer.id, {
+    const receiptNum = await registerPayment(customer.id, {
       date: paymentDate,
       value: customer.value,
       method: paymentMethod,
@@ -144,38 +193,80 @@ export const PaymentDialog = ({ open, onOpenChange, customer, onSaved }: Payment
         ) : (
           <div>
             <div ref={receiptRef} className="bg-white text-black p-8 rounded-lg border-2 border-gray-300">
-              <div className="text-center mb-6">
-                <h2 className="text-2xl font-bold">{companyConfig.name}</h2>
-                {companyConfig.legalName && <p className="text-sm">{companyConfig.legalName}</p>}
-                {companyConfig.cnpj && <p className="text-sm">CNPJ: {companyConfig.cnpj}</p>}
-                {companyConfig.address && <p className="text-sm">{companyConfig.address}</p>}
-                {companyConfig.phone && <p className="text-sm">Tel: {companyConfig.phone}</p>}
-              </div>
+              {/* Header */}
+              {template?.showCompanyName !== false && (
+                <div className="text-center mb-6">
+                  <h2 className="text-2xl font-bold" style={{ color: template?.primaryColor || '#000000' }}>
+                    {companyConfig.name}
+                  </h2>
+                  {template?.showCompanyDetails !== false && (
+                    <>
+                      {companyConfig.legalName && <p className="text-sm">{companyConfig.legalName}</p>}
+                      {companyConfig.cnpj && <p className="text-sm">CNPJ: {companyConfig.cnpj}</p>}
+                      {companyConfig.address && <p className="text-sm">{companyConfig.address}</p>}
+                      {companyConfig.phone && <p className="text-sm">Tel: {companyConfig.phone}</p>}
+                    </>
+                  )}
+                </div>
+              )}
 
-              <div className="border-t-2 border-b-2 border-gray-300 py-4 my-4">
-                <h3 className="text-xl font-bold text-center">RECIBO Nº {receiptNumber.toString().padStart(6, '0')}</h3>
-                <p className="text-center text-sm mt-1">Mensalista</p>
-              </div>
+              {/* Receipt Number */}
+              {template?.showReceiptNumber !== false && (
+                <div className="border-t-2 border-b-2 border-gray-300 py-4 my-4">
+                  <h3 className="text-xl font-bold text-center">
+                    RECIBO Nº {receiptNumber.toString().padStart(6, '0')}
+                  </h3>
+                  <p className="text-center text-sm mt-1">Mensalista</p>
+                </div>
+              )}
 
+              {/* Receipt Body */}
               <div className="space-y-3 mb-6">
                 <p><strong>Cliente:</strong> {customer.name}</p>
-                <p><strong>Placas:</strong> {customer.plates.join(', ')}</p>
-                <p><strong>Data do Pagamento:</strong> {format(new Date(paymentDate), 'dd/MM/yyyy', { locale: ptBR })}</p>
-                <p><strong>Forma de Pagamento:</strong> {paymentMethod}</p>
-                <p><strong>Valor Pago:</strong> R$ {customer.value.toFixed(2)}</p>
-                <p><strong>Período de Referência:</strong> {format(new Date(), 'MMMM/yyyy', { locale: ptBR })}</p>
+                {template?.showPlate !== false && (
+                  <p><strong>Placas:</strong> {customer.plates.join(', ')}</p>
+                )}
+                {template?.showDate !== false && (
+                  <p><strong>Data do Pagamento:</strong> {format(new Date(paymentDate), 'dd/MM/yyyy', { locale: ptBR })}</p>
+                )}
+                {template?.showPaymentMethod !== false && (
+                  <p><strong>Forma de Pagamento:</strong> {paymentMethod}</p>
+                )}
+                {template?.showValue !== false && (
+                  <p><strong>Valor Pago:</strong> R$ {customer.value.toFixed(2)}</p>
+                )}
+                
+                {/* Custom Fields */}
+                {template?.customFields?.map((field) => (
+                  <p key={field.name}>
+                    <strong>{field.label}:</strong> {customFieldValues[field.name] || '-'}
+                  </p>
+                ))}
               </div>
 
-              <div className="mt-8 pt-4 border-t border-gray-300">
-                <p className="text-center">_______________________________</p>
-                <p className="text-center text-sm mt-1">Assinatura do Responsável</p>
-              </div>
+              {/* Signature Line */}
+              {template?.showSignatureLine !== false && (
+                <div className="mt-8 pt-4 border-t border-gray-300">
+                  <p className="text-center">_______________________________</p>
+                  <p className="text-center text-sm mt-1">Assinatura do Responsável</p>
+                </div>
+              )}
 
-              <div className="mt-6 p-3 bg-yellow-50 border border-yellow-300 rounded">
-                <p className="text-xs text-center">
-                  <strong>ATENÇÃO:</strong> Documento sem validade fiscal. Emitido apenas para controle interno e comprovação de pagamento.
-                </p>
-              </div>
+              {/* Terms and Conditions */}
+              {template?.termsAndConditions && (
+                <div className="mt-6 p-3 bg-yellow-50 border border-yellow-300 rounded">
+                  <p className="text-xs text-center">
+                    <strong>ATENÇÃO:</strong> {template.termsAndConditions}
+                  </p>
+                </div>
+              )}
+
+              {/* Footer Text */}
+              {template?.footerText && (
+                <div className="mt-4 text-center text-sm text-gray-600">
+                  {template.footerText}
+                </div>
+              )}
             </div>
 
             <div className="flex gap-2 mt-4">

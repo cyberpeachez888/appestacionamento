@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Test</title>
+    <style>
+        body { font-family: monospace; padding: 20px; }
+        .success { color: green; }
+        .error { color: red; }
+        pre { background: #f4f4f4; padding: 10px; border-radius: 5px; }
+    </style>
+</head>
+<body>
+    <h1>Backend API Test</h1>
+    <button onclick="testAPI()">Test GET /rates</button>
+    <button onclick="testCreateRate()">Test POST /rates</button>
+    <div id="result"></div>
+
+    <script>
+        const API_URL = 'http://localhost:3000';
+
+        async function testAPI() {
+            const result = document.getElementById('result');
+            result.innerHTML = '<p>Testing GET /rates...</p>';
+            
+            try {
+                const response = await fetch(`${API_URL}/rates`);
+                const data = await response.json();
+                
+                result.innerHTML = `
+                    <p class="success">✓ GET /rates successful</p>
+                    <p>Status: ${response.status}</p>
+                    <p>Rates found: ${data.length}</p>
+                    <pre>${JSON.stringify(data, null, 2)}</pre>
+                `;
+            } catch (error) {
+                result.innerHTML = `
+                    <p class="error">✗ GET /rates failed</p>
+                    <pre>${error.message}</pre>
+                `;
+            }
+        }
+
+        async function testCreateRate() {
+            const result = document.getElementById('result');
+            result.innerHTML = '<p>Testing POST /rates...</p>';
+            
+            const rateData = {
+                vehicleType: 'Carro',
+                rateType: 'Hora/Fração',
+                value: 15,
+                unit: 'hora',
+                courtesyMinutes: 10
+            };
+            
+            try {
+                const response = await fetch(`${API_URL}/rates`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(rateData)
+                });
+                const data = await response.json();
+                
+                result.innerHTML = `
+                    <p class="success">✓ POST /rates successful</p>
+                    <p>Status: ${response.status}</p>
+                    <pre>${JSON.stringify(data, null, 2)}</pre>
+                `;
+            } catch (error) {
+                result.innerHTML = `
+                    <p class="error">✗ POST /rates failed</p>
+                    <pre>${error.message}</pre>
+                `;
+            }
+        }
+    </script>
+</body>
+</html>

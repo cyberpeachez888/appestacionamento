@@ -1,4 +1,21 @@
-# Welcome to your Lovable project
+# TheProParkingApp
+
+**Sistema completo de gestão de estacionamento para uso local**
+
+## Sobre o Projeto
+
+TheProParkingApp é um sistema profissional de gestão de estacionamento desenvolvido para controle de entrada/saída de veículos, gestão de mensalistas, controle financeiro e relatórios detalhados.
+
+### Funcionalidades Principais:
+- ✅ Controle de entrada e saída de veículos
+- ✅ Gestão de mensalistas
+- ✅ Cálculo automático de tarifas
+- ✅ Controle de caixa
+- ✅ Relatórios financeiros
+- ✅ Configuração de horários e feriados
+- ✅ Dashboard analítico
+
+---
 
 ## Project info
 
@@ -54,11 +71,49 @@ npm run dev
 
 This project is built with:
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+
+### Authentication & RBAC
+
+This project uses JWT-based authentication for the backend API with role-based access control (admin/operator).
+
+- Endpoints:
+	- `POST /auth/login` → returns `{ token, user }`
+	- `GET /auth/me` → returns `{ user }` (requires Bearer token)
+	- `GET /users` (admin)
+	- `POST /users` (admin)
+	- `PUT /users/:id` (admin)
+	- `PUT /users/:id/password` (self or admin)
+	- `DELETE /users/:id` (admin)
+
+Environment variables:
+
+- `JWT_SECRET` → secret used to sign tokens (set in backend environment before starting the server)
+
+Initial admin user:
+
+1. Apply the SQL schema in `backend/supabase-schema.sql` to your database (includes the `users` table).
+2. Create an initial admin user either via SQL insert or by temporarily exposing a seeding route. Example SQL (replace values):
+
+```sql
+INSERT INTO users (id, name, email, login, password_hash, role, permissions)
+VALUES (
+	gen_random_uuid(),
+	'Admin',
+	'admin@example.com',
+	'admin',
+	crypt('admin123', gen_salt('bf')),
+	'admin',
+	'{}'::jsonb
+);
+```
+
+Alternatively, you can use the `/users` endpoint once you have any admin available.
+
+Frontend integration:
+
+- The frontend stores the token in localStorage (when "Lembrar" checked) or sessionStorage, and automatically attaches it to API requests.
+- Use the Login page at `/login`.
+- Admin-only Users page: `/users`.
 
 ## How can I deploy this project?
 

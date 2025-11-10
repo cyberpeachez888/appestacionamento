@@ -1,30 +1,71 @@
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Download } from 'lucide-react';
+import { Download, FileText } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useToast } from '@/hooks/use-toast';
+import { useParking } from '@/contexts/ParkingContext';
+import { useAuth } from '@/contexts/AuthContext';
+import api from '@/lib/api';
+import OpenCashRegisterDialog from '@/components/OpenCashRegisterDialog';
+import CloseCashRegisterDialog from '@/components/CloseCashRegisterDialog';
+import { MonthlyReportDialog } from '@/components/MonthlyReportDialog';
 
 type FinancialRecord = {
   type: 'Avulso' | 'Mensalista';
   date: string;
   value: number;
 };
+type ReportPayment = { date: string; value: number; method?: string; target_type?: string };
 
 export default function Financeiro() {
   const { toast } = useToast();
+  const { cashIsOpen, cashSession, openCashRegister, getAvulsoRevenue, getMonthlyRevenue, getTotalRevenue } = useParking();
+  const { hasPermission } = useAuth();
   const [records, setRecords] = useState<FinancialRecord[]>([]);
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
+  const [openDialogOpen, setOpenDialogOpen] = useState(false);
+  const [closeDialogOpen, setCloseDialogOpen] = useState(false);
+  const [monthlyReportDialogOpen, setMonthlyReportDialogOpen] = useState(false);
 
   useEffect(() => {
-    fetch('http://localhost:3000/api/financeiro')
-      .then(res => res.json())
-      .then(data => setRecords(data))
-      .catch(err => {
-        toast({ title: 'Erro ao carregar dados', description: err.message });
-      });
-  }, []);
+    const load = async () => {
+      try {
+        const filters = startDate && endDate ? { start: startDate, end: endDate } : undefined;
+        const report = await api.getFinancialReport(filters);
+        const payments: ReportPayment[] = report?.payments || [];
+        const mapType = (t?: string): 'Avulso' | 'Mensalista' => (t === 'monthly_customer' ? 'Mensalista' : 'Avulso');
+        const mapped: FinancialRecord[] = payments.map(p => ({ type: mapType(p.target_type), date: p.date, value: Number(p.value) || 0 }));
+        setRecords(mapped);
+      } catch (err: any) {
+        toast({ title: 'Erro ao carregar dados', description: err.message || String(err) });
+      }
+    };
+    load();
+  }, [startDate, endDate, toast]);
+
+  // Warn and attempt to force a close flow when trying to leave with cash open
+  useEffect(() => {
+    if (!cashIsOpen) return;
+    const beforeUnload = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      try { localStorage.setItem('cash:pendingClose', '1'); } catch (err) { void err; }
+      e.returnValue = '';
+      return '';
+    };
+    window.addEventListener('beforeunload', beforeUnload);
+    return () => window.removeEventListener('beforeunload', beforeUnload);
+  }, [cashIsOpen]);
+
+  // If a pending close was flagged (e.g., due to beforeunload), reopen the close dialog on mount
+  useEffect(() => {
+    const pending = typeof window !== 'undefined' ? localStorage.getItem('cash:pendingClose') : null;
+    if (pending && cashIsOpen) {
+      setCloseDialogOpen(true);
+      try { localStorage.removeItem('cash:pendingClose'); } catch (err) { void err; }
+    }
+  }, [cashIsOpen]);
 
   const filteredRecords = records.filter(r => {
     if (!startDate || !endDate) return true;
@@ -32,14 +73,9 @@ export default function Financeiro() {
     return date >= new Date(startDate) && date <= new Date(endDate);
   });
 
-  const totalAvulsos = filteredRecords
-    .filter(r => r.type === 'Avulso')
-    .reduce((acc, r) => acc + r.value, 0);
-
-  const totalMensalistas = filteredRecords
-    .filter(r => r.type === 'Mensalista')
-    .reduce((acc, r) => acc + r.value, 0);
-
+  // Compute totals from fetched report records to avoid relying on client history
+  const totalAvulsos = filteredRecords.filter(r => r.type === 'Avulso').reduce((s, r) => s + r.value, 0);
+  const totalMensalistas = filteredRecords.filter(r => r.type === 'Mensalista').reduce((s, r) => s + r.value, 0);
   const totalRevenue = totalAvulsos + totalMensalistas;
 
   const handleExportCSV = () => {
@@ -61,15 +97,81 @@ export default function Financeiro() {
     });
   };
 
+  const handleGenerateMonthlyReport = async (params: { month: number; year: number; clearOperational: boolean }) => {
+    try {
+      const result = await api.generateMonthlyReport(params);
+      
+      toast({
+        title: 'Relatório mensal gerado!',
+        description: result.message || 'O relatório foi gerado e arquivado com sucesso.',
+      });
+
+      // Reload data to reflect any changes
+      const filters = startDate && endDate ? { start: startDate, end: endDate } : undefined;
+      const report = await api.getFinancialReport(filters);
+      const payments: ReportPayment[] = report?.payments || [];
+      const mapType = (t?: string): 'Avulso' | 'Mensalista' => (t === 'monthly_customer' ? 'Mensalista' : 'Avulso');
+      const mapped: FinancialRecord[] = payments.map(p => ({ type: mapType(p.target_type), date: p.date, value: Number(p.value) || 0 }));
+      setRecords(mapped);
+
+    } catch (err: any) {
+      console.error('Error generating monthly report:', err);
+      toast({
+        title: 'Erro ao gerar relatório',
+        description: err.message || 'Não foi possível gerar o relatório mensal.',
+        variant: 'destructive',
+      });
+      throw err; // Re-throw to let dialog handle it
+    }
+  };
+
+  if (!hasPermission('viewReports')) {
+    return (
+      <div className="flex-1 p-8">
+        <div className="max-w-3xl mx-auto">
+          <h2 className="text-xl font-semibold">Acesso negado</h2>
+          <p className="text-sm text-muted-foreground">Você não tem permissão para visualizar relatórios financeiros.</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex-1 p-8">
       <div className="max-w-7xl mx-auto">
         <div className="flex items-center justify-between mb-8">
-          <h1 className="text-3xl font-bold text-foreground">Financeiro</h1>
-          <Button onClick={handleExportCSV}>
-            <Download className="h-4 w-4 mr-2" />
-            Exportar CSV
-          </Button>
+          <div>
+            <h1 className="text-3xl font-bold text-foreground">Financeiro</h1>
+            {cashIsOpen && cashSession?.openedAt && (
+              <p className="text-sm text-muted-foreground mt-1">
+                Caixa aberto em {format(new Date(cashSession.openedAt), "dd/MM/yyyy HH:mm", { locale: ptBR })}
+              </p>
+            )}
+          </div>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={handleExportCSV}>
+              <Download className="h-4 w-4 mr-2" />
+              Exportar CSV
+            </Button>
+            <Button 
+              variant="outline" 
+              onClick={() => setMonthlyReportDialogOpen(true)}
+              className="border-primary text-primary hover:bg-primary hover:text-primary-foreground"
+            >
+              <FileText className="h-4 w-4 mr-2" />
+              Gerar Relatório Mensal
+            </Button>
+            {!cashIsOpen && hasPermission('openCloseCash') && (
+              <Button onClick={() => setOpenDialogOpen(true)} className="bg-green-600 hover:bg-green-700">
+                Abrir Caixa
+              </Button>
+            )}
+            {cashIsOpen && hasPermission('openCloseCash') && (
+              <Button onClick={() => setCloseDialogOpen(true)} variant="destructive">
+                Fechar Caixa
+              </Button>
+            )}
+          </div>
         </div>
 
         <div className="bg-card p-6 rounded-lg shadow-sm border mb-6">
@@ -120,6 +222,13 @@ export default function Financeiro() {
           </div>
         </div>
       </div>
+      <OpenCashRegisterDialog open={openDialogOpen} onOpenChange={setOpenDialogOpen} />
+      <CloseCashRegisterDialog open={closeDialogOpen} onOpenChange={setCloseDialogOpen} />
+      <MonthlyReportDialog 
+        open={monthlyReportDialogOpen} 
+        onOpenChange={setMonthlyReportDialogOpen}
+        onConfirm={handleGenerateMonthlyReport}
+      />
     </div>
   );
 }

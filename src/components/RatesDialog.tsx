@@ -7,16 +7,20 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Edit, Trash2, Plus } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { VehicleTypeSelect } from '@/components/VehicleTypeSelect';
 
 interface RatesDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onSaved?: () => void;
 }
 
-export const RatesDialog = ({ open, onOpenChange }: RatesDialogProps) => {
+export const RatesDialog = ({ open, onOpenChange, onSaved }: RatesDialogProps) => {
   const { rates, addRate, updateRate, deleteRate } = useParking();
   const { toast } = useToast();
   const [editingId, setEditingId] = useState<string | null>(null);
+  
+  console.log('RatesDialog rendered, rates:', rates);
   const [formData, setFormData] = useState({
     vehicleType: 'Carro' as VehicleType,
     rateType: 'Hora/Fração' as RateType,
@@ -25,7 +29,7 @@ export const RatesDialog = ({ open, onOpenChange }: RatesDialogProps) => {
     courtesyMinutes: '10',
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     const rateData = {
@@ -36,15 +40,23 @@ export const RatesDialog = ({ open, onOpenChange }: RatesDialogProps) => {
       courtesyMinutes: parseInt(formData.courtesyMinutes),
     };
 
-    if (editingId) {
-      updateRate(editingId, rateData);
-      toast({ title: 'Tarifa atualizada com sucesso' });
-    } else {
-      addRate(rateData);
-      toast({ title: 'Tarifa adicionada com sucesso' });
+    try {
+      if (editingId) {
+        await updateRate(editingId, rateData);
+        toast({ title: 'Tarifa atualizada com sucesso' });
+      } else {
+        await addRate(rateData);
+        toast({ title: 'Tarifa adicionada com sucesso' });
+      }
+      resetForm();
+      onSaved?.(); // Notify parent to refresh data
+    } catch (error) {
+      toast({ 
+        title: 'Erro ao salvar tarifa',
+        description: 'Tente novamente',
+        variant: 'destructive'
+      });
     }
-
-    resetForm();
   };
 
   const handleEdit = (rate: Rate) => {
@@ -58,9 +70,17 @@ export const RatesDialog = ({ open, onOpenChange }: RatesDialogProps) => {
     });
   };
 
-  const handleDelete = (id: string) => {
-    deleteRate(id);
-    toast({ title: 'Tarifa excluída' });
+  const handleDelete = async (id: string) => {
+    try {
+      await deleteRate(id);
+      toast({ title: 'Tarifa excluída' });
+      onSaved?.(); // Notify parent to refresh data
+    } catch (error) {
+      toast({ 
+        title: 'Erro ao excluir tarifa',
+        variant: 'destructive'
+      });
+    }
   };
 
   const resetForm = () => {
@@ -73,6 +93,9 @@ export const RatesDialog = ({ open, onOpenChange }: RatesDialogProps) => {
       courtesyMinutes: '10',
     });
   };
+
+  // Filter rates by selected vehicle type
+  const filteredRates = rates.filter(rate => rate.vehicleType === formData.vehicleType);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -89,21 +112,10 @@ export const RatesDialog = ({ open, onOpenChange }: RatesDialogProps) => {
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
                 <Label>Tipo de Veículo</Label>
-                <Select
+                <VehicleTypeSelect
                   value={formData.vehicleType}
                   onValueChange={(v) => setFormData({ ...formData, vehicleType: v as VehicleType })}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Carro">Carro</SelectItem>
-                    <SelectItem value="Moto">Moto</SelectItem>
-                    <SelectItem value="Caminhonete">Caminhonete</SelectItem>
-                    <SelectItem value="Van">Van</SelectItem>
-                    <SelectItem value="Ônibus">Ônibus</SelectItem>
-                  </SelectContent>
-                </Select>
+                />
               </div>
 
               <div>
@@ -173,9 +185,16 @@ export const RatesDialog = ({ open, onOpenChange }: RatesDialogProps) => {
           </div>
 
           <div>
-            <h3 className="font-semibold mb-4">Tarifas Cadastradas</h3>
+            <h3 className="font-semibold mb-4">
+              Tarifas Cadastradas - {formData.vehicleType}
+            </h3>
             <div className="space-y-2 max-h-96 overflow-y-auto">
-              {rates.map((rate) => (
+              {filteredRates.length === 0 ? (
+                <p className="text-muted-foreground text-sm text-center py-8">
+                  Nenhuma tarifa cadastrada para {formData.vehicleType}
+                </p>
+              ) : (
+                filteredRates.map((rate) => (
                 <div
                   key={rate.id}
                   className="bg-muted/50 p-3 rounded-lg flex items-center justify-between"
@@ -196,7 +215,8 @@ export const RatesDialog = ({ open, onOpenChange }: RatesDialogProps) => {
                     </Button>
                   </div>
                 </div>
-              ))}
+                ))
+              )}
             </div>
           </div>
         </div>
