@@ -19,7 +19,7 @@ import businessHoursController from '../controllers/businessHoursController.js';
 import holidaysController from '../controllers/holidaysController.js';
 import specialEventsController from '../controllers/specialEventsController.js';
 import dashboardSettingsController from '../controllers/dashboardSettingsController.js';
-const setupController = require('../controllers/setupController');
+import setupController from '../controllers/setupController.js';
 import pricingRulesRoutes from './pricingRules.js';
 import { requireAuth, requireAdmin, requirePermission } from '../middleware/auth.js';
 import { loginLimiter, apiLimiter, strictLimiter } from '../middleware/rateLimiter.js';

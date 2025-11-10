@@ -1,7 +1,7 @@
-const supabase = require('../config/supabase');
-const bcrypt = require('bcryptjs');
-const fs = require('fs').promises;
-const path = require('path');
+import supabase from '../config/supabase.js';
+import bcrypt from 'bcryptjs';
+import fs from 'fs/promises';
+import path from 'path';
 
 /**
  * Setup Controller
@@ -11,7 +11,7 @@ const path = require('path');
 /**
  * Check if first-run setup has been completed
  */
-exports.checkFirstRun = async (req, res) => {
+export const checkFirstRun = async (req, res) => {
   try {
     const { data, error } = await supabase
       .from('company_settings')
@@ -43,7 +43,7 @@ exports.checkFirstRun = async (req, res) => {
 /**
  * Clean up all test data from database
  */
-exports.cleanupTestData = async (req, res) => {
+export const cleanupTestData = async (req, res) => {
   try {
     // Delete in order to respect foreign key constraints
     const tables = [
@@ -84,7 +84,7 @@ exports.cleanupTestData = async (req, res) => {
 /**
  * Initialize the system with company settings and admin user
  */
-exports.initialize = async (req, res) => {
+export const initialize = async (req, res) => {
   try {
     const {
       // Company info
@@ -267,7 +267,7 @@ async function cleanupTestDataInternal() {
 /**
  * Get current company settings
  */
-exports.getCompanySettings = async (req, res) => {
+export const getCompanySettings = async (req, res) => {
   try {
     const { data, error } = await supabase
       .from('company_settings')
@@ -283,4 +283,11 @@ exports.getCompanySettings = async (req, res) => {
     console.error('Error fetching company settings:', error);
     res.status(500).json({ error: 'Failed to fetch company settings' });
   }
+};
+
+export default {
+  checkFirstRun,
+  cleanupTestData,
+  initialize,
+  getCompanySettings
 };
