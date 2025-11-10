@@ -205,6 +205,11 @@ export const initialize = async (req, res) => {
 
     // Tarifas serão configuradas posteriormente pelo usuário
 
+    console.log('✅ Setup completed successfully!');
+    console.log('   Company:', companyName);
+    console.log('   Admin user:', adminLogin);
+    console.log('   Setup marked as completed: true');
+
     res.json({
       success: true,
       message: 'Setup completed successfully',

@@ -103,12 +103,14 @@ export default function SetupWizard() {
         throw new Error(data.error || 'Erro ao inicializar o sistema');
       }
 
-      setCurrentStep(4); // Success step
+      // Show success step briefly
+      setCurrentStep(4);
 
-      // Redirect to login after 3 seconds
+      // Wait a moment to show success, then redirect
       setTimeout(() => {
-        navigate('/login');
-      }, 3000);
+        // Force navigation to login and prevent going back
+        window.location.href = '/login';
+      }, 2000);
 
     } catch (error: any) {
       toast({
