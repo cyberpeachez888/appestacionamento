@@ -3,7 +3,7 @@
 
 CREATE TABLE IF NOT EXISTS company_settings (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  company_name VARCHAR(255) NOT NULL,
+  company_name VARCHAR(255), -- Will be filled during setup
   cnpj VARCHAR(18), -- Format: 00.000.000/0000-00
   address TEXT,
   city VARCHAR(100),
