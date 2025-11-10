@@ -2,6 +2,7 @@ import { supabase } from '../config/supabase.js';
 import bcrypt from 'bcryptjs';
 import fs from 'fs/promises';
 import path from 'path';
+import crypto from 'crypto';
 
 /**
  * Setup Controller
@@ -173,6 +174,7 @@ export const initialize = async (req, res) => {
     const { data: adminUser, error: adminError } = await supabase
       .from('users')
       .insert({
+        id: crypto.randomUUID(), // Generate UUID for user ID
         name: adminName || 'Administrador',
         email: adminEmail || `admin@${companyName.toLowerCase().replace(/\s/g, '')}.com`,
         login: adminLogin,

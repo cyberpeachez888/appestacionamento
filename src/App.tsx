@@ -129,9 +129,7 @@ const App = () => (
           <Sonner />
           <BrowserRouter>
             <SetupGuard>
-              <div className="flex min-h-screen w-full">
-                {/* Hide sidebar on login and setup routes */}
-                <SidebarWrapper />
+              <LayoutWrapper>
                 <Routes>
                   <Route path="/setup" element={<SetupWizard />} />
                   <Route path="/login" element={<Login />} />
@@ -149,7 +147,7 @@ const App = () => (
                   <Route path="/configuracoes" element={<Protected><Configuracoes /></Protected>} />
                   <Route path="*" element={<NotFound />} />
                 </Routes>
-              </div>
+              </LayoutWrapper>
             </SetupGuard>
           </BrowserRouter>
         </TooltipProvider>
@@ -162,6 +160,24 @@ const SidebarWrapper: React.FC = () => {
   const location = useLocation();
   const onLoginOrSetup = location.pathname === '/login' || location.pathname === '/setup';
   return onLoginOrSetup ? null : <Sidebar />;
+};
+
+const LayoutWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const location = useLocation();
+  const onLoginOrSetup = location.pathname === '/login' || location.pathname === '/setup';
+  
+  // No flex layout for login/setup - full width centered
+  if (onLoginOrSetup) {
+    return <>{children}</>;
+  }
+  
+  // Flex layout with sidebar for other pages
+  return (
+    <div className="flex min-h-screen w-full">
+      <SidebarWrapper />
+      {children}
+    </div>
+  );
 };
 
 export default App;
