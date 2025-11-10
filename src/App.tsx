@@ -20,9 +20,59 @@ import HorariosFeriados from './pages/HorariosFeriados';
 import ConfiguracoesDashboard from './pages/ConfiguracoesDashboard';
 import NotFound from "./pages/NotFound";
 import Login from "./pages/Login";
+import SetupWizard from "./pages/SetupWizard";
 import CashRegisterClosedDialog from "./components/CashRegisterClosedDialog";
+import { useEffect, useState } from "react";
 
 const queryClient = new QueryClient();
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+
+// Component to check if setup is needed
+const SetupGuard: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [loading, setLoading] = useState(true);
+  const [needsSetup, setNeedsSetup] = useState(false);
+  const location = useLocation();
+
+  useEffect(() => {
+    // Skip check if already on setup page
+    if (location.pathname === '/setup') {
+      setLoading(false);
+      return;
+    }
+
+    const checkSetup = async () => {
+      try {
+        const response = await fetch(`${API_URL}/setup/check-first-run`);
+        const data = await response.json();
+        setNeedsSetup(data.needsSetup || false);
+      } catch (error) {
+        console.error('Error checking setup status:', error);
+        setNeedsSetup(false);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    checkSetup();
+  }, [location.pathname]);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Verificando configuração...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (needsSetup && location.pathname !== '/setup') {
+    return <Navigate to="/setup" replace />;
+  }
+
+  return <>{children}</>;
+};
 
 const Protected: React.FC<{ children: React.ReactNode; required?: string | string[] }> = ({ children, required }) => {
   const { cashIsOpen } = useParking();
@@ -78,26 +128,29 @@ const App = () => (
           <Toaster />
           <Sonner />
           <BrowserRouter>
-            <div className="flex min-h-screen w-full">
-              {/* Hide sidebar on login route */}
-              <SidebarWrapper />
-              <Routes>
-                <Route path="/login" element={<Login />} />
-                <Route path="/" element={<Protected required={["openCloseCash"]}><Operacional /></Protected>} />
-                <Route path="/mensalistas" element={<Protected required={["manageMonthlyCustomers"]}><Mensalistas /></Protected>} />
-                <Route path="/financeiro" element={<Protected required={["viewReports"]}><Financeiro /></Protected>} />
-                <Route path="/relatorios-mensais" element={<Protected required={["viewReports"]}><RelatoriosMensais /></Protected>} />
-                <Route path="/users" element={<Protected required={["manageUsers"]}><Users /></Protected>} />
-                <Route path="/tarifas" element={<Protected required={["manageRates"]}><Tarifas /></Protected>} />
-                <Route path="/integracoes" element={<Protected><Integracoes /></Protected>} />
-                <Route path="/modelos-recibos" element={<Protected><ModelosRecibos /></Protected>} />
-                <Route path="/horarios-feriados" element={<Protected required={["manageCompanyConfig"]}><HorariosFeriados /></Protected>} />
-                <Route path="/configuracoes-dashboard" element={<Protected required={["viewReports"]}><ConfiguracoesDashboard /></Protected>} />
-                {/* Configurações: leitura permitida sem manageCompanyConfig, somente bloqueia edição dentro da página */}
-                <Route path="/configuracoes" element={<Protected><Configuracoes /></Protected>} />
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-            </div>
+            <SetupGuard>
+              <div className="flex min-h-screen w-full">
+                {/* Hide sidebar on login and setup routes */}
+                <SidebarWrapper />
+                <Routes>
+                  <Route path="/setup" element={<SetupWizard />} />
+                  <Route path="/login" element={<Login />} />
+                  <Route path="/" element={<Protected required={["openCloseCash"]}><Operacional /></Protected>} />
+                  <Route path="/mensalistas" element={<Protected required={["manageMonthlyCustomers"]}><Mensalistas /></Protected>} />
+                  <Route path="/financeiro" element={<Protected required={["viewReports"]}><Financeiro /></Protected>} />
+                  <Route path="/relatorios-mensais" element={<Protected required={["viewReports"]}><RelatoriosMensais /></Protected>} />
+                  <Route path="/users" element={<Protected required={["manageUsers"]}><Users /></Protected>} />
+                  <Route path="/tarifas" element={<Protected required={["manageRates"]}><Tarifas /></Protected>} />
+                  <Route path="/integracoes" element={<Protected><Integracoes /></Protected>} />
+                  <Route path="/modelos-recibos" element={<Protected><ModelosRecibos /></Protected>} />
+                  <Route path="/horarios-feriados" element={<Protected required={["manageCompanyConfig"]}><HorariosFeriados /></Protected>} />
+                  <Route path="/configuracoes-dashboard" element={<Protected required={["viewReports"]}><ConfiguracoesDashboard /></Protected>} />
+                  {/* Configurações: leitura permitida sem manageCompanyConfig, somente bloqueia edição dentro da página */}
+                  <Route path="/configuracoes" element={<Protected><Configuracoes /></Protected>} />
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+              </div>
+            </SetupGuard>
           </BrowserRouter>
         </TooltipProvider>
       </ParkingProvider>
@@ -107,8 +160,8 @@ const App = () => (
 
 const SidebarWrapper: React.FC = () => {
   const location = useLocation();
-  const onLogin = location.pathname === '/login';
-  return onLogin ? null : <Sidebar />;
+  const onLoginOrSetup = location.pathname === '/login' || location.pathname === '/setup';
+  return onLoginOrSetup ? null : <Sidebar />;
 };
 
 export default App;

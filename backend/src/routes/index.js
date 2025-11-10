@@ -19,11 +19,18 @@ import businessHoursController from '../controllers/businessHoursController.js';
 import holidaysController from '../controllers/holidaysController.js';
 import specialEventsController from '../controllers/specialEventsController.js';
 import dashboardSettingsController from '../controllers/dashboardSettingsController.js';
+const setupController = require('../controllers/setupController');
 import pricingRulesRoutes from './pricingRules.js';
 import { requireAuth, requireAdmin, requirePermission } from '../middleware/auth.js';
 import { loginLimiter, apiLimiter, strictLimiter } from '../middleware/rateLimiter.js';
 
 const router = express.Router();
+
+// Setup routes (no auth required for first-run)
+router.get('/setup/check-first-run', setupController.checkFirstRun);
+router.post('/setup/initialize', setupController.initialize);
+router.post('/setup/cleanup-test-data', setupController.cleanupTestData);
+router.get('/setup/company-settings', setupController.getCompanySettings);
 
 // Rates (view requires any auth? allow unauth? We'll protect modifications.)
 router.get('/rates', ratesController.list);
