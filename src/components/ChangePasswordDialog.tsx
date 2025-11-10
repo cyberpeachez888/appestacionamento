@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { AlertCircle, CheckCircle, Eye, EyeOff } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import api from '@/lib/api';
 
 interface ChangePasswordDialogProps {
   open: boolean;
@@ -19,7 +20,7 @@ interface PasswordValidation {
   errors: string[];
   strength?: {
     score: number;
-    feedback: {
+    feedback?: {
       warning?: string;
       suggestions?: string[];
     };
@@ -71,11 +72,8 @@ export const ChangePasswordDialog = ({
 
   const fetchPasswordRequirements = async () => {
     try {
-      const response = await fetch('/api/auth/password-requirements');
-      if (response.ok) {
-        const data = await response.json();
-        setPasswordRequirements(data);
-      }
+      const data = await api.getPasswordRequirements();
+      setPasswordRequirements(data);
     } catch (err) {
       console.error('Error fetching password requirements:', err);
     }
@@ -83,20 +81,8 @@ export const ChangePasswordDialog = ({
 
   const validatePasswordStrength = async (password: string) => {
     try {
-      const token = localStorage.getItem('auth:token') || sessionStorage.getItem('auth:token');
-      const response = await fetch('/api/auth/validate-password', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({ password })
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setValidation(data);
-      }
+      const data = await api.validatePasswordStrength(password);
+      setValidation(data);
     } catch (err) {
       console.error('Error validating password:', err);
     }
@@ -138,55 +124,25 @@ export const ChangePasswordDialog = ({
     setLoading(true);
 
     try {
-      // Get token from localStorage or sessionStorage (matches AuthContext storage)
-      const token = localStorage.getItem('auth:token') || sessionStorage.getItem('auth:token');
-      
-      if (!token) {
-        toast({
-          variant: 'destructive',
-          title: 'Erro',
-          description: 'Token de autenticação não encontrado. Faça login novamente.'
-        });
-        setLoading(false);
-        return;
-      }
-      
-      const response = await fetch('/api/auth/change-password', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          currentPassword: isFirstLogin ? undefined : currentPassword,
-          newPassword
-        })
+      await api.changePassword({
+        currentPassword: isFirstLogin ? undefined : currentPassword,
+        newPassword
       });
 
-      const data = await response.json();
-
-      if (response.ok) {
-        toast({
-          title: 'Sucesso',
-          description: 'Senha alterada com sucesso'
-        });
-        onOpenChange(false);
-        if (onSuccess) {
-          onSuccess();
-        }
-      } else {
-        toast({
-          variant: 'destructive',
-          title: 'Erro',
-          description: data.error || 'Erro ao alterar senha'
-        });
+      toast({
+        title: 'Sucesso',
+        description: 'Senha alterada com sucesso'
+      });
+      onOpenChange(false);
+      if (onSuccess) {
+        onSuccess();
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error changing password:', err);
       toast({
         variant: 'destructive',
         title: 'Erro',
-        description: 'Erro ao alterar senha'
+        description: err.message || 'Erro ao alterar senha'
       });
     } finally {
       setLoading(false);

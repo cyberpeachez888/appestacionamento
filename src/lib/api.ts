@@ -267,6 +267,13 @@ class ApiClient {
     return this.request<{ user: AuthUser }>(`/auth/me`);
   }
 
+  async changePassword(data: { currentPassword?: string; newPassword: string }) {
+    return this.request<void>(`/auth/change-password`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
   // Users (admin) endpoints
   async getUsers() {
     return this.request<AuthUser[]>(`/users`);
@@ -298,6 +305,27 @@ class ApiClient {
       method: 'PUT',
       body: JSON.stringify({ oldPassword, newPassword }),
     });
+  }
+
+  async validatePasswordStrength(password: string) {
+    return this.request<{
+      valid: boolean;
+      strength: { score: number };
+      errors: string[];
+    }>(`/auth/validate-password`, {
+      method: 'POST',
+      body: JSON.stringify({ password }),
+    });
+  }
+
+  async getPasswordRequirements() {
+    return this.request<{
+      minLength: number;
+      requireUppercase: boolean;
+      requireLowercase: boolean;
+      requireNumbers: boolean;
+      requireSpecialChars: boolean;
+    }>(`/auth/password-requirements`);
   }
 
   async deleteUser(id: string) {

@@ -166,9 +166,12 @@ export default {
       const validation = validatePassword(password);
       
       res.json({
-        valid: validation.isValid,
+        valid: validation.valid,
         errors: validation.errors,
-        strength: validation.strength,
+        strength: {
+          score: validation.strength,
+          feedback: validation.feedback
+        },
         suggestions: validation.suggestions
       });
     } catch (err) {
@@ -203,7 +206,7 @@ export default {
       
       // Validate new password strength
       const validation = validatePassword(newPassword);
-      if (!validation.isValid) {
+      if (!validation.valid) {
         return res.status(400).json({ 
           error: 'Senha não atende aos requisitos de segurança',
           errors: validation.errors
