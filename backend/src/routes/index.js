@@ -26,6 +26,15 @@ import { loginLimiter, apiLimiter, strictLimiter } from '../middleware/rateLimit
 
 const router = express.Router();
 
+// Health check endpoint for Render
+router.get('/health', (req, res) => {
+  res.status(200).json({ 
+    status: 'ok', 
+    timestamp: new Date().toISOString(),
+    service: 'TheProParking Backend'
+  });
+});
+
 // Setup routes (no auth required for first-run)
 router.get('/setup/check-first-run', setupController.checkFirstRun);
 router.post('/setup/initialize', setupController.initialize);
