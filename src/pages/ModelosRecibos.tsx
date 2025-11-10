@@ -300,7 +300,7 @@ export default function ModelosRecibos() {
     return labels[type] || type;
   };
 
-  const filteredTemplates = templates;
+  const filteredTemplates = Array.isArray(templates) ? templates : [];
 
   return (
     <div className="flex-1 p-8">
