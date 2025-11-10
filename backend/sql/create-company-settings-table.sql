@@ -24,18 +24,16 @@ CREATE UNIQUE INDEX IF NOT EXISTS idx_single_company_settings ON company_setting
 -- Add RLS policies
 ALTER TABLE company_settings ENABLE ROW LEVEL SECURITY;
 
--- Allow authenticated users to read company settings
-CREATE POLICY "Allow authenticated users to read company settings"
+-- Allow anyone to read company settings (needed for setup check)
+CREATE POLICY "Allow anyone to read company settings"
   ON company_settings
   FOR SELECT
-  TO authenticated
   USING (true);
 
--- Allow service role to insert/update (for setup)
-CREATE POLICY "Allow service role to manage company settings"
+-- Allow anyone to manage company settings
+CREATE POLICY "Allow anyone to manage company settings"
   ON company_settings
   FOR ALL
-  TO service_role
   USING (true)
   WITH CHECK (true);
 

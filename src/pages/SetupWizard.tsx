@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Building2, User, DollarSign, CheckCircle2, Loader2 } from 'lucide-react';
+import { Building2, User, CheckCircle2, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
@@ -33,10 +33,6 @@ export default function SetupWizard() {
     adminLogin: '',
     adminPassword: '',
     adminPasswordConfirm: '',
-    
-    // Initial rates
-    defaultHourlyRate: '5.00',
-    defaultDailyRate: '30.00',
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -107,7 +103,7 @@ export default function SetupWizard() {
         throw new Error(data.error || 'Erro ao inicializar o sistema');
       }
 
-      setCurrentStep(5); // Success step
+      setCurrentStep(4); // Success step
 
       // Redirect to login after 3 seconds
       setTimeout(() => {
@@ -154,7 +150,7 @@ export default function SetupWizard() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
-      <Card className="w-full max-w-2xl shadow-2xl">
+      <Card className="w-full max-w-2xl shadow-2xl mx-auto">
         <CardHeader className="text-center">
           <div className="mb-4">
             <div className="mx-auto w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center">
@@ -171,8 +167,8 @@ export default function SetupWizard() {
 
         <CardContent className="space-y-6">
           {/* Progress indicators */}
-          <div className="flex justify-between items-center mb-8">
-            {[1, 2, 3, 4].map((step) => (
+          <div className="flex justify-center items-center mb-8 gap-2">
+            {[1, 2, 3].map((step) => (
               <div key={step} className="flex items-center">
                 <div
                   className={`w-10 h-10 rounded-full flex items-center justify-center font-semibold ${
@@ -183,7 +179,7 @@ export default function SetupWizard() {
                 >
                   {step}
                 </div>
-                {step < 4 && (
+                {step < 3 && (
                   <div
                     className={`h-1 w-12 md:w-24 ${
                       currentStep > step ? 'bg-blue-600' : 'bg-gray-200'
@@ -203,7 +199,7 @@ export default function SetupWizard() {
               <p className="text-gray-600 text-lg">
                 Este assistente irá guiá-lo na configuração inicial do sistema.
               </p>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-8">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-8">
                 <div className="p-4 bg-blue-50 rounded-lg">
                   <Building2 className="w-8 h-8 text-blue-600 mx-auto mb-2" />
                   <p className="font-semibold">Dados da Empresa</p>
@@ -213,11 +209,6 @@ export default function SetupWizard() {
                   <User className="w-8 h-8 text-blue-600 mx-auto mb-2" />
                   <p className="font-semibold">Usuário Admin</p>
                   <p className="text-sm text-gray-600">Criar acesso inicial</p>
-                </div>
-                <div className="p-4 bg-blue-50 rounded-lg">
-                  <DollarSign className="w-8 h-8 text-blue-600 mx-auto mb-2" />
-                  <p className="font-semibold">Tarifas</p>
-                  <p className="text-sm text-gray-600">Valores iniciais</p>
                 </div>
               </div>
               <Button onClick={nextStep} size="lg" className="mt-8">
@@ -447,65 +438,6 @@ export default function SetupWizard() {
                 <Button onClick={prevStep} variant="outline">
                   Voltar
                 </Button>
-                <Button onClick={nextStep}>
-                  Próximo
-                </Button>
-              </div>
-            </div>
-          )}
-
-          {/* Step 4: Initial Rates */}
-          {currentStep === 4 && (
-            <div className="space-y-4">
-              <h2 className="text-2xl font-bold text-gray-800 mb-4">
-                Tarifas Iniciais
-              </h2>
-              <p className="text-gray-600 mb-4">
-                Configure os valores padrão. Você poderá ajustar depois.
-              </p>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="defaultHourlyRate">Valor por Hora (R$)</Label>
-                  <Input
-                    id="defaultHourlyRate"
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    value={formData.defaultHourlyRate}
-                    onChange={(e) => updateField('defaultHourlyRate', e.target.value)}
-                    placeholder="5.00"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="defaultDailyRate">Valor Diária (R$)</Label>
-                  <Input
-                    id="defaultDailyRate"
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    value={formData.defaultDailyRate}
-                    onChange={(e) => updateField('defaultDailyRate', e.target.value)}
-                    placeholder="30.00"
-                  />
-                </div>
-              </div>
-
-              <div className="bg-blue-50 p-4 rounded-lg mt-4">
-                <h3 className="font-semibold text-blue-900 mb-2">Resumo da Configuração</h3>
-                <div className="space-y-2 text-sm text-blue-800">
-                  <p><strong>Empresa:</strong> {formData.companyName || 'Não informado'}</p>
-                  <p><strong>Admin:</strong> {formData.adminLogin || 'Não informado'}</p>
-                  <p><strong>Tarifa/Hora:</strong> R$ {formData.defaultHourlyRate}</p>
-                  <p><strong>Diária:</strong> R$ {formData.defaultDailyRate}</p>
-                </div>
-              </div>
-
-              <div className="flex justify-between pt-4">
-                <Button onClick={prevStep} variant="outline">
-                  Voltar
-                </Button>
                 <Button onClick={handleSubmit} disabled={loading}>
                   {loading ? (
                     <>
@@ -520,8 +452,8 @@ export default function SetupWizard() {
             </div>
           )}
 
-          {/* Step 5: Success */}
-          {currentStep === 5 && (
+          {/* Step 4: Success */}
+          {currentStep === 4 && (
             <div className="text-center space-y-6 py-8">
               <div className="mx-auto w-20 h-20 bg-green-100 rounded-full flex items-center justify-center">
                 <CheckCircle2 className="w-12 h-12 text-green-600" />

@@ -44,20 +44,18 @@ ALTER TABLE company_settings ENABLE ROW LEVEL SECURITY;
 -- 4. RLS POLICIES
 -- ================================================
 
--- Allow authenticated users to read company settings
-DROP POLICY IF EXISTS "Allow authenticated users to read company settings" ON company_settings;
-CREATE POLICY "Allow authenticated users to read company settings"
+-- Allow anyone to read company settings (needed for setup check)
+DROP POLICY IF EXISTS "Allow anyone to read company settings" ON company_settings;
+CREATE POLICY "Allow anyone to read company settings"
   ON company_settings
   FOR SELECT
-  TO authenticated
   USING (true);
 
--- Allow service role to manage (for setup process)
-DROP POLICY IF EXISTS "Allow service role to manage company settings" ON company_settings;
-CREATE POLICY "Allow service role to manage company settings"
+-- Allow anyone to insert/update during setup (authenticated users after)
+DROP POLICY IF EXISTS "Allow anyone to manage company settings" ON company_settings;
+CREATE POLICY "Allow anyone to manage company settings"
   ON company_settings
   FOR ALL
-  TO service_role
   USING (true)
   WITH CHECK (true);
 

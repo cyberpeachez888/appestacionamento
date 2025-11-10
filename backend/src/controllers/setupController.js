@@ -101,11 +101,7 @@ export const initialize = async (req, res) => {
       adminName,
       adminEmail,
       adminLogin,
-      adminPassword,
-      
-      // Initial rates (optional)
-      defaultHourlyRate,
-      defaultDailyRate
+      adminPassword
     } = req.body;
 
     // Validation
@@ -186,36 +182,7 @@ export const initialize = async (req, res) => {
         .insert(vType);
     }
 
-    // 6. Create default rates if provided
-    if (defaultHourlyRate || defaultDailyRate) {
-      const rates = [];
-      
-      if (defaultHourlyRate) {
-        rates.push({
-          name: 'Hora',
-          type: 'hourly',
-          amount: parseFloat(defaultHourlyRate),
-          duration_hours: 1,
-          is_active: true
-        });
-      }
-
-      if (defaultDailyRate) {
-        rates.push({
-          name: 'Diária',
-          type: 'daily',
-          amount: parseFloat(defaultDailyRate),
-          duration_hours: 24,
-          is_active: true
-        });
-      }
-
-      for (const rate of rates) {
-        await supabase
-          .from('rates')
-          .insert(rate);
-      }
-    }
+    // Tarifas serão configuradas posteriormente pelo usuário
 
     res.json({
       success: true,
