@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Plus, Eye, Copy, Pencil, Trash2, Star } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import api from '@/lib/api';
 import {
   Dialog,
   DialogContent,
@@ -140,17 +141,15 @@ export default function ModelosRecibos() {
 
   const fetchTemplates = async () => {
     try {
-      const url = selectedType === 'all' 
-        ? 'http://localhost:3000/receipt-templates' 
-        : `http://localhost:3000/receipt-templates?type=${selectedType}`;
-      
-      const res = await fetch(url, {
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-      });
-      const data = await res.json();
+      const data = await api.getReceiptTemplates(selectedType);
       setTemplates(data);
     } catch (err) {
       console.error('Error fetching templates:', err);
+      toast({
+        variant: 'destructive',
+        title: 'Erro',
+        description: 'Erro ao carregar modelos de recibo'
+      });
     }
   };
 
@@ -207,35 +206,22 @@ export default function ModelosRecibos() {
 
     setLoading(true);
     try {
-      const url = editingTemplate
-        ? `http://localhost:3000/receipt-templates/${editingTemplate.id}`
-        : 'http://localhost:3000/receipt-templates';
-      
-      const method = editingTemplate ? 'PUT' : 'POST';
-
-      const res = await fetch(url, {
-        method,
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${localStorage.getItem('token')}`,
-        },
-        body: JSON.stringify(formData),
-      });
-
-      if (res.ok) {
-        toast({
-          title: 'Sucesso',
-          description: editingTemplate ? 'Template atualizado' : 'Template criado',
-        });
-        setDialogOpen(false);
-        fetchTemplates();
+      if (editingTemplate) {
+        await api.updateReceiptTemplate(editingTemplate.id, formData);
       } else {
-        throw new Error('Falha ao salvar template');
+        await api.createReceiptTemplate(formData);
       }
-    } catch (err) {
+
+      toast({
+        title: 'Sucesso',
+        description: editingTemplate ? 'Template atualizado' : 'Template criado',
+      });
+      setDialogOpen(false);
+      fetchTemplates();
+    } catch (err: any) {
       toast({
         title: 'Erro',
-        description: 'Não foi possível salvar o template',
+        description: err.message || 'Não foi possível salvar o template',
         variant: 'destructive',
       });
     } finally {
@@ -248,23 +234,15 @@ export default function ModelosRecibos() {
 
     setLoading(true);
     try {
-      const res = await fetch(`http://localhost:3000/receipt-templates/${deletingTemplate.id}`, {
-        method: 'DELETE',
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+      await api.deleteReceiptTemplate(deletingTemplate.id);
+      
+      toast({
+        title: 'Template excluído',
+        description: 'O template foi removido com sucesso',
       });
-
-      if (res.ok) {
-        toast({
-          title: 'Template excluído',
-          description: 'O template foi removido com sucesso',
-        });
-        setDeleteDialogOpen(false);
-        setDeletingTemplate(null);
-        fetchTemplates();
-      } else {
-        const error = await res.json();
-        throw new Error(error.error || 'Erro ao excluir');
-      }
+      setDeleteDialogOpen(false);
+      setDeletingTemplate(null);
+      fetchTemplates();
     } catch (err: any) {
       toast({
         title: 'Erro',
@@ -278,22 +256,17 @@ export default function ModelosRecibos() {
 
   const handleSetDefault = async (template: ReceiptTemplate) => {
     try {
-      const res = await fetch(`http://localhost:3000/receipt-templates/${template.id}/set-default`, {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+      await api.setDefaultReceiptTemplate(template.id);
+      
+      toast({
+        title: 'Template padrão definido',
+        description: `"${template.templateName}" agora é o template padrão`,
       });
-
-      if (res.ok) {
-        toast({
-          title: 'Template padrão definido',
-          description: `"${template.templateName}" agora é o template padrão`,
-        });
-        fetchTemplates();
-      }
-    } catch (err) {
+      fetchTemplates();
+    } catch (err: any) {
       toast({
         title: 'Erro',
-        description: 'Não foi possível definir como padrão',
+        description: err.message || 'Não foi possível definir como padrão',
         variant: 'destructive',
       });
     }
@@ -301,22 +274,17 @@ export default function ModelosRecibos() {
 
   const handleClone = async (template: ReceiptTemplate) => {
     try {
-      const res = await fetch(`http://localhost:3000/receipt-templates/${template.id}/clone`, {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+      await api.cloneReceiptTemplate(template.id);
+      
+      toast({
+        title: 'Template duplicado',
+        description: 'Uma cópia do template foi criada',
       });
-
-      if (res.ok) {
-        toast({
-          title: 'Template duplicado',
-          description: 'Uma cópia do template foi criada',
-        });
-        fetchTemplates();
-      }
-    } catch (err) {
+      fetchTemplates();
+    } catch (err: any) {
       toast({
         title: 'Erro',
-        description: 'Não foi possível duplicar o template',
+        description: err.message || 'Não foi possível duplicar o template',
         variant: 'destructive',
       });
     }

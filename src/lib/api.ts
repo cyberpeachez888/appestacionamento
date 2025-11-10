@@ -502,6 +502,44 @@ class ApiClient {
       body: JSON.stringify({ isActive }),
     });
   }
+
+  // Receipt Templates endpoints
+  async getReceiptTemplates(type?: string) {
+    const query = type && type !== 'all' ? `?type=${type}` : '';
+    return this.request<any[]>(`/receipt-templates${query}`);
+  }
+
+  async createReceiptTemplate(template: any) {
+    return this.request<any>('/receipt-templates', {
+      method: 'POST',
+      body: JSON.stringify(template),
+    });
+  }
+
+  async updateReceiptTemplate(id: string, template: any) {
+    return this.request<any>(`/receipt-templates/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(template),
+    });
+  }
+
+  async deleteReceiptTemplate(id: string) {
+    return this.request<void>(`/receipt-templates/${id}`, {
+      method: 'DELETE',
+    });
+  }
+
+  async setDefaultReceiptTemplate(id: string) {
+    return this.request<any>(`/receipt-templates/${id}/set-default`, {
+      method: 'POST',
+    });
+  }
+
+  async cloneReceiptTemplate(id: string) {
+    return this.request<any>(`/receipt-templates/${id}/clone`, {
+      method: 'POST',
+    });
+  }
 }
 
 export const api = new ApiClient(API_BASE_URL);
