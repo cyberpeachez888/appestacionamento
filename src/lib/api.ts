@@ -540,6 +540,75 @@ class ApiClient {
       method: 'POST',
     });
   }
+
+  // Business Hours endpoints
+  async getBusinessHours() {
+    return this.request<any[]>('/business-hours');
+  }
+
+  async updateBusinessHours(dayOfWeek: number, data: any) {
+    return this.request<any>(`/business-hours/${dayOfWeek}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  }
+
+  // Holidays endpoints
+  async getHolidays(upcoming?: boolean) {
+    const query = upcoming ? '?upcoming=true' : '';
+    return this.request<any[]>(`/holidays${query}`);
+  }
+
+  async createHoliday(data: any) {
+    return this.request<any>('/holidays', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async updateHoliday(id: string, data: any) {
+    return this.request<any>(`/holidays/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async deleteHoliday(id: string) {
+    return this.request<void>(`/holidays/${id}`, {
+      method: 'DELETE',
+    });
+  }
+
+  // Special Events endpoints
+  async getSpecialEvents(active?: boolean) {
+    const query = active ? '?active=true' : '';
+    return this.request<any[]>(`/special-events${query}`);
+  }
+
+  async createSpecialEvent(data: any) {
+    return this.request<any>('/special-events', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async updateSpecialEvent(id: string, data: any) {
+    return this.request<any>(`/special-events/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async deleteSpecialEvent(id: string) {
+    return this.request<void>(`/special-events/${id}`, {
+      method: 'DELETE',
+    });
+  }
+
+  // Operational Status endpoint
+  async getOperationalStatus() {
+    return this.request<any>('/operational-status');
+  }
 }
 
 export const api = new ApiClient(API_BASE_URL);

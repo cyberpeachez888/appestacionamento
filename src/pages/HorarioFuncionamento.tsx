@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Plus, Clock, Calendar, Sparkles, AlertCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import api from '@/lib/api';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -127,10 +128,7 @@ export default function HorarioFuncionamento() {
 
   const fetchBusinessHours = async () => {
     try {
-      const res = await fetch('http://localhost:3000/business-hours', {
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-      });
-      const data = await res.json();
+      const data = await api.getBusinessHours();
       setBusinessHours(data);
     } catch (err) {
       console.error('Error fetching business hours:', err);
@@ -139,10 +137,7 @@ export default function HorarioFuncionamento() {
 
   const fetchHolidays = async () => {
     try {
-      const res = await fetch('http://localhost:3000/holidays?upcoming=true', {
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-      });
-      const data = await res.json();
+      const data = await api.getHolidays(true);
       setHolidays(data);
     } catch (err) {
       console.error('Error fetching holidays:', err);
@@ -151,10 +146,7 @@ export default function HorarioFuncionamento() {
 
   const fetchEvents = async () => {
     try {
-      const res = await fetch('http://localhost:3000/special-events?active=true', {
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-      });
-      const data = await res.json();
+      const data = await api.getSpecialEvents(true);
       setEvents(data);
     } catch (err) {
       console.error('Error fetching events:', err);
@@ -163,10 +155,7 @@ export default function HorarioFuncionamento() {
 
   const fetchOperationalStatus = async () => {
     try {
-      const res = await fetch('http://localhost:3000/operational-status', {
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-      });
-      const data = await res.json();
+      const data = await api.getOperationalStatus();
       setOperationalStatus(data);
     } catch (err) {
       console.error('Error fetching status:', err);
@@ -178,23 +167,14 @@ export default function HorarioFuncionamento() {
       const current = businessHours.find(h => h.dayOfWeek === dayOfWeek);
       if (!current) return;
 
-      const res = await fetch(`http://localhost:3000/business-hours/${dayOfWeek}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${localStorage.getItem('token')}`
-        },
-        body: JSON.stringify({ ...current, ...updates })
-      });
-
-      if (res.ok) {
-        toast({ title: 'Horário atualizado com sucesso' });
-        fetchBusinessHours();
-      }
-    } catch (err) {
+      await api.updateBusinessHours(dayOfWeek, { ...current, ...updates });
+      
+      toast({ title: 'Horário atualizado com sucesso' });
+      fetchBusinessHours();
+    } catch (err: any) {
       toast({
         title: 'Erro',
-        description: 'Não foi possível atualizar o horário',
+        description: err.message || 'Não foi possível atualizar o horário',
         variant: 'destructive'
       });
     }
@@ -202,33 +182,22 @@ export default function HorarioFuncionamento() {
 
   const handleSaveHoliday = async (holiday: Partial<Holiday>) => {
     try {
-      const url = editingHoliday
-        ? `http://localhost:3000/holidays/${editingHoliday.id}`
-        : 'http://localhost:3000/holidays';
-      
-      const method = editingHoliday ? 'PUT' : 'POST';
-
-      const res = await fetch(url, {
-        method,
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${localStorage.getItem('token')}`
-        },
-        body: JSON.stringify(holiday)
-      });
-
-      if (res.ok) {
-        toast({
-          title: editingHoliday ? 'Feriado atualizado' : 'Feriado criado'
-        });
-        setHolidayDialogOpen(false);
-        setEditingHoliday(null);
-        fetchHolidays();
+      if (editingHoliday) {
+        await api.updateHoliday(editingHoliday.id, holiday);
+      } else {
+        await api.createHoliday(holiday);
       }
-    } catch (err) {
+      
+      toast({
+        title: editingHoliday ? 'Feriado atualizado' : 'Feriado criado'
+      });
+      setHolidayDialogOpen(false);
+      setEditingHoliday(null);
+      fetchHolidays();
+    } catch (err: any) {
       toast({
         title: 'Erro',
-        description: 'Não foi possível salvar o feriado',
+        description: err.message || 'Não foi possível salvar o feriado',
         variant: 'destructive'
       });
     }
@@ -236,33 +205,22 @@ export default function HorarioFuncionamento() {
 
   const handleSaveEvent = async (event: Partial<SpecialEvent>) => {
     try {
-      const url = editingEvent
-        ? `http://localhost:3000/special-events/${editingEvent.id}`
-        : 'http://localhost:3000/special-events';
-      
-      const method = editingEvent ? 'PUT' : 'POST';
-
-      const res = await fetch(url, {
-        method,
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${localStorage.getItem('token')}`
-        },
-        body: JSON.stringify(event)
-      });
-
-      if (res.ok) {
-        toast({
-          title: editingEvent ? 'Evento atualizado' : 'Evento criado'
-        });
-        setEventDialogOpen(false);
-        setEditingEvent(null);
-        fetchEvents();
+      if (editingEvent) {
+        await api.updateSpecialEvent(editingEvent.id, event);
+      } else {
+        await api.createSpecialEvent(event);
       }
-    } catch (err) {
+      
+      toast({
+        title: editingEvent ? 'Evento atualizado' : 'Evento criado'
+      });
+      setEventDialogOpen(false);
+      setEditingEvent(null);
+      fetchEvents();
+    } catch (err: any) {
       toast({
         title: 'Erro',
-        description: 'Não foi possível salvar o evento',
+        description: err.message || 'Não foi possível salvar o evento',
         variant: 'destructive'
       });
     }
@@ -272,26 +230,25 @@ export default function HorarioFuncionamento() {
     if (!deletingItem) return;
 
     try {
-      const endpoint = deletingItem.type === 'holiday' ? 'holidays' : 'special-events';
-      const res = await fetch(`http://localhost:3000/${endpoint}/${deletingItem.id}`, {
-        method: 'DELETE',
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-      });
-
-      if (res.ok) {
-        toast({ title: 'Item excluído com sucesso' });
-        setDeleteDialogOpen(false);
-        setDeletingItem(null);
-        if (deletingItem.type === 'holiday') {
-          fetchHolidays();
-        } else {
-          fetchEvents();
-        }
+      if (deletingItem.type === 'holiday') {
+        await api.deleteHoliday(deletingItem.id);
+      } else {
+        await api.deleteSpecialEvent(deletingItem.id);
       }
-    } catch (err) {
+      
+      toast({ title: 'Item excluído com sucesso' });
+      setDeleteDialogOpen(false);
+      setDeletingItem(null);
+      
+      if (deletingItem.type === 'holiday') {
+        fetchHolidays();
+      } else {
+        fetchEvents();
+      }
+    } catch (err: any) {
       toast({
         title: 'Erro',
-        description: 'Não foi possível excluir',
+        description: err.message || 'Não foi possível excluir',
         variant: 'destructive'
       });
     }
