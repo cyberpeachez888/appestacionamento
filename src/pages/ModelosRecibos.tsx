@@ -142,9 +142,10 @@ export default function ModelosRecibos() {
   const fetchTemplates = async () => {
     try {
       const data = await api.getReceiptTemplates(selectedType);
-      setTemplates(data);
+      setTemplates(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error('Error fetching templates:', err);
+      setTemplates([]); // Set empty array on error
       toast({
         variant: 'destructive',
         title: 'Erro',
@@ -333,7 +334,18 @@ export default function ModelosRecibos() {
 
         {/* Templates Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredTemplates.map((template) => (
+          {filteredTemplates.length === 0 ? (
+            <div className="col-span-full text-center py-12">
+              <p className="text-muted-foreground mb-4">
+                Nenhum template encontrado. Crie seu primeiro template!
+              </p>
+              <Button onClick={handleCreate}>
+                <Plus className="h-4 w-4 mr-2" />
+                Criar Primeiro Template
+              </Button>
+            </div>
+          ) : (
+            filteredTemplates.map((template) => (
             <div
               key={template.id}
               className={`bg-card border rounded-lg p-6 hover:shadow-md transition-shadow ${
@@ -418,14 +430,9 @@ export default function ModelosRecibos() {
                 </Button>
               </div>
             </div>
-          ))}
+            ))
+          )}
         </div>
-
-        {filteredTemplates.length === 0 && (
-          <div className="text-center py-12 text-muted-foreground">
-            Nenhum template encontrado
-          </div>
-        )}
 
         {/* Create/Edit Dialog */}
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
