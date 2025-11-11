@@ -15,6 +15,9 @@ dotenv.config({ path: join(__dirname, '..', '.env') });
 
 const app = express();
 
+// ✅ ADICIONAR ESTA LINHA
+app.set('trust proxy', 1); // Trust first proxy (Render)
+
 // CORS configuration for production (Vercel + Render + Local)
 const allowedOrigins = [
   // Local development
