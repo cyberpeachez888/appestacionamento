@@ -78,6 +78,14 @@ export default {
       
       // Build update payload
       const updatePayload = {};
+      // Desfazer finalização: status 'Em andamento'
+      if (req.body.status === 'Em andamento') {
+        updatePayload.status = 'open';
+        updatePayload.exit_time = null;
+        updatePayload.amount = 0;
+        updatePayload.metadata = {};
+      }
+      // Finalizar saída normalmente
       if (req.body.exitDate && req.body.exitTime) {
         const exitDateTime = new Date(`${req.body.exitDate}T${req.body.exitTime}`);
         updatePayload.exit_time = exitDateTime.toISOString();
