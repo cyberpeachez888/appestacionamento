@@ -12,6 +12,38 @@ import { useParking } from '@/contexts/ParkingContext';
 import { useAuth } from '@/contexts/AuthContext';
 
 export default function Operacional() {
+
+  // Função para desfazer finalização
+  const handleUndoFinish = async (vehicle: any) => {
+    try {
+      await fetch(`${API_URL}/vehicles/${vehicle.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          status: 'Em andamento',
+          exitDate: null,
+          exitTime: null,
+          totalValue: null,
+          paymentMethod: null,
+        }),
+      });
+      toast({
+        title: 'Finalização desfeita',
+        description: 'O veículo voltou para o estado de entrada.',
+      });
+      fetchVehicles();
+    } catch (err) {
+      console.error(err);
+      toast({
+        title: 'Erro ao desfazer finalização',
+        description: 'Tente novamente',
+        variant: 'destructive',
+      });
+    }
+  };
   const { toast } = useToast();
   const navigate = useNavigate();
   const { cashIsOpen, cashSession, companyConfig } = useParking();
@@ -335,13 +367,18 @@ export default function Operacional() {
                       <td className="px-4 py-3 text-right space-x-2">
                         {hasPermission('openCloseCash') && (
                           <Button size="sm" variant="ghost" onClick={() => handleEdit(vehicle)}>
-                          <Edit className="h-4 w-4" />
+                            <Edit className="h-4 w-4" />
                           </Button>
                         )}
                         {vehicle.status === 'Em andamento' && hasPermission('openCloseCash') && (
                           <Button size="sm" onClick={() => handleFinishExit(vehicle)}>
                             <CheckCircle className="h-4 w-4 mr-1" />
                             Finalizar
+                          </Button>
+                        )}
+                        {vehicle.status === 'Concluído' && hasPermission('openCloseCash') && (
+                          <Button size="sm" variant="outline" style={{ color: '#b45309', borderColor: '#fbbf24' }} onClick={() => handleUndoFinish(vehicle)}>
+                            Desfazer Finalização
                           </Button>
                         )}
                       </td>

@@ -42,12 +42,20 @@ export const ExitConfirmationDialog = ({
   const [amountPaid, setAmountPaid] = useState('');
   const [change, setChange] = useState(0);
   const [showReceipt, setShowReceipt] = useState(false);
-  
+
   // Receipt options
   const [receiptType, setReceiptType] = useState<'none' | 'simple' | 'reimbursement'>('simple');
   const [clientName, setClientName] = useState('');
   const [clientCpf, setClientCpf] = useState('');
   const [notes, setNotes] = useState('');
+
+  // Edição da hora de entrada
+  const [isEditingEntryTime, setIsEditingEntryTime] = useState(false);
+  const [editedEntryTime, setEditedEntryTime] = useState(vehicle?.entryTime || '');
+
+  useEffect(() => {
+    if (vehicle?.entryTime) setEditedEntryTime(vehicle.entryTime);
+  }, [vehicle]);
 
   useEffect(() => {
     if (open) {
@@ -120,7 +128,8 @@ export const ExitConfirmationDialog = ({
   };
 
   const exitDate = new Date();
-  const entryDateTime = vehicle ? new Date(`${vehicle.entryDate}T${vehicle.entryTime}`) : new Date();
+  // Se estiver editando, usa o valor editado
+  const entryDateTime = vehicle ? new Date(`${vehicle.entryDate}T${isEditingEntryTime ? editedEntryTime : vehicle.entryTime}`) : new Date();
   const duration = vehicle ? Math.floor((exitDate.getTime() - entryDateTime.getTime()) / 60000) : 0;
   const hours = Math.floor(duration / 60);
   const minutes = duration % 60;
@@ -240,8 +249,7 @@ export const ExitConfirmationDialog = ({
               Voltar
             </Button>
             <Button onClick={handlePrint}>
-              <Printer className="h-4 w-4 mr-2" />
-              Imprimir e Confirmar
+              {receiptType === 'none' ? 'Confirmar' : (<><Printer className="h-4 w-4 mr-2" />Imprimir e Confirmar</>)}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -267,11 +275,27 @@ export const ExitConfirmationDialog = ({
               <span className="text-sm text-muted-foreground">Tipo:</span>
               <span>{vehicle?.vehicleType}</span>
             </div>
-            <div className="flex justify-between">
+            <div className="flex justify-between items-center">
               <span className="text-sm text-muted-foreground">Entrada:</span>
-              <span>
-                {vehicle && format(entryDateTime, "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
-              </span>
+              {isEditingEntryTime ? (
+                <input
+                  type="time"
+                  className="border rounded px-2 py-1 text-sm"
+                  value={editedEntryTime}
+                  onChange={e => setEditedEntryTime(e.target.value)}
+                  onBlur={() => setIsEditingEntryTime(false)}
+                  autoFocus
+                  style={{ width: '90px' }}
+                />
+              ) : (
+                <span
+                  title="Duplo clique para editar hora"
+                  style={{ cursor: 'pointer', userSelect: 'none' }}
+                  onDoubleClick={() => setIsEditingEntryTime(true)}
+                >
+                  {vehicle && format(entryDateTime, "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                </span>
+              )}
             </div>
             <div className="flex justify-between">
               <span className="text-sm text-muted-foreground">Permanência:</span>
@@ -401,8 +425,7 @@ export const ExitConfirmationDialog = ({
             Cancelar
           </Button>
           <Button onClick={handleConfirmAndPrint}>
-            <Printer className="h-4 w-4 mr-2" />
-            Confirmar & Imprimir
+            {receiptType === 'none' ? 'Confirmar' : (<><Printer className="h-4 w-4 mr-2" />Confirmar & Imprimir</>)}
           </Button>
         </DialogFooter>
       </DialogContent>
