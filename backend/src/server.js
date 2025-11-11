@@ -15,32 +15,54 @@ dotenv.config({ path: join(__dirname, '..', '.env') });
 
 const app = express();
 
-// CORS for local network access only
-// Allows connections from:
-// - Localhost (development)
-// - Same computer (127.0.0.1, localhost)
-// - Local network devices (192.168.x.x, 10.x.x.x)
+// CORS configuration for production (Vercel + Render + Local)
+const allowedOrigins = [
+  // Local development
+  'http://localhost:5173',
+  'http://localhost:3000',
+  'http://127.0.0.1:5173',
+  'http://127.0.0.1:3000',
+  // Vercel deployments
+  'https://appestacionamento-f1pr-a3mk2fpyq-cyberpeachezs-projects.vercel.app',
+  'https://appestacionamento-v1-4537vs52d-cyberpeachezs-projects.vercel.app',
+  // Render backend
+  'https://theproparking-backend-1rxk.onrender.com'
+];
+
 app.use(cors({
   origin: function(origin, callback) {
-    // Allow requests with no origin (mobile apps, Postman, etc)
+    // Allow requests with no origin (mobile apps, Postman, curl, etc)
     if (!origin) return callback(null, true);
     
-    // Allow localhost and local network IPs
-    const allowedPatterns = [
-      /^http:\/\/localhost(:\d+)?$/,
-      /^http:\/\/127\.0\.0\.1(:\d+)?$/,
+    // Check if origin is in allowed list
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+    
+    // Allow any Vercel preview deployment
+    if (origin.match(/^https:\/\/appestacionamento.*\.vercel\.app$/)) {
+      return callback(null, true);
+    }
+    
+    // Allow localhost with any port
+    if (origin.match(/^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/)) {
+      return callback(null, true);
+    }
+    
+    // Allow local network IPs (for development)
+    const localNetworkPatterns = [
       /^http:\/\/192\.168\.\d{1,3}\.\d{1,3}(:\d+)?$/,
       /^http:\/\/10\.\d{1,3}\.\d{1,3}\.\d{1,3}(:\d+)?$/,
       /^http:\/\/172\.(1[6-9]|2\d|3[01])\.\d{1,3}\.\d{1,3}(:\d+)?$/
     ];
     
-    const isAllowed = allowedPatterns.some(pattern => pattern.test(origin));
-    if (isAllowed) {
-      callback(null, true);
-    } else {
-      console.warn(`🚫 CORS blocked request from: ${origin}`);
-      callback(new Error('Not allowed by CORS - Local network only'));
+    const isLocalNetwork = localNetworkPatterns.some(pattern => pattern.test(origin));
+    if (isLocalNetwork) {
+      return callback(null, true);
     }
+    
+    console.warn(`🚫 CORS blocked request from: ${origin}`);
+    callback(new Error('Not allowed by CORS'));
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
