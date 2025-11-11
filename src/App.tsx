@@ -20,6 +20,8 @@ import HorariosFeriados from './pages/HorariosFeriados';
 import ConfiguracoesDashboard from './pages/ConfiguracoesDashboard';
 import NotFound from "./pages/NotFound";
 import Login from "./pages/Login";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
 import SetupWizard from "./pages/SetupWizard";
 import CashRegisterClosedDialog from "./components/CashRegisterClosedDialog";
 import { useEffect, useState } from "react";
@@ -133,6 +135,8 @@ const App = () => (
                 <Routes>
                   <Route path="/setup" element={<SetupWizard />} />
                   <Route path="/login" element={<Login />} />
+                  <Route path="/forgot-password" element={<ForgotPassword />} />
+                  <Route path="/reset-password" element={<ResetPassword />} />
                   <Route path="/" element={<Protected required={["openCloseCash"]}><Operacional /></Protected>} />
                   <Route path="/mensalistas" element={<Protected required={["manageMonthlyCustomers"]}><Mensalistas /></Protected>} />
                   <Route path="/financeiro" element={<Protected required={["viewReports"]}><Financeiro /></Protected>} />
@@ -158,13 +162,13 @@ const App = () => (
 
 const SidebarWrapper: React.FC = () => {
   const location = useLocation();
-  const onLoginOrSetup = location.pathname === '/login' || location.pathname === '/setup';
+  const onLoginOrSetup = location.pathname === '/login' || location.pathname === '/setup' || location.pathname === '/forgot-password' || location.pathname === '/reset-password';
   return onLoginOrSetup ? null : <Sidebar />;
 };
 
 const LayoutWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const location = useLocation();
-  const onLoginOrSetup = location.pathname === '/login' || location.pathname === '/setup';
+  const onLoginOrSetup = location.pathname === '/login' || location.pathname === '/setup' || location.pathname === '/forgot-password' || location.pathname === '/reset-password';
   
   // No flex layout for login/setup - full width centered
   if (onLoginOrSetup) {

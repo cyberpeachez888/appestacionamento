@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -82,7 +82,9 @@ const Login: React.FC = () => {
                 {submitting ? 'Entrando...' : 'Entrar'}
               </Button>
               <div className="text-xs text-center text-muted-foreground">
-                <button type="button" className="underline decoration-dotted" onClick={() => alert('Recuperação de senha ainda não implementada.')}>Esqueceu a senha?</button>
+                <Link to="/forgot-password" className="underline decoration-dotted hover:text-foreground">
+                  Esqueceu a senha?
+                </Link>
               </div>
             </form>
           </CardContent>
