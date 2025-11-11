@@ -79,9 +79,17 @@ app.use('/api', routes);
 // Legacy compatibility (some frontend may hit root endpoints)
 app.use('/', routes);
 
+
+// Middleware global para garantir CORS em todos os erros
 app.use((err, req, res, next) => {
+  res.header('Access-Control-Allow-Origin', req.headers.origin || '*');
+  res.header('Access-Control-Allow-Credentials', 'true');
+  res.header('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type,Authorization');
   console.error(err.stack);
-  res.status(500).json({ error: 'Internal Server Error' });
+  // Se já foi enviada resposta, não tente enviar novamente
+  if (res.headersSent) return next(err);
+  res.status(err.status || 500).json({ error: err.message || 'Internal Server Error' });
 });
 
 const PORT = process.env.PORT || 3000;

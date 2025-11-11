@@ -15,7 +15,7 @@ export default function Operacional() {
   const { toast } = useToast();
   const navigate = useNavigate();
   const { cashIsOpen, cashSession, companyConfig } = useParking();
-  const { user, hasPermission } = useAuth();
+  const { user, hasPermission, token } = useAuth();
   const [vehicles, setVehicles] = useState<any[]>([]);
   const [rates, setRates] = useState<any[]>([]);
   const [filter, setFilter] = useState<'all' | string>('all');
@@ -115,11 +115,16 @@ export default function Operacional() {
 
     const totalValue = calculateRateValue(exitingVehicle, rate, now);
 
+    // Log do token para diagnóstico
+    console.log('Token usado na saída:', token);
     try {
       // Update vehicle exit
       await fetch(`${API_URL}/vehicles/${exitingVehicle.id}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
         body: JSON.stringify({
           exitDate,
           exitTime,
