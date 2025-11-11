@@ -322,7 +322,8 @@ export default {
       res.json({ 
         message: 'Se o email existir, você receberá instruções para redefinir sua senha.',
         success: true,
-        _dev: process.env.NODE_ENV === 'development' ? { resetUrl, token: resetToken } : undefined
+        // ⚠️ REMOVER DEPOIS DO TESTE
+        _dev: { resetUrl, token: resetToken }
       });
       
     } catch (err) {
