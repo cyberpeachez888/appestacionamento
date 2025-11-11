@@ -105,6 +105,9 @@ router.get('/auth/me', requireAuth, authController.me);
 router.post('/auth/validate-password', requireAuth, authController.validatePasswordStrength);
 router.post('/auth/change-password', requireAuth, strictLimiter, authController.changePassword);
 router.get('/auth/password-requirements', authController.getPasswordRequirements);
+router.post('/auth/forgot-password', loginLimiter, authController.forgotPassword);
+router.post('/auth/reset-password', loginLimiter, authController.resetPassword);
+router.get('/auth/validate-reset-token/:token', authController.validateResetToken);
 
 // Users (protected) - still admin-only for management
 router.get('/users', requireAuth, requirePermission('manageUsers'), usersController.list);

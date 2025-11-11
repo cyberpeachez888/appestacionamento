@@ -1,6 +1,7 @@
 import { supabase } from '../config/supabase.js';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import crypto from 'crypto';
 import {
   logLoginAttempt,
   getFailedAttempts,
@@ -264,5 +265,212 @@ export default {
       maxLoginAttempts: 5,
       lockoutDurationMinutes: 30
     });
+  },
+
+  async forgotPassword(req, res) {
+    try {
+      const { email } = req.body;
+      
+      if (!email) {
+        return res.status(400).json({ error: 'Email é obrigatório' });
+      }
+      
+      const { data: user, error } = await supabase
+        .from(USERS_TABLE)
+        .select('id, email, name')
+        .eq('email', email)
+        .maybeSingle();
+      
+      if (!user || error) {
+        return res.json({ 
+          message: 'Se o email existir, você receberá instruções para redefinir sua senha.',
+          success: true 
+        });
+      }
+      
+      const resetToken = crypto.randomBytes(32).toString('hex');
+      const resetTokenHash = await bcrypt.hash(resetToken, 10);
+      const expiresAt = new Date(Date.now() + 60 * 60 * 1000);
+      
+      const { error: updateError } = await supabase
+        .from(USERS_TABLE)
+        .update({
+          reset_token: resetTokenHash,
+          reset_token_expires_at: expiresAt.toISOString()
+        })
+        .eq('id', user.id);
+      
+      if (updateError) {
+        console.error('Erro ao salvar token:', updateError);
+        return res.status(500).json({ error: 'Erro ao processar solicitação' });
+      }
+      
+      const frontendUrl = process.env.FRONTEND_URL || 'https://appestacionamento-f1pr-a3mk2fpyq-cyberpeachezs-projects.vercel.app';
+      const resetUrl = `${frontendUrl}/reset-password?token=${resetToken}&email=${encodeURIComponent(email)}`;
+      
+      const { error: emailError } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: resetUrl,
+      });
+      
+      if (emailError) {
+        console.error('Erro ao enviar email:', emailError);
+      }
+      
+      console.log(`📧 Token de recuperação gerado para: ${email}`);
+      console.log(`🔗 Link: ${resetUrl}`);
+      
+      res.json({ 
+        message: 'Se o email existir, você receberá instruções para redefinir sua senha.',
+        success: true,
+        _dev: process.env.NODE_ENV === 'development' ? { resetUrl, token: resetToken } : undefined
+      });
+      
+    } catch (err) {
+      console.error('Forgot password error:', err);
+      res.status(500).json({ error: 'Erro ao processar solicitação' });
+    }
+  },
+
+  async validateResetToken(req, res) {
+    try {
+      const { token } = req.params;
+      const { email } = req.query;
+      
+      if (!token || !email) {
+        return res.status(400).json({ 
+          error: 'Token e email são obrigatórios',
+          valid: false 
+        });
+      }
+      
+      const { data: user, error } = await supabase
+        .from(USERS_TABLE)
+        .select('id, email, reset_token, reset_token_expires_at')
+        .eq('email', email)
+        .maybeSingle();
+      
+      if (!user || error || !user.reset_token) {
+        return res.status(400).json({ 
+          error: 'Token inválido ou expirado',
+          valid: false 
+        });
+      }
+      
+      if (new Date() > new Date(user.reset_token_expires_at)) {
+        return res.status(400).json({ 
+          error: 'Token expirado. Solicite um novo link de recuperação.',
+          valid: false 
+        });
+      }
+      
+      const isValid = await bcrypt.compare(token, user.reset_token);
+      
+      if (!isValid) {
+        return res.status(400).json({ 
+          error: 'Token inválido',
+          valid: false 
+        });
+      }
+      
+      res.json({ 
+        valid: true,
+        message: 'Token válido'
+      });
+      
+    } catch (err) {
+      console.error('Validate token error:', err);
+      res.status(500).json({ 
+        error: 'Erro ao validar token',
+        valid: false 
+      });
+    }
+  },
+
+  async resetPassword(req, res) {
+    try {
+      const { email, token, newPassword } = req.body;
+      
+      if (!email || !token || !newPassword) {
+        return res.status(400).json({ 
+          error: 'Email, token e nova senha são obrigatórios' 
+        });
+      }
+      
+      const { data: user, error } = await supabase
+        .from(USERS_TABLE)
+        .select('*')
+        .eq('email', email)
+        .maybeSingle();
+      
+      if (!user || error || !user.reset_token) {
+        return res.status(400).json({ 
+          error: 'Token inválido ou expirado' 
+        });
+      }
+      
+      if (new Date() > new Date(user.reset_token_expires_at)) {
+        return res.status(400).json({ 
+          error: 'Token expirado. Solicite um novo link de recuperação.' 
+        });
+      }
+      
+      const isValid = await bcrypt.compare(token, user.reset_token);
+      if (!isValid) {
+        return res.status(400).json({ 
+          error: 'Token inválido' 
+        });
+      }
+      
+      const validation = validatePassword(newPassword);
+      if (!validation.valid) {
+        return res.status(400).json({ 
+          error: 'Senha não atende aos requisitos de segurança',
+          errors: validation.errors
+        });
+      }
+      
+      const isReused = await isPasswordReused(user.id, newPassword);
+      if (isReused) {
+        return res.status(400).json({ 
+          error: 'Esta senha foi usada recentemente. Escolha uma senha diferente.'
+        });
+      }
+      
+      const salt = await bcrypt.genSalt(10);
+      const passwordHash = await bcrypt.hash(newPassword, salt);
+      
+      const { error: updateError } = await supabase
+        .from(USERS_TABLE)
+        .update({
+          password_hash: passwordHash,
+          password_changed_at: new Date().toISOString(),
+          password_expires_at: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString(),
+          reset_token: null,
+          reset_token_expires_at: null,
+          must_change_password: false,
+          is_first_login: false
+        })
+        .eq('id', user.id);
+      
+      if (updateError) {
+        console.error('Password update error:', updateError);
+        return res.status(500).json({ error: 'Erro ao atualizar senha' });
+      }
+      
+      await supabase
+        .from('login_attempts')
+        .delete()
+        .eq('login', user.login);
+      
+      res.json({ 
+        message: 'Senha redefinida com sucesso! Você já pode fazer login.',
+        success: true
+      });
+      
+    } catch (err) {
+      console.error('Reset password error:', err);
+      res.status(500).json({ error: 'Erro ao redefinir senha' });
+    }
   }
 };
+
