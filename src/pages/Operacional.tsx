@@ -98,12 +98,14 @@ export default function Operacional() {
   };
 
   const handleFinishExit = (vehicle: any) => {
+  console.log('Clicou em finalizar saída', vehicle);
     if (!hasPermission('openCloseCash')) return;
     setExitingVehicle(vehicle);
     setExitDialogOpen(true);
   };
 
   const handleConfirmExit = async (paymentMethod: PaymentMethod, receiptData?: any) => {
+  console.log('Entrou em handleConfirmExit', exitingVehicle, token);
     if (!exitingVehicle) return;
 
     const now = new Date();
