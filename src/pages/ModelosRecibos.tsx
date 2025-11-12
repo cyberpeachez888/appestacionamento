@@ -613,6 +613,11 @@ export default function ModelosRecibos() {
   const [editingTemplate, setEditingTemplate] = useState<ReceiptTemplate | null>(null);
   const [deletingTemplate, setDeletingTemplate] = useState<ReceiptTemplate | null>(null);
   const [loading, setLoading] = useState(false);
+  const [previewTemplate, setPreviewTemplate] = useState<ReceiptTemplate | null>(null);
+  const [previewSampleData, setPreviewSampleData] = useState<any | null>(null);
+  const [thermalPreview, setThermalPreview] = useState('');
+  const [companyConfig, setCompanyConfig] = useState<any | null>(null);
+  const [previewTab, setPreviewTab] = useState<'thermal' | 'pdf'>('thermal');
 
   const [formData, setFormData] = useState<Partial<ReceiptTemplate>>({
     templateName: '',
@@ -649,6 +654,31 @@ export default function ModelosRecibos() {
     fetchTemplates();
   }, [selectedType]);
 
+  useEffect(() => {
+    const loadCompanyConfig = async () => {
+      try {
+        const config = await api.getCompanyConfig();
+        setCompanyConfig(config);
+      } catch (err) {
+        console.error('Erro ao carregar configuração da empresa:', err);
+      }
+    };
+
+    loadCompanyConfig();
+  }, []);
+
+  useEffect(() => {
+    if (!previewTemplate) {
+      setPreviewSampleData(null);
+      setThermalPreview('');
+      return;
+    }
+
+    const sample = buildSampleData(previewTemplate.templateType, previewTemplate, companyConfig);
+    setPreviewSampleData(sample);
+    setThermalPreview(generateThermalPreview(previewTemplate, sample, companyConfig));
+  }, [previewTemplate, companyConfig]);
+
   const fetchTemplates = async () => {
     try {
       const data = await api.getReceiptTemplates(selectedType);
@@ -662,6 +692,12 @@ export default function ModelosRecibos() {
         description: 'Erro ao carregar modelos de recibo',
       });
     }
+  };
+
+  const handlePreview = (template: ReceiptTemplate) => {
+    setPreviewTemplate(template);
+    setPreviewTab('thermal');
+    setPreviewDialogOpen(true);
   };
 
   const handleCreate = () => {
@@ -901,7 +937,16 @@ export default function ModelosRecibos() {
                   )}
                 </div>
 
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handlePreview(template)}
+                    className="flex-1"
+                  >
+                    <Eye className="h-3 w-3 mr-1" />
+                    Visualizar
+                  </Button>
                   <Button
                     variant="outline"
                     size="sm"
@@ -1342,6 +1387,63 @@ export default function ModelosRecibos() {
                 {loading ? 'Salvando...' : editingTemplate ? 'Atualizar' : 'Criar'}
               </Button>
             </div>
+          </DialogContent>
+        </Dialog>
+
+        <Dialog
+          open={previewDialogOpen}
+          onOpenChange={(open) => {
+            setPreviewDialogOpen(open);
+            if (!open) {
+              setPreviewTemplate(null);
+              setPreviewSampleData(null);
+              setThermalPreview('');
+            }
+          }}
+        >
+          <DialogContent className="max-w-5xl w-full max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Preview do Template</DialogTitle>
+              <DialogDescription>
+                {previewTemplate
+                  ? `Visualizando "${previewTemplate.templateName}".`
+                  : 'Selecione um template para visualizar.'}
+              </DialogDescription>
+            </DialogHeader>
+
+            {previewTemplate && previewSampleData ? (
+              <Tabs
+                value={previewTab}
+                onValueChange={(value) => setPreviewTab(value as 'thermal' | 'pdf')}
+              >
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="thermal">Impressora Térmica</TabsTrigger>
+                  <TabsTrigger value="pdf">Modelo PDF (completo)</TabsTrigger>
+                </TabsList>
+
+                <TabsContent value="thermal" className="space-y-3">
+                  <div className="rounded border bg-muted/50 p-4 font-mono text-xs whitespace-pre-wrap leading-relaxed max-h-[520px] overflow-auto">
+                    {thermalPreview || 'Preview indisponível para este template.'}
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Simulação em texto monoespaçado de um cupom de 58 mm com dados fictícios de
+                    mensalista.
+                  </p>
+                </TabsContent>
+
+                <TabsContent value="pdf" className="pt-4">
+                  <PdfPreview
+                    template={previewTemplate}
+                    sample={previewSampleData}
+                    company={companyConfig}
+                  />
+                </TabsContent>
+              </Tabs>
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                Nenhum template selecionado para visualização.
+              </p>
+            )}
           </DialogContent>
         </Dialog>
 
