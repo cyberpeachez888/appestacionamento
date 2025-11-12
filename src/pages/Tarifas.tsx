@@ -15,7 +15,7 @@ import { Edit, Trash2, Plus, Settings } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { VehicleTypeSelect } from '@/components/VehicleTypeSelect';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { PricingRulesManager } from '@/components/PricingRulesManager';
+import { RateAdvancedSettings } from '@/components/RateAdvancedSettings';
 
 export default function Tarifas() {
   const { rates, addRate, updateRate, deleteRate } = useParking();
@@ -101,6 +101,9 @@ export default function Tarifas() {
 
   // Filter rates by selected vehicle type
   const filteredRates = rates.filter((rate) => rate.vehicleType === formData.vehicleType);
+  const selectedRate = showAdvancedRules
+    ? rates.find((rate) => rate.id === showAdvancedRules) || null
+    : null;
 
   const canManage = hasPermission('manageRates');
 
@@ -290,20 +293,22 @@ export default function Tarifas() {
           </Card>
         </div>
 
-        {/* Advanced Pricing Rules Section */}
-        {showAdvancedRules && (
+        {/* Advanced Pricing Configuration */}
+        {selectedRate && (
           <div className="mt-6">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-2xl font-bold">
-                Regras Avançadas - {rates.find((r) => r.id === showAdvancedRules)?.rateType}
-              </h2>
-              <Button variant="outline" onClick={() => setShowAdvancedRules(null)}>
-                Fechar
-              </Button>
-            </div>
-            <PricingRulesManager
-              rateId={showAdvancedRules}
+            <RateAdvancedSettings
+              rate={selectedRate}
+              allRates={rates}
               onClose={() => setShowAdvancedRules(null)}
+              onUpdated={() => {
+                // reload courtesy minutes if form currently editing same rate
+                if (editingId === selectedRate.id) {
+                  setFormData((prev) => ({
+                    ...prev,
+                    courtesyMinutes: (selectedRate.courtesyMinutes ?? 0).toString(),
+                  }));
+                }
+              }}
             />
           </div>
         )}

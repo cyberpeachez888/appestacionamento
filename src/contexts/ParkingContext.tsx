@@ -8,6 +8,25 @@ export type RateType = 'Hora/Fração' | 'Diária' | 'Pernoite' | 'Semanal' | 'Q
 export type VehicleStatus = 'Em andamento' | 'Concluído';
 export type PaymentMethod = 'Dinheiro' | 'Pix' | 'Cartão Débito' | 'Cartão Crédito';
 
+export interface RateConfig {
+  courtesyMinutes?: number;
+  daily?: {
+    defaultStart?: string;
+    defaultEnd?: string;
+  };
+  overnight?: {
+    defaultStart?: string;
+    defaultEnd?: string;
+  };
+  weekly?: {
+    durationLimitMinutes?: number;
+  };
+  biweekly?: {
+    durationLimitMinutes?: number;
+  };
+  metadata?: Record<string, any>;
+}
+
 export interface Rate {
   id: string;
   vehicleType: VehicleType;
@@ -15,6 +34,7 @@ export interface Rate {
   value: number;
   unit: string;
   courtesyMinutes: number;
+  config?: RateConfig | null;
 }
 
 export interface Vehicle {
@@ -381,12 +401,9 @@ export const ParkingProvider: React.FC<{ children: ReactNode }> = ({ children })
 
   const addRate = async (rate: Omit<Rate, 'id'>) => {
     try {
-      console.log('Adding rate:', rate);
       const data = await api.createRate(rate);
-      console.log('API response:', data);
       setRates((prev) => {
         const updated = [...prev, data];
-        console.log('Updated rates:', updated);
         return updated;
       });
     } catch (err) {
@@ -399,6 +416,7 @@ export const ParkingProvider: React.FC<{ children: ReactNode }> = ({ children })
     try {
       const data = await api.updateRate(id, rate);
       setRates((prev) => prev.map((r) => (r.id === id ? data : r)));
+      return data;
     } catch (err) {
       console.error('Erro ao atualizar tarifa:', err);
       throw err;

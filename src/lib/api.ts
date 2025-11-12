@@ -564,6 +564,56 @@ class ApiClient {
     });
   }
 
+  // Rate time windows (diária, pernoite, etc.)
+  async getRateTimeWindows(rateId: string) {
+    return this.request<any[]>(`/rates/${rateId}/windows`);
+  }
+
+  async createRateTimeWindow(rateId: string, window: any) {
+    return this.request<any>(`/rates/${rateId}/windows`, {
+      method: 'POST',
+      body: JSON.stringify(window),
+    });
+  }
+
+  async updateRateTimeWindow(id: string, window: any) {
+    return this.request<any>(`/rate-windows/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(window),
+    });
+  }
+
+  async deleteRateTimeWindow(id: string) {
+    return this.request<void>(`/rate-windows/${id}`, {
+      method: 'DELETE',
+    });
+  }
+
+  // Rate thresholds (teto/sugestões)
+  async getRateThresholds(rateId: string) {
+    return this.request<any[]>(`/rates/${rateId}/thresholds`);
+  }
+
+  async createRateThreshold(rateId: string, payload: any) {
+    return this.request<any>(`/rates/${rateId}/thresholds`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  }
+
+  async updateRateThreshold(id: string, payload: any) {
+    return this.request<any>(`/rate-thresholds/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(payload),
+    });
+  }
+
+  async deleteRateThreshold(id: string) {
+    return this.request<void>(`/rate-thresholds/${id}`, {
+      method: 'DELETE',
+    });
+  }
+
   // Receipt Templates endpoints
   async getReceiptTemplates(type?: string) {
     const query = type && type !== 'all' ? `?type=${type}` : '';
