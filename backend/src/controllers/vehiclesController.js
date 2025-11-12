@@ -12,22 +12,26 @@ export default {
     try {
       const { data, error } = await supabase.from(ticketsTable).select('*');
       if (error) return res.status(500).json({ error });
-      
+
       // Map ticket data to vehicle format for frontend
-      const vehicles = (data || []).map(ticket => ({
+      const vehicles = (data || []).map((ticket) => ({
         id: ticket.id,
         plate: ticket.vehicle_plate,
         vehicleType: ticket.vehicle_type,
         entryDate: ticket.entry_time ? new Date(ticket.entry_time).toISOString().split('T')[0] : '',
         entryTime: ticket.entry_time ? new Date(ticket.entry_time).toTimeString().slice(0, 5) : '',
-        exitDate: ticket.exit_time ? new Date(ticket.exit_time).toISOString().split('T')[0] : undefined,
-        exitTime: ticket.exit_time ? new Date(ticket.exit_time).toTimeString().slice(0, 5) : undefined,
+        exitDate: ticket.exit_time
+          ? new Date(ticket.exit_time).toISOString().split('T')[0]
+          : undefined,
+        exitTime: ticket.exit_time
+          ? new Date(ticket.exit_time).toTimeString().slice(0, 5)
+          : undefined,
         status: ticket.status === 'closed' ? 'Concluído' : 'Em andamento',
         totalValue: ticket.amount || 0,
         paymentMethod: ticket.metadata?.paymentMethod,
         rateId: ticket.metadata?.rateId || '',
       }));
-      
+
       res.json(vehicles);
     } catch (err) {
       res.status(500).json({ error: err.message || err });
@@ -38,7 +42,7 @@ export default {
     try {
       const id = uuid();
       const entryDateTime = new Date(`${req.body.entryDate}T${req.body.entryTime}`);
-      
+
       const payload = {
         id,
         vehicle_plate: req.body.plate,
@@ -50,7 +54,7 @@ export default {
         },
       };
 
-  const { data, error } = await supabase.from(ticketsTable).insert(payload).select().single();
+      const { data, error } = await supabase.from(ticketsTable).insert(payload).select().single();
       if (error) return res.status(500).json({ error });
 
       // Return in vehicle format
@@ -65,7 +69,13 @@ export default {
         rateId: req.body.rateId,
       };
 
-      await logEvent({ actor: req.user, action: 'ticket.create', targetType: 'ticket', targetId: id, details: { plate: req.body.plate } });
+      await logEvent({
+        actor: req.user,
+        action: 'ticket.create',
+        targetType: 'ticket',
+        targetId: id,
+        details: { plate: req.body.plate },
+      });
       res.status(201).json(vehicle);
     } catch (err) {
       res.status(500).json({ error: err.message || err });
@@ -75,7 +85,7 @@ export default {
   async update(req, res) {
     try {
       const { id } = req.params;
-      
+
       // Build update payload
       const updatePayload = {};
       // Desfazer finalização: status 'Em andamento'
@@ -98,7 +108,12 @@ export default {
         updatePayload.metadata = { paymentMethod: req.body.paymentMethod };
       }
 
-  const { data, error } = await supabase.from(ticketsTable).update(updatePayload).eq('id', id).select().single();
+      const { data, error } = await supabase
+        .from(ticketsTable)
+        .update(updatePayload)
+        .eq('id', id)
+        .select()
+        .single();
       if (error) return res.status(500).json({ error });
 
       // Return in vehicle format
@@ -115,7 +130,7 @@ export default {
         paymentMethod: data.metadata?.paymentMethod,
       };
 
-  // If ticket got closed here (exit handled via /vehicles update), ensure payment record exists
+      // If ticket got closed here (exit handled via /vehicles update), ensure payment record exists
       if (vehicle.status === 'Concluído') {
         try {
           const paymentsResp = await supabase
@@ -132,7 +147,7 @@ export default {
               target_id: id,
               date: data.exit_time || new Date().toISOString(),
               value: vehicle.totalValue || 0,
-              method: vehicle.paymentMethod || 'cash'
+              method: vehicle.paymentMethod || 'cash',
             });
           }
         } catch (paymentErr) {
@@ -141,7 +156,13 @@ export default {
         }
       }
 
-      await logEvent({ actor: req.user, action: vehicle.status === 'Concluído' ? 'ticket.close' : 'ticket.update', targetType: 'ticket', targetId: id, details: updatePayload });
+      await logEvent({
+        actor: req.user,
+        action: vehicle.status === 'Concluído' ? 'ticket.close' : 'ticket.update',
+        targetType: 'ticket',
+        targetId: id,
+        details: updatePayload,
+      });
       res.json(vehicle);
     } catch (err) {
       res.status(500).json({ error: err.message || err });
@@ -152,7 +173,12 @@ export default {
     const { id } = req.params;
     const { error } = await supabase.from(ticketsTable).delete().eq('id', id);
     if (error) return res.status(500).json({ error });
-    await logEvent({ actor: req.user, action: 'ticket.delete', targetType: 'ticket', targetId: id });
+    await logEvent({
+      actor: req.user,
+      action: 'ticket.delete',
+      targetType: 'ticket',
+      targetId: id,
+    });
     res.sendStatus(204);
   },
 };

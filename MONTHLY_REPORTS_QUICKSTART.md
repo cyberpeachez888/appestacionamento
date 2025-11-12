@@ -3,12 +3,14 @@
 ## Setup (One-time)
 
 ### 1. Run SQL Migration
+
 ```sql
 -- In Supabase SQL Editor, run:
 backend/create-monthly-reports-table.sql
 ```
 
 ### 2. Reload Schema Cache
+
 ```sql
 NOTIFY pgrst, 'reload schema';
 ```
@@ -36,6 +38,7 @@ NOTIFY pgrst, 'reload schema';
 ## What It Does
 
 ### ✅ Generates
+
 - Complete financial summary
 - Company information snapshot
 - Operator details
@@ -44,12 +47,14 @@ NOTIFY pgrst, 'reload schema';
 - Operational statistics
 
 ### ✅ Archives
+
 - All tickets (entry/exit records)
 - All payments made
 - Monthly customers snapshot
 - Full report data (JSONB)
 
 ### ✅ Clears
+
 - Operational tickets table (if selected)
 - Starts fresh for new month
 
@@ -58,6 +63,7 @@ NOTIFY pgrst, 'reload schema';
 ## Storage Strategy
 
 ### ✅ Database (Recommended)
+
 - Centralized cloud storage
 - Automatic backups
 - Access from any device
@@ -65,6 +71,7 @@ NOTIFY pgrst, 'reload schema';
 - Professional audit trail
 
 ### Why Not Local?
+
 - ❌ Risk of data loss (PC crash/theft)
 - ❌ Single-device limitation
 - ❌ Manual backup required
@@ -84,11 +91,13 @@ NOTIFY pgrst, 'reload schema';
 ## Files Created
 
 ### Backend
+
 - `backend/create-monthly-reports-table.sql` - Database schema
 - `backend/src/controllers/monthlyReportsController.js` - Business logic
 - `backend/src/routes/index.js` - API routes (updated)
 
 ### Frontend
+
 - `src/components/MonthlyReportDialog.tsx` - Generation dialog
 - `src/pages/RelatoriosMensais.tsx` - Reports list page
 - `src/pages/Financeiro.tsx` - Button added
@@ -112,12 +121,14 @@ DELETE /api/reports/monthly/:id  - Delete report (admin)
 ## Best Practices
 
 ### Before Generating
+
 - ✓ Close all tickets
 - ✓ Record all payments
 - ✓ Close cash register
 - ✓ Verify data accuracy
 
 ### After Generating
+
 - ✓ Download document
 - ✓ Verify totals
 - ✓ Share with accounting
@@ -128,13 +139,16 @@ DELETE /api/reports/monthly/:id  - Delete report (admin)
 ## Troubleshooting
 
 ### "Report already exists"
+
 → One report per month allowed
 → Admin can delete if needed
 
 ### "Schema cache error"
+
 → Run: `NOTIFY pgrst, 'reload schema';`
 
 ### Can't see reports
+
 → Check `viewReports` permission
 → Verify user is logged in
 

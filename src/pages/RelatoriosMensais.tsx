@@ -59,8 +59,18 @@ interface DetailedReport {
 }
 
 const MONTHS = [
-  'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
-  'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
+  'Janeiro',
+  'Fevereiro',
+  'Março',
+  'Abril',
+  'Maio',
+  'Junho',
+  'Julho',
+  'Agosto',
+  'Setembro',
+  'Outubro',
+  'Novembro',
+  'Dezembro',
 ];
 
 export default function RelatoriosMensais() {
@@ -83,16 +93,18 @@ export default function RelatoriosMensais() {
       setReports(data || []);
     } catch (err: any) {
       console.error('Error loading reports:', err);
-      
+
       // Check if it's a schema/table error
-      const isSchemaError = err.message?.includes('relation') || 
-                           err.message?.includes('monthly_reports') ||
-                           err.message?.includes('does not exist');
-      
+      const isSchemaError =
+        err.message?.includes('relation') ||
+        err.message?.includes('monthly_reports') ||
+        err.message?.includes('does not exist');
+
       if (isSchemaError) {
         toast({
           title: 'Tabela não encontrada',
-          description: 'Execute o script backend/create-monthly-reports-table.sql no Supabase para criar a estrutura necessária.',
+          description:
+            'Execute o script backend/create-monthly-reports-table.sql no Supabase para criar a estrutura necessária.',
           variant: 'destructive',
         });
       } else {
@@ -126,7 +138,7 @@ export default function RelatoriosMensais() {
     // Generate a simple text document for now
     // In production, you'd use a PDF library like jsPDF or pdfmake
     const content = generateReportDocument(report);
-    
+
     const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
@@ -141,7 +153,7 @@ export default function RelatoriosMensais() {
 
   const generateReportDocument = (report: DetailedReport): string => {
     const monthName = MONTHS[report.report_month - 1];
-    
+
     return `
 ═══════════════════════════════════════════════════════════
              RELATÓRIO FINANCEIRO MENSAL
@@ -238,14 +250,10 @@ Status: ${report.status === 'completed' ? 'Concluído' : report.status}
               Histórico de encerramentos mensais e relatórios financeiros
             </p>
           </div>
-          
+
           {/* Year Filter */}
           <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setSelectedYear(selectedYear - 1)}
-            >
+            <Button variant="outline" size="sm" onClick={() => setSelectedYear(selectedYear - 1)}>
               ←
             </Button>
             <span className="font-semibold min-w-[80px] text-center">{selectedYear}</span>
@@ -266,7 +274,8 @@ Status: ${report.status === 'completed' ? 'Concluído' : report.status}
               <FileText className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
               <h3 className="text-lg font-semibold mb-2">Nenhum relatório gerado</h3>
               <p className="text-muted-foreground">
-                Clique em "Gerar Relatório Mensal" na página Financeiro para criar seu primeiro relatório.
+                Clique em "Gerar Relatório Mensal" na página Financeiro para criar seu primeiro
+                relatório.
               </p>
             </CardContent>
           </Card>
@@ -281,7 +290,10 @@ Status: ${report.status === 'completed' ? 'Concluído' : report.status}
                         {MONTHS[report.report_month - 1]} {report.report_year}
                       </CardTitle>
                       <CardDescription className="text-xs mt-1">
-                        Gerado em {format(new Date(report.generated_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                        Gerado em{' '}
+                        {format(new Date(report.generated_at), "dd/MM/yyyy 'às' HH:mm", {
+                          locale: ptBR,
+                        })}
                       </CardDescription>
                     </div>
                     <Badge variant={report.status === 'completed' ? 'default' : 'secondary'}>
@@ -304,15 +316,15 @@ Status: ${report.status === 'completed' ? 'Concluído' : report.status}
                       <span>R$ {report.mensalistas_revenue.toFixed(2)}</span>
                     </div>
                   </div>
-                  
+
                   <div className="pt-2 border-t text-xs text-muted-foreground">
                     Operador: {report.operator_name}
                   </div>
 
                   <div className="flex gap-2 pt-2">
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
+                    <Button
+                      variant="outline"
+                      size="sm"
                       className="flex-1"
                       onClick={() => handleViewDetails(report)}
                     >
@@ -335,10 +347,14 @@ Status: ${report.status === 'completed' ? 'Concluído' : report.status}
               <DialogHeader>
                 <DialogTitle className="flex items-center gap-2">
                   <FileText className="h-5 w-5" />
-                  Relatório Mensal - {MONTHS[selectedReport.report_month - 1]}/{selectedReport.report_year}
+                  Relatório Mensal - {MONTHS[selectedReport.report_month - 1]}/
+                  {selectedReport.report_year}
                 </DialogTitle>
                 <DialogDescription>
-                  Gerado em {format(new Date(selectedReport.generated_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                  Gerado em{' '}
+                  {format(new Date(selectedReport.generated_at), "dd/MM/yyyy 'às' HH:mm", {
+                    locale: ptBR,
+                  })}
                 </DialogDescription>
               </DialogHeader>
 
@@ -375,19 +391,25 @@ Status: ${report.status === 'completed' ? 'Concluído' : report.status}
                     <Card>
                       <CardContent className="pt-4">
                         <p className="text-sm text-muted-foreground">Receita Total</p>
-                        <p className="text-2xl font-bold">R$ {selectedReport.total_revenue.toFixed(2)}</p>
+                        <p className="text-2xl font-bold">
+                          R$ {selectedReport.total_revenue.toFixed(2)}
+                        </p>
                       </CardContent>
                     </Card>
                     <Card>
                       <CardContent className="pt-4">
                         <p className="text-sm text-muted-foreground">Avulsos</p>
-                        <p className="text-2xl font-bold text-primary">R$ {selectedReport.avulsos_revenue.toFixed(2)}</p>
+                        <p className="text-2xl font-bold text-primary">
+                          R$ {selectedReport.avulsos_revenue.toFixed(2)}
+                        </p>
                       </CardContent>
                     </Card>
                     <Card>
                       <CardContent className="pt-4">
                         <p className="text-sm text-muted-foreground">Mensalistas</p>
-                        <p className="text-2xl font-bold text-accent">R$ {selectedReport.mensalistas_revenue.toFixed(2)}</p>
+                        <p className="text-2xl font-bold text-accent">
+                          R$ {selectedReport.mensalistas_revenue.toFixed(2)}
+                        </p>
                       </CardContent>
                     </Card>
                     <Card>
@@ -405,19 +427,27 @@ Status: ${report.status === 'completed' ? 'Concluído' : report.status}
                   <div className="grid grid-cols-2 gap-3 text-sm">
                     <div className="flex justify-between p-2 bg-muted rounded">
                       <span>Dinheiro:</span>
-                      <span className="font-semibold">R$ {selectedReport.cash_total.toFixed(2)}</span>
+                      <span className="font-semibold">
+                        R$ {selectedReport.cash_total.toFixed(2)}
+                      </span>
                     </div>
                     <div className="flex justify-between p-2 bg-muted rounded">
                       <span>PIX:</span>
-                      <span className="font-semibold">R$ {selectedReport.pix_total.toFixed(2)}</span>
+                      <span className="font-semibold">
+                        R$ {selectedReport.pix_total.toFixed(2)}
+                      </span>
                     </div>
                     <div className="flex justify-between p-2 bg-muted rounded">
                       <span>Cartão Débito:</span>
-                      <span className="font-semibold">R$ {selectedReport.debit_card_total.toFixed(2)}</span>
+                      <span className="font-semibold">
+                        R$ {selectedReport.debit_card_total.toFixed(2)}
+                      </span>
                     </div>
                     <div className="flex justify-between p-2 bg-muted rounded">
                       <span>Cartão Crédito:</span>
-                      <span className="font-semibold">R$ {selectedReport.credit_card_total.toFixed(2)}</span>
+                      <span className="font-semibold">
+                        R$ {selectedReport.credit_card_total.toFixed(2)}
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -439,7 +469,9 @@ Status: ${report.status === 'completed' ? 'Concluído' : report.status}
                     </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Clientes Mensalistas:</span>
-                      <span className="font-semibold">{selectedReport.monthly_customers_count}</span>
+                      <span className="font-semibold">
+                        {selectedReport.monthly_customers_count}
+                      </span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Pagamentos Mensalistas:</span>
@@ -456,17 +488,11 @@ Status: ${report.status === 'completed' ? 'Concluído' : report.status}
               </div>
 
               <div className="flex gap-2 pt-4 border-t">
-                <Button 
-                  onClick={() => handleDownloadPDF(selectedReport)}
-                  className="flex-1"
-                >
+                <Button onClick={() => handleDownloadPDF(selectedReport)} className="flex-1">
                   <Download className="h-4 w-4 mr-2" />
                   Baixar Documento
                 </Button>
-                <Button 
-                  variant="outline"
-                  onClick={() => setDetailsOpen(false)}
-                >
+                <Button variant="outline" onClick={() => setDetailsOpen(false)}>
                   Fechar
                 </Button>
               </div>

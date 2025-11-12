@@ -9,12 +9,14 @@ A comprehensive operational scheduling system that manages business hours, holid
 ## 🎯 Features Implemented
 
 ### 1. **Business Hours Management** ⏰
+
 - Configure open/close times for each day of the week
 - Set different hours per day (Monday-Sunday)
 - Mark specific days as closed
 - 24-hour format support
 
 ### 2. **Holiday Calendar** 📅
+
 - Add national/local holidays
 - Mark recurring holidays (annual)
 - Set holiday-specific hours (open reduced hours)
@@ -22,6 +24,7 @@ A comprehensive operational scheduling system that manages business hours, holid
 - Description/notes for each holiday
 
 ### 3. **Special Events** 🎉
+
 - Create special pricing events
 - Set event date ranges
 - Configure price multipliers (e.g., 1.5x during events)
@@ -29,6 +32,7 @@ A comprehensive operational scheduling system that manages business hours, holid
 - Active/inactive toggle
 
 ### 4. **Operational Features** 🔧
+
 - Real-time open/closed status check
 - After-hours surcharge calculation
 - Special event pricing detection
@@ -129,6 +133,7 @@ GET    /special-events/check/:date  # Get events for specific date
 ```
 
 **Permissions:**
+
 - View: Any authenticated user
 - Manage: `manageCompanyConfig` permission
 
@@ -143,6 +148,7 @@ GET    /special-events/check/:date  # Get events for specific date
 **Tabs:**
 
 #### 1. **Horário de Funcionamento** Tab
+
 - 7-day grid showing all days of week
 - Each day card shows:
   - Day name (Segunda, Terça, etc.)
@@ -154,6 +160,7 @@ GET    /special-events/check/:date  # Get events for specific date
 - Save changes button
 
 #### 2. **Feriados** Tab
+
 - List of all holidays (sorted by date)
 - Add new holiday button
 - Holiday cards show:
@@ -173,6 +180,7 @@ GET    /special-events/check/:date  # Get events for specific date
   - Description textarea
 
 #### 3. **Eventos Especiais** Tab
+
 - List of special events
 - Add new event button
 - Event cards show:
@@ -191,6 +199,7 @@ GET    /special-events/check/:date  # Get events for specific date
   - Description textarea
 
 **Icons:**
+
 - Menu icon: `Calendar` (calendar icon)
 - Shows in sidebar for users with `manageCompanyConfig` permission
 
@@ -201,7 +210,9 @@ GET    /special-events/check/:date  # Get events for specific date
 ### Controllers
 
 #### `businessHoursController.js`
+
 **Key Functions:**
+
 - `list()` - Get all 7 days business hours
 - `getById()` - Get specific day hours
 - `update()` - Update day hours
@@ -209,6 +220,7 @@ GET    /special-events/check/:date  # Get events for specific date
   - Returns: `{ isOpen, currentDay, currentTime, todayHours, nextOpenTime }`
 
 **Business Logic:**
+
 ```javascript
 // Check if currently open
 const now = new Date();
@@ -227,7 +239,9 @@ if (currentTime >= openTime && currentTime < closeTime) {
 ```
 
 #### `holidaysController.js`
+
 **Key Functions:**
+
 - `list()` - Get all holidays with optional year filter
 - `getById()` - Get specific holiday
 - `create()` - Create new holiday
@@ -237,6 +251,7 @@ if (currentTime >= openTime && currentTime < closeTime) {
 - `getUpcoming()` - Get next 10 upcoming holidays
 
 **Holiday Logic:**
+
 ```javascript
 // Check if today is holiday
 const today = format(new Date(), 'yyyy-MM-dd');
@@ -250,7 +265,9 @@ if (isRecurring) {
 ```
 
 #### `specialEventsController.js`
+
 **Key Functions:**
+
 - `list()` - Get all events
 - `getById()` - Get specific event
 - `create()` - Create new event
@@ -260,12 +277,13 @@ if (isRecurring) {
 - `checkDate()` - Get events for specific date
 
 **Event Pricing Logic:**
+
 ```javascript
 // Check if date is during special event
 const events = await getActiveEvents(date);
 if (events.length > 0) {
   // Use highest multiplier if multiple events
-  const multiplier = Math.max(...events.map(e => e.price_multiplier));
+  const multiplier = Math.max(...events.map((e) => e.price_multiplier));
   finalPrice = basePrice * multiplier;
 }
 ```
@@ -352,29 +370,28 @@ Response:
 ### 6. Check Upcoming Holidays
 
 ```javascript
-GET /holidays/upcoming
+GET / holidays / upcoming;
 
-Response:
-[
+Response: [
   {
-    "id": "uuid",
-    "name": "Natal",
-    "date": "2025-12-25",
-    "isRecurring": true,
-    "isClosed": true,
-    "daysUntil": 45
+    id: 'uuid',
+    name: 'Natal',
+    date: '2025-12-25',
+    isRecurring: true,
+    isClosed: true,
+    daysUntil: 45,
   },
   {
-    "id": "uuid",
-    "name": "Ano Novo",
-    "date": "2026-01-01",
-    "isRecurring": true,
-    "isClosed": false,
-    "specialOpenTime": "08:00",
-    "specialCloseTime": "14:00",
-    "daysUntil": 52
-  }
-]
+    id: 'uuid',
+    name: 'Ano Novo',
+    date: '2026-01-01',
+    isRecurring: true,
+    isClosed: false,
+    specialOpenTime: '08:00',
+    specialCloseTime: '14:00',
+    daysUntil: 52,
+  },
+];
 ```
 
 ---
@@ -389,16 +406,16 @@ Update `ticketsController.js`:
 // Before allowing entry
 const status = await fetch('/business-hours/status/current');
 if (!status.isOpen && !user.isAdmin) {
-  return res.status(400).json({ 
+  return res.status(400).json({
     error: 'Estacionamento fechado',
-    nextOpenTime: status.nextOpenTime 
+    nextOpenTime: status.nextOpenTime,
   });
 }
 
 // Apply special event pricing
 const events = await fetch(`/special-events/check/${today}`);
 if (events.length > 0) {
-  const multiplier = Math.max(...events.map(e => e.priceMultiplier));
+  const multiplier = Math.max(...events.map((e) => e.priceMultiplier));
   finalPrice = basePrice * multiplier;
 }
 ```
@@ -411,7 +428,7 @@ Update `PaymentDialog.tsx` and `ReceiptDialog.tsx`:
 // Add "Closed" notice on receipts when after hours
 const status = await fetch('/business-hours/status/current');
 if (!status.isOpen) {
-  receiptNotice = "⚠️ Atendimento fora do horário comercial";
+  receiptNotice = '⚠️ Atendimento fora do horário comercial';
 }
 
 // Show special event pricing
@@ -433,12 +450,9 @@ const status = await fetch('/business-hours/status/current');
     {status.isOpen ? '🟢 ABERTO' : '🔴 FECHADO'}
   </div>
   <p className="text-sm">
-    {status.isOpen 
-      ? `Fecha às ${status.todayHours.closeTime}`
-      : `Abre ${status.nextOpenTime}`
-    }
+    {status.isOpen ? `Fecha às ${status.todayHours.closeTime}` : `Abre ${status.nextOpenTime}`}
   </p>
-</div>
+</div>;
 ```
 
 ### 4. **After-Hours Surcharge**
@@ -453,7 +467,7 @@ const currentTime = now.toTimeString().slice(0, 5);
 if (currentTime < openTime || currentTime >= closeTime) {
   // Apply 20% surcharge for after-hours service
   finalPrice = basePrice * 1.2;
-  receipt.notes = "Acréscimo de 20% - Atendimento fora do horário";
+  receipt.notes = 'Acréscimo de 20% - Atendimento fora do horário';
 }
 ```
 
@@ -462,8 +476,9 @@ if (currentTime < openTime || currentTime >= closeTime) {
 ## 🎨 UI Features
 
 ### Business Hours Tab
+
 - **Visual Day Cards:** Each day displayed in card format
-- **Color Coding:** 
+- **Color Coding:**
   - Green = Currently open
   - Red = Closed
   - Yellow = Outside hours
@@ -471,12 +486,14 @@ if (currentTime < openTime || currentTime >= closeTime) {
 - **Batch Save:** Save all changes at once
 
 ### Holidays Tab
+
 - **Calendar View:** Holidays shown in list sorted by date
 - **Recurring Badge:** Visual indicator for annual holidays
 - **Quick Actions:** Edit/Delete buttons on each card
 - **Filtering:** Filter by year, month, or show only recurring
 
 ### Special Events Tab
+
 - **Active/Inactive Toggle:** Easily enable/disable events
 - **Price Multiplier Display:** Shows both multiplier and percentage
 - **Date Range Display:** Clear start/end dates
@@ -487,6 +504,7 @@ if (currentTime < openTime || currentTime >= closeTime) {
 ## 📊 Default Data
 
 ### Business Hours (Default)
+
 ```
 Monday:    08:00 - 18:00
 Tuesday:   08:00 - 18:00
@@ -498,6 +516,7 @@ Sunday:    CLOSED
 ```
 
 ### Default Brazilian Holidays
+
 ```
 01/01 - Ano Novo (Confraternização Universal)
 21/04 - Tiradentes
@@ -515,12 +534,14 @@ Sunday:    CLOSED
 ## 🧪 Testing Checklist
 
 ### Database
+
 - [x] Execute SQL migration in Supabase
 - [ ] Verify 7 business hours records created
 - [ ] Verify 9 default holidays created
 - [ ] Verify tables have correct constraints
 
 ### Backend API
+
 - [x] Backend running on port 3000
 - [ ] GET /business-hours returns 7 days
 - [ ] PUT /business-hours/:id updates hours
@@ -532,6 +553,7 @@ Sunday:    CLOSED
 - [ ] Price multiplier calculation works
 
 ### Frontend UI
+
 - [ ] Navigate to /horarios-feriados
 - [ ] See 3 tabs (Horários, Feriados, Eventos)
 - [ ] Edit Monday hours (8:00 - 18:00)
@@ -543,6 +565,7 @@ Sunday:    CLOSED
 - [ ] View upcoming holidays list
 
 ### Integration
+
 - [ ] Dashboard shows current open/closed status
 - [ ] Vehicle entry blocked when closed
 - [ ] Special event pricing applied correctly
@@ -562,6 +585,7 @@ Sunday:    CLOSED
 ```
 
 **Verify:**
+
 ```sql
 SELECT * FROM business_hours ORDER BY day_of_week;
 SELECT * FROM holidays ORDER BY date;
@@ -604,20 +628,23 @@ curl http://localhost:3000/holidays/upcoming \
 ## 🎯 Benefits
 
 ### For Business Owners
+
 ✅ **Automated Scheduling** - Set it and forget it  
 ✅ **Holiday Management** - Never miss a holiday update  
 ✅ **Revenue Optimization** - Special event pricing  
-✅ **Legal Compliance** - Accurate holiday tracking  
+✅ **Legal Compliance** - Accurate holiday tracking
 
 ### For Operators
+
 ✅ **Clear Hours** - Know when open/closed  
 ✅ **Automatic Blocking** - Can't accept cars when closed  
-✅ **Price Clarity** - Automatic surcharges shown  
+✅ **Price Clarity** - Automatic surcharges shown
 
 ### For Customers
+
 ✅ **Transparent Hours** - Always know when open  
 ✅ **No Surprises** - After-hours charges shown upfront  
-✅ **Holiday Info** - Know when closed in advance  
+✅ **Holiday Info** - Know when closed in advance
 
 ---
 
@@ -665,16 +692,19 @@ curl http://localhost:3000/holidays/upcoming \
 ## 📞 Support & Troubleshooting
 
 **Issue:** Current status shows wrong time
+
 - Check server timezone settings
 - Verify business hours in database
 - Check holiday table for today's date
 
 **Issue:** Special event pricing not applied
+
 - Verify event is marked `is_active: true`
 - Check date range includes current date
 - Ensure price_multiplier > 0
 
 **Issue:** Can't modify business hours
+
 - Verify user has `manageCompanyConfig` permission
 - Check audit logs for error details
 - Ensure PUT request has all required fields

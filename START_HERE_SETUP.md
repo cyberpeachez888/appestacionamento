@@ -23,12 +23,14 @@ npm install
 ### 3. Reiniciar servidores (1 minuto)
 
 **Terminal 1:**
+
 ```bash
 cd ~/appestacionamento/backend
 npm start
 ```
 
 **Terminal 2:**
+
 ```bash
 cd ~/appestacionamento
 npm run dev

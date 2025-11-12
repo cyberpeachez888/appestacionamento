@@ -15,7 +15,7 @@ function toFrontendFormat(receipt) {
     clientCpf: receipt.client_cpf,
     notes: receipt.notes,
     createdAt: receipt.created_at,
-    updatedAt: receipt.updated_at
+    updatedAt: receipt.updated_at,
   };
 }
 
@@ -27,7 +27,7 @@ function toDbFormat(receipt) {
     receipt_type: receipt.receiptType || 'simple',
     client_name: receipt.clientName,
     client_cpf: receipt.clientCpf,
-    notes: receipt.notes
+    notes: receipt.notes,
   };
 }
 
@@ -35,14 +35,16 @@ export default {
   async create(req, res) {
     try {
       const payload = toDbFormat(req.body);
-      const { data, error } = await supabase
-        .from(table)
-        .insert(payload)
-        .select()
-        .single();
-      
+      const { data, error } = await supabase.from(table).insert(payload).select().single();
+
       if (error) return res.status(500).json({ error });
-      await logEvent({ actor: req.user, action: 'receipt.create', targetType: 'receipt', targetId: data.id, details: { ticketId: data.ticket_id } });
+      await logEvent({
+        actor: req.user,
+        action: 'receipt.create',
+        targetType: 'receipt',
+        targetId: data.id,
+        details: { ticketId: data.ticket_id },
+      });
       res.status(201).json(toFrontendFormat(data));
     } catch (err) {
       res.status(500).json({ error: err.message || err });
@@ -53,13 +55,13 @@ export default {
     try {
       const { ticketId } = req.query;
       let query = supabase.from(table).select('*');
-      
+
       if (ticketId) {
         query = query.eq('ticket_id', ticketId);
       }
-      
+
       const { data, error } = await query.order('created_at', { ascending: false });
-      
+
       if (error) return res.status(500).json({ error });
       res.json(data.map(toFrontendFormat));
     } catch (err) {
@@ -74,7 +76,7 @@ export default {
         .select('*')
         .eq('id', req.params.id)
         .single();
-      
+
       if (error) return res.status(404).json({ error: 'Receipt not found' });
       res.json(toFrontendFormat(data));
     } catch (err) {
@@ -84,16 +86,18 @@ export default {
 
   async delete(req, res) {
     try {
-      const { error } = await supabase
-        .from(table)
-        .delete()
-        .eq('id', req.params.id);
-      
+      const { error } = await supabase.from(table).delete().eq('id', req.params.id);
+
       if (error) return res.status(500).json({ error });
-      await logEvent({ actor: req.user, action: 'receipt.delete', targetType: 'receipt', targetId: req.params.id });
+      await logEvent({
+        actor: req.user,
+        action: 'receipt.delete',
+        targetType: 'receipt',
+        targetId: req.params.id,
+      });
       res.status(204).send();
     } catch (err) {
       res.status(500).json({ error: err.message || err });
     }
-  }
+  },
 };

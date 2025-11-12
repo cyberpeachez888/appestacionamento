@@ -3,28 +3,34 @@
 ## 🎉 Status Atual
 
 ✅ **Backend:** Rodando na porta **3000**
+
 - URL: http://localhost:3000
 - Serviço de backup automático: ✅ Inicializado
 - Log: `tail -f backend.log`
 
 ✅ **Frontend:** Rodando na porta **8080**
+
 - URL: http://localhost:8080
 - Vite dev server: ✅ Ativo
 
 ## 🧪 Teste o Sistema de Backup AGORA
 
 ### Passo 1: Acessar a Aplicação
+
 Abra no navegador: **http://localhost:8080**
 
 ### Passo 2: Fazer Login
+
 Use suas credenciais de admin.
 
 ### Passo 3: Acessar Backups
+
 1. Clique em **"Configurações"** no menu lateral
 2. Você verá 3 abas na parte superior
 3. Clique na **terceira aba: "Backups Automáticos"**
 
 ### Passo 4: Criar Backup Manual
+
 1. Na seção superior, clique no botão **"Criar Backup Manual"**
 2. ✅ Aguarde alguns segundos
 3. ✅ Você verá uma mensagem de sucesso
@@ -35,12 +41,14 @@ Use suas credenciais de admin.
    - Botões: Download | Restaurar | Deletar
 
 ### Passo 5: Testar Download
+
 1. Clique no ícone de **download** (↓) do backup criado
 2. ✅ Um arquivo JSON será baixado para seu computador
 3. Abra o arquivo e verifique que contém os dados
 
 ### Passo 6: Testar Preview de Restauração
-1. Clique no botão **"Restaurar"** 
+
+1. Clique no botão **"Restaurar"**
 2. ✅ Deve abrir um dialog mostrando:
    - Informações do backup
    - Lista de 10 tabelas com quantidade de registros
@@ -49,6 +57,7 @@ Use suas credenciais de admin.
 4. Clique em "Cancelar"
 
 ### Passo 7: Configurar Backup Automático
+
 Na mesma página, role para baixo até a seção **"Configuração de Backups Automáticos"**:
 
 1. **Habilitar Backup Automático:** Liga o toggle (ON)
@@ -72,11 +81,13 @@ Para testar agora sem esperar até as 2h da manhã:
 ## 📊 Verificar Logs
 
 ### Backend (terminal separado):
+
 ```bash
 tail -f backend.log
 ```
 
 Você deve ver linhas como:
+
 ```
 Scheduled backup service initialized
 [Scheduled Backup] Starting automatic backup...
@@ -84,6 +95,7 @@ Scheduled backup service initialized
 ```
 
 ### Verificar Arquivos Criados:
+
 ```bash
 # Backups manuais
 ls -lh backend/backups/manual/
@@ -121,7 +133,7 @@ Isso confirma que a permissão `manageBackups` está funcionando!
 1. Vá para página **"Usuários"**
 2. Clique no ícone de **log** (📋) do seu usuário admin
 3. ✅ Você verá eventos como:
-   - `backup_created` 
+   - `backup_created`
    - `backup_config_updated`
    - `backup_downloaded` (se fez download)
 

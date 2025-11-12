@@ -2,7 +2,13 @@ import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import {
   Dialog,
   DialogContent,
@@ -69,11 +75,17 @@ export function CustomerDialog({ open, onOpenChange, customer, onSaved }: Custom
       setName(customer.name);
       setCpf(customer.cpf || '');
       setPhone(customer.phone || '');
-  const slotStr = customer.parkingSlot?.toString() || '';
-  setParkingSlot(slotStr);
-  setOriginalParkingSlot(slotStr);
+      const slotStr = customer.parkingSlot?.toString() || '';
+      setParkingSlot(slotStr);
+      setOriginalParkingSlot(slotStr);
       const customerPlates = Array.isArray(customer.plates) ? customer.plates : [];
-      setPlates(customerPlates.map((p: string) => ({ id: Math.random().toString(), value: p, isEditing: false })));
+      setPlates(
+        customerPlates.map((p: string) => ({
+          id: Math.random().toString(),
+          value: p,
+          isEditing: false,
+        }))
+      );
       setValue(customer.value.toString());
       setOperatorName(customer.operatorName || '');
       if (customer.contractDate) {
@@ -83,8 +95,8 @@ export function CustomerDialog({ open, onOpenChange, customer, onSaved }: Custom
       setName('');
       setCpf('');
       setPhone('');
-  setParkingSlot('');
-  setOriginalParkingSlot(null);
+      setParkingSlot('');
+      setOriginalParkingSlot(null);
       setSlotError('');
       setPlates([]);
       setValue('150');
@@ -113,9 +125,7 @@ export function CustomerDialog({ open, onOpenChange, customer, onSaved }: Custom
   const formatPhone = (value: string) => {
     const numbers = value.replace(/\D/g, '');
     if (numbers.length <= 11) {
-      return numbers
-        .replace(/(\d{2})(\d)/, '($1) $2')
-        .replace(/(\d{5})(\d{1,4})$/, '$1-$2');
+      return numbers.replace(/(\d{2})(\d)/, '($1) $2').replace(/(\d{5})(\d{1,4})$/, '$1-$2');
     }
     return value;
   };
@@ -140,7 +150,10 @@ export function CustomerDialog({ open, onOpenChange, customer, onSaved }: Custom
       const trimmed = newPlateValue.trim();
       if (trimmed) {
         const upperPlate = trimmed.toUpperCase();
-        setPlates(prev => [...prev, { id: Date.now().toString(), value: upperPlate, isEditing: false }]);
+        setPlates((prev) => [
+          ...prev,
+          { id: Date.now().toString(), value: upperPlate, isEditing: false },
+        ]);
         setNewPlateValue('');
         setIsAddingPlate(false);
       }
@@ -158,15 +171,17 @@ export function CustomerDialog({ open, onOpenChange, customer, onSaved }: Custom
   };
 
   const handleEditPlate = (id: string) => {
-    setPlates(prev => prev.map(p => p.id === id ? { ...p, isEditing: true } : p));
+    setPlates((prev) => prev.map((p) => (p.id === id ? { ...p, isEditing: true } : p)));
   };
 
   const handleSavePlateEdit = (id: string, newValue: string) => {
-    setPlates(prev => prev.map(p => p.id === id ? { ...p, value: newValue.toUpperCase(), isEditing: false } : p));
+    setPlates((prev) =>
+      prev.map((p) => (p.id === id ? { ...p, value: newValue.toUpperCase(), isEditing: false } : p))
+    );
   };
 
   const handleDeletePlate = (id: string) => {
-    setPlates(prev => prev.filter(p => p.id !== id));
+    setPlates((prev) => prev.filter((p) => p.id !== id));
   };
 
   // Calculate change for cash payment
@@ -192,10 +207,10 @@ export function CustomerDialog({ open, onOpenChange, customer, onSaved }: Custom
 
     try {
       // When editing, pass customer ID to exclude current customer from validation
-      const url = customer?.id 
+      const url = customer?.id
         ? `${API_URL}/monthlyCustomers/slot/${slotNumber}/check?customerId=${customer.id}`
         : `${API_URL}/monthlyCustomers/slot/${slotNumber}/check`;
-      const headers: Record<string, string> = token ? { 'Authorization': `Bearer ${token}` } : {};
+      const headers: Record<string, string> = token ? { Authorization: `Bearer ${token}` } : {};
       const response = await fetch(url, { headers });
       const data = await response.json();
 
@@ -246,33 +261,33 @@ export function CustomerDialog({ open, onOpenChange, customer, onSaved }: Custom
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     // Detailed validation with specific error messages
     if (!name.trim()) {
       alert('Por favor, preencha o nome do cliente.');
       return;
     }
-    
+
     if (!cpf.trim()) {
       alert('Por favor, preencha o CPF do cliente.');
       return;
     }
-    
+
     if (!phone.trim()) {
       alert('Por favor, preencha o telefone do cliente.');
       return;
     }
-    
+
     if (!parkingSlot) {
       alert('Por favor, informe o número da vaga.');
       return;
     }
-    
+
     if (plates.length === 0) {
       alert('Por favor, adicione pelo menos uma placa de veículo.');
       return;
     }
-    
+
     if (!value || parseFloat(value) <= 0) {
       alert('Por favor, informe o valor mensal.');
       return;
@@ -291,7 +306,7 @@ export function CustomerDialog({ open, onOpenChange, customer, onSaved }: Custom
           cpf: cpf.trim(),
           phone: phone.trim(),
           parkingSlot: parseInt(parkingSlot),
-          plates: plates.map(p => p.value),
+          plates: plates.map((p) => p.value),
           value: parseFloat(value),
           operatorName: operatorName.trim() || undefined,
         };
@@ -303,7 +318,7 @@ export function CustomerDialog({ open, onOpenChange, customer, onSaved }: Custom
           cpf: cpf.trim(),
           phone: phone.trim(),
           parkingSlot: parseInt(parkingSlot),
-          plates: plates.map(p => p.value),
+          plates: plates.map((p) => p.value),
           value: parseFloat(value),
           paymentMethod,
           paidAmount: paymentMethod === 'Dinheiro' ? parseFloat(paidAmount) : undefined,
@@ -316,7 +331,7 @@ export function CustomerDialog({ open, onOpenChange, customer, onSaved }: Custom
         if (created?.id) {
           // Generate and print receipt (authenticated request)
           const response = await fetch(`${API_URL}/monthlyCustomers/${created.id}/receipt`, {
-            headers: token ? { 'Authorization': `Bearer ${token}` } : undefined,
+            headers: token ? { Authorization: `Bearer ${token}` } : undefined,
           });
           if (response.ok) {
             const receiptData = await response.json();
@@ -412,25 +427,37 @@ export function CustomerDialog({ open, onOpenChange, customer, onSaved }: Custom
                 <span class="field-label">Nome:</span>
                 <span class="field-value">${receiptData.customer.name}</span>
               </div>
-              ${receiptData.customer.cpf ? `
+              ${
+                receiptData.customer.cpf
+                  ? `
               <div class="field">
                 <span class="field-label">CPF:</span>
                 <span class="field-value">${receiptData.customer.cpf}</span>
-              </div>` : ''}
-              ${receiptData.customer.phone ? `
+              </div>`
+                  : ''
+              }
+              ${
+                receiptData.customer.phone
+                  ? `
               <div class="field">
                 <span class="field-label">Telefone:</span>
                 <span class="field-value">${receiptData.customer.phone}</span>
-              </div>` : ''}
+              </div>`
+                  : ''
+              }
             </div>
 
             <div class="section">
               <div class="section-title">Vaga e Veículos</div>
-              ${receiptData.customer.parkingSlot ? `
+              ${
+                receiptData.customer.parkingSlot
+                  ? `
               <div class="field">
                 <span class="field-label">Vaga Reservada:</span>
                 <span class="field-value" style="font-size: 18px; font-weight: bold; color: #2563eb;">Nº ${receiptData.customer.parkingSlot}</span>
-              </div>` : ''}
+              </div>`
+                  : ''
+              }
               <div class="field" style="margin-top: 10px;">
                 <span class="field-label">Placas Cadastradas:</span>
               </div>
@@ -458,7 +485,9 @@ export function CustomerDialog({ open, onOpenChange, customer, onSaved }: Custom
               </div>
             </div>
 
-            ${receiptData.payment ? `
+            ${
+              receiptData.payment
+                ? `
             <div class="section">
               <div class="section-title">Pagamento</div>
               <div class="field">
@@ -473,15 +502,21 @@ export function CustomerDialog({ open, onOpenChange, customer, onSaved }: Custom
                 <span class="field-label">Data do Pagamento:</span>
                 <span class="field-value">${format(new Date(receiptData.payment.date), 'dd/MM/yyyy HH:mm')}</span>
               </div>
-            </div>` : ''}
+            </div>`
+                : ''
+            }
 
-            ${receiptData.operator ? `
+            ${
+              receiptData.operator
+                ? `
             <div class="section">
               <div class="field">
                 <span class="field-label">Operador:</span>
                 <span class="field-value">${receiptData.operator}</span>
               </div>
-            </div>` : ''}
+            </div>`
+                : ''
+            }
 
             <div class="footer">
               <p>Este recibo é comprovante de contrato de estacionamento mensal.</p>
@@ -507,7 +542,9 @@ export function CustomerDialog({ open, onOpenChange, customer, onSaved }: Custom
         <DialogHeader>
           <DialogTitle>{customer ? 'Editar Cliente' : 'Adicionar Cliente Mensalista'}</DialogTitle>
           <DialogDescription>
-            {customer ? 'Edite os dados do cliente mensalista.' : 'Registre um novo cliente mensalista com pagamento e recibo.'}
+            {customer
+              ? 'Edite os dados do cliente mensalista.'
+              : 'Registre um novo cliente mensalista com pagamento e recibo.'}
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit}>
@@ -515,7 +552,9 @@ export function CustomerDialog({ open, onOpenChange, customer, onSaved }: Custom
             {/* Contract Date Display */}
             <div className="bg-muted/50 p-3 rounded-md">
               <div className="text-sm font-medium text-muted-foreground">Data do Contrato</div>
-              <div className="text-lg font-semibold">{format(contractDate, "dd/MM/yyyy 'às' HH:mm")}</div>
+              <div className="text-lg font-semibold">
+                {format(contractDate, "dd/MM/yyyy 'às' HH:mm")}
+              </div>
             </div>
 
             {/* Name */}
@@ -584,9 +623,7 @@ export function CustomerDialog({ open, onOpenChange, customer, onSaved }: Custom
                 {isCheckingSlot && (
                   <p className="text-sm text-muted-foreground">Verificando disponibilidade...</p>
                 )}
-                {slotError && (
-                  <p className="text-sm text-red-500 font-medium">{slotError}</p>
-                )}
+                {slotError && <p className="text-sm text-red-500 font-medium">{slotError}</p>}
                 {parkingSlot && !slotError && !isCheckingSlot && (
                   <p className="text-sm text-green-600 font-medium">✓ Vaga disponível</p>
                 )}
@@ -610,7 +647,9 @@ export function CustomerDialog({ open, onOpenChange, customer, onSaved }: Custom
                         value={plate.value}
                         onChange={(e) => {
                           const newValue = e.target.value.toUpperCase();
-                          setPlates(prev => prev.map(p => p.id === plate.id ? { ...p, value: newValue } : p));
+                          setPlates((prev) =>
+                            prev.map((p) => (p.id === plate.id ? { ...p, value: newValue } : p))
+                          );
                         }}
                         onBlur={() => handleSavePlateEdit(plate.id, plate.value)}
                         onKeyDown={(e) => {
@@ -647,7 +686,7 @@ export function CustomerDialog({ open, onOpenChange, customer, onSaved }: Custom
                     </Button>
                   </div>
                 ))}
-                
+
                 {/* New plate input */}
                 {isAddingPlate && (
                   <div className="space-y-2">
@@ -669,7 +708,10 @@ export function CustomerDialog({ open, onOpenChange, customer, onSaved }: Custom
                           const trimmed = newPlateValue.trim();
                           if (trimmed) {
                             const upperPlate = trimmed.toUpperCase();
-                            setPlates(prev => [...prev, { id: Date.now().toString(), value: upperPlate, isEditing: false }]);
+                            setPlates((prev) => [
+                              ...prev,
+                              { id: Date.now().toString(), value: upperPlate, isEditing: false },
+                            ]);
                             setNewPlateValue('');
                             setIsAddingPlate(false);
                           }
@@ -693,7 +735,7 @@ export function CustomerDialog({ open, onOpenChange, customer, onSaved }: Custom
                     </div>
                   </div>
                 )}
-                
+
                 {/* Add plate button */}
                 {!isAddingPlate && plates.length < 5 && (
                   <Button
@@ -706,13 +748,15 @@ export function CustomerDialog({ open, onOpenChange, customer, onSaved }: Custom
                     Adicionar Placa {plates.length > 0 && `(${plates.length}/5)`}
                   </Button>
                 )}
-                
+
                 {plates.length >= 5 && (
                   <p className="text-sm text-muted-foreground">✓ Máximo de 5 veículos atingido</p>
                 )}
-                
+
                 {plates.length === 0 && !isAddingPlate && (
-                  <p className="text-sm text-muted-foreground italic">Clique no botão acima para adicionar a primeira placa</p>
+                  <p className="text-sm text-muted-foreground italic">
+                    Clique no botão acima para adicionar a primeira placa
+                  </p>
                 )}
               </div>
             </div>
@@ -750,51 +794,51 @@ export function CustomerDialog({ open, onOpenChange, customer, onSaved }: Custom
 
             {/* Payment Section (only for creation) */}
             {!customer && (
-            <div className="border-t pt-4 mt-2">
-              <h3 className="font-semibold mb-3">Pagamento</h3>
-              
-              <div className="grid grid-cols-4 items-center gap-4 mb-3">
-                <Label className="text-right">Forma</Label>
-                <Select value={paymentMethod} onValueChange={setPaymentMethod}>
-                  <SelectTrigger className="col-span-3">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Dinheiro">Dinheiro</SelectItem>
-                    <SelectItem value="Pix">Pix</SelectItem>
-                    <SelectItem value="Cartão Débito">Cartão Débito</SelectItem>
-                    <SelectItem value="Cartão Crédito">Cartão Crédito</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+              <div className="border-t pt-4 mt-2">
+                <h3 className="font-semibold mb-3">Pagamento</h3>
 
-              {paymentMethod === 'Dinheiro' && (
-                <>
-                  <div className="grid grid-cols-4 items-center gap-4 mb-3">
-                    <Label htmlFor="paidAmount" className="text-right">
-                      Valor Pago
-                    </Label>
-                    <Input
-                      id="paidAmount"
-                      type="number"
-                      step="0.01"
-                      value={paidAmount}
-                      onChange={(e) => setPaidAmount(e.target.value)}
-                      placeholder="200.00"
-                      className="col-span-3"
-                    />
-                  </div>
-                  {change > 0 && (
-                    <div className="grid grid-cols-4 items-center gap-4">
-                      <Label className="text-right">Troco</Label>
-                      <div className="col-span-3 px-3 py-2 bg-muted rounded-md font-semibold text-green-600">
-                        R$ {change.toFixed(2)}
-                      </div>
+                <div className="grid grid-cols-4 items-center gap-4 mb-3">
+                  <Label className="text-right">Forma</Label>
+                  <Select value={paymentMethod} onValueChange={setPaymentMethod}>
+                    <SelectTrigger className="col-span-3">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Dinheiro">Dinheiro</SelectItem>
+                      <SelectItem value="Pix">Pix</SelectItem>
+                      <SelectItem value="Cartão Débito">Cartão Débito</SelectItem>
+                      <SelectItem value="Cartão Crédito">Cartão Crédito</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {paymentMethod === 'Dinheiro' && (
+                  <>
+                    <div className="grid grid-cols-4 items-center gap-4 mb-3">
+                      <Label htmlFor="paidAmount" className="text-right">
+                        Valor Pago
+                      </Label>
+                      <Input
+                        id="paidAmount"
+                        type="number"
+                        step="0.01"
+                        value={paidAmount}
+                        onChange={(e) => setPaidAmount(e.target.value)}
+                        placeholder="200.00"
+                        className="col-span-3"
+                      />
                     </div>
-                  )}
-                </>
-              )}
-            </div>
+                    {change > 0 && (
+                      <div className="grid grid-cols-4 items-center gap-4">
+                        <Label className="text-right">Troco</Label>
+                        <div className="col-span-3 px-3 py-2 bg-muted rounded-md font-semibold text-green-600">
+                          R$ {change.toFixed(2)}
+                        </div>
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
             )}
           </div>
           <DialogFooter>

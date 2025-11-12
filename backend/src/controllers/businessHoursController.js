@@ -8,19 +8,19 @@ const businessHoursController = {
         .from('business_hours')
         .select('*')
         .order('day_of_week', { ascending: true });
-      
+
       if (error) throw error;
-      
+
       res.json({
         success: true,
-        data
+        data,
       });
     } catch (err) {
       console.error('Error listing business hours:', err);
-      res.status(500).json({ 
+      res.status(500).json({
         success: false,
         message: 'Failed to list business hours',
-        error: err.message || err 
+        error: err.message || err,
       });
     }
   },
@@ -34,19 +34,19 @@ const businessHoursController = {
         .select('*')
         .eq('id', id)
         .single();
-      
+
       if (error) throw error;
-      
+
       res.json({
         success: true,
-        data
+        data,
       });
     } catch (err) {
       console.error('Error getting business hour:', err);
-      res.status(500).json({ 
+      res.status(500).json({
         success: false,
         message: 'Failed to get business hour',
-        error: err.message || err 
+        error: err.message || err,
       });
     }
   },
@@ -57,27 +57,27 @@ const businessHoursController = {
       const { id } = req.params;
       const payload = req.body;
       payload.updated_at = new Date().toISOString();
-      
+
       const { data, error } = await supabase
         .from('business_hours')
         .update(payload)
         .eq('id', id)
         .select()
         .single();
-      
+
       if (error) throw error;
-      
+
       res.json({
         success: true,
         data,
-        message: 'Business hours updated successfully'
+        message: 'Business hours updated successfully',
       });
     } catch (err) {
       console.error('Error updating business hours:', err);
-      res.status(500).json({ 
+      res.status(500).json({
         success: false,
         message: 'Failed to update business hours',
-        error: err.message || err 
+        error: err.message || err,
       });
     }
   },
@@ -103,7 +103,9 @@ const businessHoursController = {
       const { data: holidays, error: holidayError } = await supabase
         .from('holidays')
         .select('*')
-        .or(`holiday_date.eq.${today},and(is_recurring.eq.true,recurring_month.eq.${now.getMonth() + 1},recurring_day.eq.${now.getDate()})`);
+        .or(
+          `holiday_date.eq.${today},and(is_recurring.eq.true,recurring_month.eq.${now.getMonth() + 1},recurring_day.eq.${now.getDate()})`
+        );
 
       const isHoliday = holidays && holidays.length > 0;
 
@@ -120,7 +122,7 @@ const businessHoursController = {
       // Determine if open
       let isOpen = false;
       let reason = '';
-      
+
       if (isHoliday && holidays[0].is_closed) {
         isOpen = false;
         reason = `Fechado - Feriado: ${holidays[0].holiday_name}`;
@@ -148,18 +150,18 @@ const businessHoursController = {
           todayHours,
           isHoliday,
           holidays: holidays || [],
-          activeEvents
-        }
+          activeEvents,
+        },
       });
     } catch (err) {
       console.error('Error getting current status:', err);
-      res.status(500).json({ 
+      res.status(500).json({
         success: false,
         message: 'Failed to get current status',
-        error: err.message || err 
+        error: err.message || err,
       });
     }
-  }
+  },
 };
 
 export default businessHoursController;

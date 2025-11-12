@@ -7,6 +7,7 @@
 ## ⚡ 60-Second Setup (Test Now)
 
 1. **Update JWT Secret:**
+
    ```bash
    # Open: backend/.env
    # Replace JWT_SECRET line with:
@@ -14,11 +15,12 @@
    ```
 
 2. **Start Servers:**
+
    ```bash
    # Terminal 1 - Backend
    cd backend
    npm start
-   
+
    # Terminal 2 - Frontend
    npm run dev
    ```
@@ -39,9 +41,11 @@
    - Mac: `ifconfig | grep "inet "`
 
 2. **On Phone Browser:**
+
    ```
    http://YOUR-COMPUTER-IP:8080
    ```
+
    Example: `http://192.168.1.100:8080`
 
 3. **Add to Home Screen** (iOS/Android)
@@ -50,11 +54,11 @@
 
 ## 📁 Key Files
 
-| File | What It Does |
-|------|--------------|
-| `SETUP_COMPLETE.md` | ✅ Summary of everything done |
-| `LOCAL_NETWORK_SETUP.md` | 📖 Complete deployment guide |
-| `backend/.env` | 🔐 **CRITICAL** - Your secrets |
+| File                     | What It Does                   |
+| ------------------------ | ------------------------------ |
+| `SETUP_COMPLETE.md`      | ✅ Summary of everything done  |
+| `LOCAL_NETWORK_SETUP.md` | 📖 Complete deployment guide   |
+| `backend/.env`           | 🔐 **CRITICAL** - Your secrets |
 
 ---
 
@@ -93,4 +97,4 @@
 
 ---
 
-*TheProParkingApp v1.0.0 - Production Ready* 🚀
+_TheProParkingApp v1.0.0 - Production Ready_ 🚀

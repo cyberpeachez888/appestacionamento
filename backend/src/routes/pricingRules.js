@@ -10,7 +10,7 @@ import {
   createRule,
   updateRule,
   deleteRule,
-  toggleRuleStatus
+  toggleRuleStatus,
 } from '../controllers/pricingRulesController.js';
 
 const router = express.Router();

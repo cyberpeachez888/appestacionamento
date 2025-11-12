@@ -1,6 +1,15 @@
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Plus, Edit, CheckCircle, Building2, MapPin, Calendar, Clock, CreditCard } from 'lucide-react';
+import {
+  Plus,
+  Edit,
+  CheckCircle,
+  Building2,
+  MapPin,
+  Calendar,
+  Clock,
+  CreditCard,
+} from 'lucide-react';
 import { VehicleDialog } from '@/components/VehicleDialog';
 import { ExitConfirmationDialog } from '@/components/ExitConfirmationDialog';
 import { format } from 'date-fns';
@@ -12,7 +21,6 @@ import { useParking } from '@/contexts/ParkingContext';
 import { useAuth } from '@/contexts/AuthContext';
 
 export default function Operacional() {
-
   // Função para desfazer finalização
   const handleUndoFinish = async (vehicle: any) => {
     try {
@@ -20,7 +28,7 @@ export default function Operacional() {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
           status: 'Em andamento',
@@ -99,9 +107,7 @@ export default function Operacional() {
 
   // Removido listener: atualizações fluem pelo contexto
 
-  const filteredVehicles = vehicles.filter(v =>
-    filter === 'all' ? true : v.status === filter
-  );
+  const filteredVehicles = vehicles.filter((v) => (filter === 'all' ? true : v.status === filter));
 
   const calculateRateValue = (vehicle: any, rate: any, exitDate: Date): number => {
     const entry = new Date(`${vehicle.entryDate}T${vehicle.entryTime}`);
@@ -121,8 +127,11 @@ export default function Operacional() {
     } else if (['Semanal', 'Quinzenal', 'Mensal'].includes(rate.rateType)) {
       const contractedMinutes = (vehicle.contractedDays || 30) * 24 * 60;
       if (diffMinutes <= contractedMinutes) return rate.value;
-      const hourlyRate = rates.find(r => r.vehicleType === vehicle.vehicleType && r.rateType === 'Hora/Fração');
-      if (hourlyRate) return rate.value + Math.ceil((diffMinutes - contractedMinutes) / 60) * hourlyRate.value;
+      const hourlyRate = rates.find(
+        (r) => r.vehicleType === vehicle.vehicleType && r.rateType === 'Hora/Fração'
+      );
+      if (hourlyRate)
+        return rate.value + Math.ceil((diffMinutes - contractedMinutes) / 60) * hourlyRate.value;
       return rate.value;
     }
 
@@ -130,21 +139,21 @@ export default function Operacional() {
   };
 
   const handleFinishExit = (vehicle: any) => {
-  console.log('Clicou em finalizar saída', vehicle);
+    console.log('Clicou em finalizar saída', vehicle);
     if (!hasPermission('openCloseCash')) return;
     setExitingVehicle(vehicle);
     setExitDialogOpen(true);
   };
 
   const handleConfirmExit = async (paymentMethod: PaymentMethod, receiptData?: any) => {
-  console.log('Entrou em handleConfirmExit', exitingVehicle, token);
+    console.log('Entrou em handleConfirmExit', exitingVehicle, token);
     if (!exitingVehicle) return;
 
     const now = new Date();
     const exitDate = format(now, 'yyyy-MM-dd');
     const exitTime = format(now, 'HH:mm');
 
-    const rate = rates.find(r => r.id === exitingVehicle.rateId);
+    const rate = rates.find((r) => r.id === exitingVehicle.rateId);
     if (!rate) return;
 
     const totalValue = calculateRateValue(exitingVehicle, rate, now);
@@ -157,7 +166,7 @@ export default function Operacional() {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
           exitDate,
@@ -231,7 +240,7 @@ export default function Operacional() {
                   <span className="font-medium">Empresa:</span>
                   <span>{companyConfig?.name || 'Carregando...'}</span>
                 </div>
-                
+
                 <div className="flex items-center gap-2">
                   <Calendar className="h-4 w-4 text-muted-foreground" />
                   <span className="font-medium">Data:</span>
@@ -269,7 +278,8 @@ export default function Operacional() {
                   <div className="flex items-center gap-2 md:col-span-2">
                     <span className="font-medium">Caixa aberto por:</span>
                     <span>
-                      {cashSession.operatorName || '—'} — {format(new Date(cashSession.openedAt), "dd/MM/yyyy HH:mm", { locale: ptBR })}
+                      {cashSession.operatorName || '—'} —{' '}
+                      {format(new Date(cashSession.openedAt), 'dd/MM/yyyy HH:mm', { locale: ptBR })}
                     </span>
                   </div>
                 )}
@@ -323,11 +333,17 @@ export default function Operacional() {
                 <tr>
                   <th className="px-4 py-3 text-left text-sm font-medium text-foreground">Placa</th>
                   <th className="px-4 py-3 text-left text-sm font-medium text-foreground">Tipo</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-foreground">Entrada</th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-foreground">
+                    Entrada
+                  </th>
                   <th className="px-4 py-3 text-left text-sm font-medium text-foreground">Saída</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-foreground">Status</th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-foreground">
+                    Status
+                  </th>
                   <th className="px-4 py-3 text-left text-sm font-medium text-foreground">Valor</th>
-                  <th className="px-4 py-3 text-right text-sm font-medium text-foreground">Ações</th>
+                  <th className="px-4 py-3 text-right text-sm font-medium text-foreground">
+                    Ações
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -339,11 +355,15 @@ export default function Operacional() {
                   </tr>
                 ) : (
                   filteredVehicles.map((vehicle, index) => (
-                    <tr key={vehicle.id} className={index % 2 === 0 ? 'bg-background' : 'bg-muted/20'}>
+                    <tr
+                      key={vehicle.id}
+                      className={index % 2 === 0 ? 'bg-background' : 'bg-muted/20'}
+                    >
                       <td className="px-4 py-3 font-medium">{vehicle.plate}</td>
                       <td className="px-4 py-3">{vehicle.vehicleType}</td>
                       <td className="px-4 py-3 text-sm">
-                        {format(new Date(vehicle.entryDate), 'dd/MM/yyyy', { locale: ptBR })} {vehicle.entryTime}
+                        {format(new Date(vehicle.entryDate), 'dd/MM/yyyy', { locale: ptBR })}{' '}
+                        {vehicle.entryTime}
                       </td>
                       <td className="px-4 py-3 text-sm">
                         {vehicle.exitDate
@@ -377,7 +397,12 @@ export default function Operacional() {
                           </Button>
                         )}
                         {vehicle.status === 'Concluído' && hasPermission('openCloseCash') && (
-                          <Button size="sm" variant="outline" style={{ color: '#b45309', borderColor: '#fbbf24' }} onClick={() => handleUndoFinish(vehicle)}>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            style={{ color: '#b45309', borderColor: '#fbbf24' }}
+                            onClick={() => handleUndoFinish(vehicle)}
+                          >
                             Desfazer Finalização
                           </Button>
                         )}
@@ -402,12 +427,12 @@ export default function Operacional() {
         open={exitDialogOpen}
         onOpenChange={setExitDialogOpen}
         vehicle={exitingVehicle}
-        rate={exitingVehicle ? rates.find(r => r.id === exitingVehicle.rateId) : undefined}
+        rate={exitingVehicle ? rates.find((r) => r.id === exitingVehicle.rateId) : undefined}
         calculatedValue={
-          exitingVehicle && rates.find(r => r.id === exitingVehicle.rateId)
+          exitingVehicle && rates.find((r) => r.id === exitingVehicle.rateId)
             ? calculateRateValue(
                 exitingVehicle,
-                rates.find(r => r.id === exitingVehicle.rateId),
+                rates.find((r) => r.id === exitingVehicle.rateId),
                 new Date()
               )
             : 0

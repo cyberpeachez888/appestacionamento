@@ -3,6 +3,7 @@
 ## Error: "Unexpected error" on Relatórios Mensais page
 
 ### 🔍 Cause
+
 The `monthly_reports` table has not been created in your Supabase database yet.
 
 ---
@@ -10,11 +11,13 @@ The `monthly_reports` table has not been created in your Supabase database yet.
 ## ✅ SOLUTION: Run SQL Migration (5 minutes)
 
 ### Step 1: Open Supabase SQL Editor
+
 1. Go to **Supabase Dashboard**: https://app.supabase.com
 2. Select your project
 3. Click **"SQL Editor"** in left sidebar
 
 ### Step 2: Run the Migration
+
 1. Click **"+ New Query"**
 2. Open file: `backend/create-monthly-reports-table.sql`
 3. **Copy the entire contents**
@@ -22,13 +25,17 @@ The `monthly_reports` table has not been created in your Supabase database yet.
 5. Click **"Run"** (or press Ctrl+Enter)
 
 ### Step 3: Reload Schema Cache
+
 After the migration completes, run this command:
+
 ```sql
 NOTIFY pgrst, 'reload schema';
 ```
 
 ### Step 4: Verify Setup
+
 Run this command from your terminal:
+
 ```bash
 node backend/test-monthly-reports-setup.js
 ```
@@ -40,6 +47,7 @@ You should see: **"✨ ALL TESTS PASSED!"**
 ## 📋 What Gets Created
 
 The migration creates:
+
 - ✅ `monthly_reports` table (stores all monthly reports)
 - ✅ `archived_tickets` table (historical operational data)
 - ✅ Indexes for performance
@@ -52,6 +60,7 @@ The migration creates:
 ## 🧪 After Setup
 
 ### Test the System
+
 1. **Open app** → Navigate to **"Relatórios Mensais"**
 2. Page should load without errors
 3. You'll see: "Nenhum relatório gerado" (no reports yet)
@@ -66,20 +75,24 @@ The migration creates:
 ### Still seeing errors after migration?
 
 **Problem: "Table not found"**
+
 ```sql
 -- Run in Supabase SQL Editor:
 NOTIFY pgrst, 'reload schema';
 ```
 
 **Problem: "Permission denied"**
+
 - Check you're logged into correct Supabase project
 - Verify you have admin access to the database
 
 **Problem: "Relation already exists"**
+
 - Migration already ran successfully
 - Just reload schema cache (step 3 above)
 
 ### Verify manually in Supabase
+
 1. Go to **Table Editor**
 2. Look for `monthly_reports` table
 3. Should see all columns (id, report_month, report_year, etc.)
@@ -110,6 +123,7 @@ npm start
 ## ✅ Success Indicators
 
 After proper setup:
+
 - ✅ No errors on Relatórios Mensais page
 - ✅ Can click "Gerar Relatório Mensal" button
 - ✅ Can view generated reports

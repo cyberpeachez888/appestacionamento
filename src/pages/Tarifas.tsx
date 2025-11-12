@@ -4,7 +4,13 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Edit, Trash2, Plus, Settings } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { VehicleTypeSelect } from '@/components/VehicleTypeSelect';
@@ -17,7 +23,7 @@ export default function Tarifas() {
   const { toast } = useToast();
   const [editingId, setEditingId] = useState<string | null>(null);
   const [showAdvancedRules, setShowAdvancedRules] = useState<string | null>(null);
-  
+
   const [formData, setFormData] = useState({
     vehicleType: 'Carro' as VehicleType,
     rateType: 'Hora/Fração' as RateType,
@@ -28,7 +34,7 @@ export default function Tarifas() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     const rateData = {
       vehicleType: formData.vehicleType,
       rateType: formData.rateType,
@@ -47,10 +53,10 @@ export default function Tarifas() {
       }
       resetForm();
     } catch (error) {
-      toast({ 
+      toast({
         title: 'Erro ao salvar tarifa',
         description: 'Tente novamente',
-        variant: 'destructive'
+        variant: 'destructive',
       });
     }
   };
@@ -70,14 +76,14 @@ export default function Tarifas() {
 
   const handleDelete = async (id: string) => {
     if (!confirm('Tem certeza que deseja excluir esta tarifa?')) return;
-    
+
     try {
       await deleteRate(id);
       toast({ title: 'Tarifa excluída com sucesso' });
     } catch (error) {
-      toast({ 
+      toast({
         title: 'Erro ao excluir tarifa',
-        variant: 'destructive'
+        variant: 'destructive',
       });
     }
   };
@@ -94,7 +100,7 @@ export default function Tarifas() {
   };
 
   // Filter rates by selected vehicle type
-  const filteredRates = rates.filter(rate => rate.vehicleType === formData.vehicleType);
+  const filteredRates = rates.filter((rate) => rate.vehicleType === formData.vehicleType);
 
   const canManage = hasPermission('manageRates');
 
@@ -113,14 +119,11 @@ export default function Tarifas() {
           {/* Form Section */}
           <Card className={!canManage ? 'opacity-50 pointer-events-none select-none' : ''}>
             <CardHeader>
-              <CardTitle>
-                {editingId ? 'Editar Tarifa' : 'Adicionar Nova Tarifa'}
-              </CardTitle>
+              <CardTitle>{editingId ? 'Editar Tarifa' : 'Adicionar Nova Tarifa'}</CardTitle>
               <CardDescription>
-                {editingId 
+                {editingId
                   ? 'Atualize as informações da tarifa selecionada'
-                  : 'Preencha os campos abaixo para criar uma nova tarifa'
-                }
+                  : 'Preencha os campos abaixo para criar uma nova tarifa'}
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -129,7 +132,9 @@ export default function Tarifas() {
                   <Label>Tipo de Veículo</Label>
                   <VehicleTypeSelect
                     value={formData.vehicleType}
-                    onValueChange={(v) => setFormData({ ...formData, vehicleType: v as VehicleType })}
+                    onValueChange={(v) =>
+                      setFormData({ ...formData, vehicleType: v as VehicleType })
+                    }
                   />
                 </div>
 
@@ -212,11 +217,10 @@ export default function Tarifas() {
           {/* List Section */}
           <Card>
             <CardHeader>
-              <CardTitle>
-                Tarifas Cadastradas - {formData.vehicleType}
-              </CardTitle>
+              <CardTitle>Tarifas Cadastradas - {formData.vehicleType}</CardTitle>
               <CardDescription>
-                {filteredRates.length} {filteredRates.length === 1 ? 'tarifa cadastrada' : 'tarifas cadastradas'}
+                {filteredRates.length}{' '}
+                {filteredRates.length === 1 ? 'tarifa cadastrada' : 'tarifas cadastradas'}
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -239,7 +243,9 @@ export default function Tarifas() {
                       }`}
                     >
                       <div className="flex-1">
-                        <p className="font-medium">{rate.vehicleType} - {rate.rateType}</p>
+                        <p className="font-medium">
+                          {rate.vehicleType} - {rate.rateType}
+                        </p>
                         <p className="text-sm text-muted-foreground">
                           R$ {rate.value.toFixed(2)}/{rate.unit}
                           {rate.courtesyMinutes > 0 && ` • ${rate.courtesyMinutes}min cortesia`}
@@ -248,25 +254,25 @@ export default function Tarifas() {
                       <div className="flex gap-2">
                         {canManage && (
                           <>
-                            <Button 
-                              size="sm" 
-                              variant="ghost" 
+                            <Button
+                              size="sm"
+                              variant="ghost"
                               onClick={() => setShowAdvancedRules(rate.id)}
                               title="Regras avançadas"
                             >
                               <Settings className="h-4 w-4" />
                             </Button>
-                            <Button 
-                              size="sm" 
-                              variant="ghost" 
+                            <Button
+                              size="sm"
+                              variant="ghost"
                               onClick={() => handleEdit(rate)}
                               title="Editar tarifa"
                             >
                               <Edit className="h-4 w-4" />
                             </Button>
-                            <Button 
-                              size="sm" 
-                              variant="ghost" 
+                            <Button
+                              size="sm"
+                              variant="ghost"
                               onClick={() => handleDelete(rate.id)}
                               title="Excluir tarifa"
                               className="text-destructive hover:text-destructive"
@@ -289,14 +295,14 @@ export default function Tarifas() {
           <div className="mt-6">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-2xl font-bold">
-                Regras Avançadas - {rates.find(r => r.id === showAdvancedRules)?.rateType}
+                Regras Avançadas - {rates.find((r) => r.id === showAdvancedRules)?.rateType}
               </h2>
               <Button variant="outline" onClick={() => setShowAdvancedRules(null)}>
                 Fechar
               </Button>
             </div>
-            <PricingRulesManager 
-              rateId={showAdvancedRules} 
+            <PricingRulesManager
+              rateId={showAdvancedRules}
               onClose={() => setShowAdvancedRules(null)}
             />
           </div>

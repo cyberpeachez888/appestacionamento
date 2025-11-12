@@ -1,6 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import api from '@/lib/api';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
@@ -13,7 +19,12 @@ interface RestoreDialogProps {
   onRestored?: () => void;
 }
 
-const RestoreDialog: React.FC<RestoreDialogProps> = ({ open, onOpenChange, backupId, onRestored }) => {
+const RestoreDialog: React.FC<RestoreDialogProps> = ({
+  open,
+  onOpenChange,
+  backupId,
+  onRestored,
+}) => {
   interface BackupPreview {
     summary?: Record<string, number>;
     metadata?: {
@@ -65,8 +76,8 @@ const RestoreDialog: React.FC<RestoreDialogProps> = ({ open, onOpenChange, backu
   };
 
   const toggleTable = (table: string) => {
-    setSelectedTables(prev =>
-      prev.includes(table) ? prev.filter(t => t !== table) : [...prev, table]
+    setSelectedTables((prev) =>
+      prev.includes(table) ? prev.filter((t) => t !== table) : [...prev, table]
     );
   };
 
@@ -80,24 +91,36 @@ const RestoreDialog: React.FC<RestoreDialogProps> = ({ open, onOpenChange, backu
   const handleRestore = async () => {
     if (!backupId) return;
     if (confirmText !== 'RESTAURAR') {
-      toast({ title: 'Confirmação inválida', description: 'Digite "RESTAURAR" para confirmar', variant: 'destructive' });
+      toast({
+        title: 'Confirmação inválida',
+        description: 'Digite "RESTAURAR" para confirmar',
+        variant: 'destructive',
+      });
       return;
     }
     if (!acknowledged) {
-      toast({ title: 'Confirmação necessária', description: 'Você deve confirmar que entende o risco', variant: 'destructive' });
+      toast({
+        title: 'Confirmação necessária',
+        description: 'Você deve confirmar que entende o risco',
+        variant: 'destructive',
+      });
       return;
     }
     if (selectedTables.length === 0) {
-      toast({ title: 'Nenhuma tabela selecionada', description: 'Selecione ao menos uma tabela', variant: 'destructive' });
+      toast({
+        title: 'Nenhuma tabela selecionada',
+        description: 'Selecione ao menos uma tabela',
+        variant: 'destructive',
+      });
       return;
     }
 
     setRestoring(true);
     try {
       await api.restoreBackup(backupId, selectedTables);
-      toast({ 
-        title: 'Restauração concluída', 
-        description: `${selectedTables.length} tabela(s) restaurada(s) com sucesso` 
+      toast({
+        title: 'Restauração concluída',
+        description: `${selectedTables.length} tabela(s) restaurada(s) com sucesso`,
       });
       onOpenChange(false);
       if (onRestored) onRestored();
@@ -122,7 +145,8 @@ const RestoreDialog: React.FC<RestoreDialogProps> = ({ open, onOpenChange, backu
     receipts: 'Recibos',
   };
 
-  const allSelected = preview?.summary && selectedTables.length === Object.keys(preview.summary).length;
+  const allSelected =
+    preview?.summary && selectedTables.length === Object.keys(preview.summary).length;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -147,8 +171,9 @@ const RestoreDialog: React.FC<RestoreDialogProps> = ({ open, onOpenChange, backu
                 <div className="flex-1">
                   <h3 className="font-semibold text-red-900">⚠️ Operação Destrutiva</h3>
                   <p className="text-sm text-red-800 mt-1">
-                    A restauração irá <strong>substituir</strong> os dados atuais das tabelas selecionadas.
-                    Esta ação <strong>não pode ser desfeita</strong>. Certifique-se de ter um backup atual antes de prosseguir.
+                    A restauração irá <strong>substituir</strong> os dados atuais das tabelas
+                    selecionadas. Esta ação <strong>não pode ser desfeita</strong>. Certifique-se de
+                    ter um backup atual antes de prosseguir.
                   </p>
                 </div>
               </div>
@@ -176,7 +201,9 @@ const RestoreDialog: React.FC<RestoreDialogProps> = ({ open, onOpenChange, backu
                   {preview.metadata.checksum && (
                     <div className="col-span-2">
                       <span className="text-muted-foreground">Checksum:</span>
-                      <span className="ml-2 font-mono text-xs">{preview.metadata.checksum.substring(0, 16)}...</span>
+                      <span className="ml-2 font-mono text-xs">
+                        {preview.metadata.checksum.substring(0, 16)}...
+                      </span>
                     </div>
                   )}
                 </div>
@@ -192,32 +219,36 @@ const RestoreDialog: React.FC<RestoreDialogProps> = ({ open, onOpenChange, backu
                 </Button>
               </div>
               <div className="p-4 space-y-3 max-h-64 overflow-y-auto">
-                {preview.summary && Object.keys(preview.summary).map(table => (
-                  <label key={table} className="flex items-center justify-between p-3 hover:bg-muted/30 rounded cursor-pointer">
-                    <div className="flex items-center gap-3">
-                      <Checkbox
-                        checked={selectedTables.includes(table)}
-                        onCheckedChange={() => toggleTable(table)}
-                      />
-                      <div>
-                        <div className="font-medium">{tableLabels[table] || table}</div>
-                        <div className="text-xs text-muted-foreground">
-                          {preview.summary[table]} registro(s)
+                {preview.summary &&
+                  Object.keys(preview.summary).map((table) => (
+                    <label
+                      key={table}
+                      className="flex items-center justify-between p-3 hover:bg-muted/30 rounded cursor-pointer"
+                    >
+                      <div className="flex items-center gap-3">
+                        <Checkbox
+                          checked={selectedTables.includes(table)}
+                          onCheckedChange={() => toggleTable(table)}
+                        />
+                        <div>
+                          <div className="font-medium">{tableLabels[table] || table}</div>
+                          <div className="text-xs text-muted-foreground">
+                            {preview.summary[table]} registro(s)
+                          </div>
                         </div>
                       </div>
-                    </div>
-                    {selectedTables.includes(table) && (
-                      <CheckCircle2 className="h-4 w-4 text-green-600" />
-                    )}
-                  </label>
-                ))}
+                      {selectedTables.includes(table) && (
+                        <CheckCircle2 className="h-4 w-4 text-green-600" />
+                      )}
+                    </label>
+                  ))}
               </div>
             </div>
 
             {/* Confirmation Section */}
             <div className="space-y-4 bg-amber-50 border border-amber-200 rounded-lg p-4">
               <h3 className="font-semibold text-amber-900">Confirmação Necessária</h3>
-              
+
               <div className="space-y-3">
                 <label className="flex items-start gap-3">
                   <Checkbox
@@ -225,14 +256,15 @@ const RestoreDialog: React.FC<RestoreDialogProps> = ({ open, onOpenChange, backu
                     onCheckedChange={(checked) => setAcknowledged(Boolean(checked))}
                   />
                   <span className="text-sm text-amber-900">
-                    Eu entendo que esta operação irá <strong>substituir permanentemente</strong> os dados atuais
-                    das tabelas selecionadas e não pode ser desfeita.
+                    Eu entendo que esta operação irá <strong>substituir permanentemente</strong> os
+                    dados atuais das tabelas selecionadas e não pode ser desfeita.
                   </span>
                 </label>
 
                 <div>
                   <label className="text-sm font-medium text-amber-900 block mb-2">
-                    Digite <code className="bg-amber-100 px-2 py-1 rounded">RESTAURAR</code> para confirmar:
+                    Digite <code className="bg-amber-100 px-2 py-1 rounded">RESTAURAR</code> para
+                    confirmar:
                   </label>
                   <input
                     type="text"
@@ -254,7 +286,13 @@ const RestoreDialog: React.FC<RestoreDialogProps> = ({ open, onOpenChange, backu
           <Button
             variant="destructive"
             onClick={handleRestore}
-            disabled={!preview || restoring || confirmText !== 'RESTAURAR' || !acknowledged || selectedTables.length === 0}
+            disabled={
+              !preview ||
+              restoring ||
+              confirmText !== 'RESTAURAR' ||
+              !acknowledged ||
+              selectedTables.length === 0
+            }
           >
             {restoring ? 'Restaurando...' : 'Restaurar Backup'}
           </Button>

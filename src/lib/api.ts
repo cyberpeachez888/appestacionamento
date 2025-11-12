@@ -1,6 +1,12 @@
 // API client for backend communication
 // Handles all HTTP requests to the Node.js + Express backend
-import type { MonthlyCustomer, Rate, Vehicle, CompanyConfig, Payment } from '@/contexts/ParkingContext';
+import type {
+  MonthlyCustomer,
+  Rate,
+  Vehicle,
+  CompanyConfig,
+  Payment,
+} from '@/contexts/ParkingContext';
 
 // Lightweight user type (matches backend authController toFrontendUser)
 export interface AuthUser {
@@ -31,7 +37,7 @@ class ApiClient {
     const url = `${this.baseUrl}${endpoint}`;
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
-      ...(options?.headers as Record<string, string> || {}),
+      ...((options?.headers as Record<string, string>) || {}),
     };
     if (this.authToken) {
       headers['Authorization'] = `Bearer ${this.authToken}`;
@@ -51,7 +57,11 @@ class ApiClient {
         let message: string;
         if (typeof errField === 'string') {
           message = errField;
-        } else if (errField && typeof errField === 'object' && typeof errField.message === 'string') {
+        } else if (
+          errField &&
+          typeof errField === 'object' &&
+          typeof errField.message === 'string'
+        ) {
           message = errField.message;
         } else if (payload && typeof payload.details === 'string') {
           message = payload.details;
@@ -60,7 +70,8 @@ class ApiClient {
         } else {
           // Fallback to status text and payload stringified (truncated)
           const json = JSON.stringify(payload);
-          message = json && json.length < 200 ? json : `HTTP ${response.status}: ${response.statusText}`;
+          message =
+            json && json.length < 200 ? json : `HTTP ${response.status}: ${response.statusText}`;
         }
         if (response.status === 401) {
           throw new Error(message || 'Unauthorized');
@@ -130,10 +141,13 @@ class ApiClient {
   }
 
   async registerMonthlyPayment(customerId: string, payment: { value: number; method: string }) {
-    return this.request<{ customer: MonthlyCustomer; payment: Payment }>(`/monthlyCustomers/${customerId}/pay`, {
-      method: 'POST',
-      body: JSON.stringify(payment),
-    });
+    return this.request<{ customer: MonthlyCustomer; payment: Payment }>(
+      `/monthlyCustomers/${customerId}/pay`,
+      {
+        method: 'POST',
+        body: JSON.stringify(payment),
+      }
+    );
   }
 
   // Tickets endpoints (vehicle entry/exit)
@@ -252,8 +266,8 @@ class ApiClient {
   // Auth endpoints
   // =====================
   async login(credentials: { login: string; password: string }) {
-    return this.request<{ 
-      token: string; 
+    return this.request<{
+      token: string;
       user: AuthUser;
       mustChangePassword?: boolean;
       isFirstLogin?: boolean;
@@ -279,14 +293,30 @@ class ApiClient {
     return this.request<AuthUser[]>(`/users`);
   }
 
-  async createUser(user: { name: string; email: string; login: string; password: string; role: string; permissions?: Record<string, boolean> }) {
+  async createUser(user: {
+    name: string;
+    email: string;
+    login: string;
+    password: string;
+    role: string;
+    permissions?: Record<string, boolean>;
+  }) {
     return this.request<AuthUser>(`/users`, {
       method: 'POST',
       body: JSON.stringify(user),
     });
   }
 
-  async updateUser(id: string, patch: Partial<{ name: string; email: string; login: string; role: string; permissions: Record<string, boolean> }>) {
+  async updateUser(
+    id: string,
+    patch: Partial<{
+      name: string;
+      email: string;
+      login: string;
+      role: string;
+      permissions: Record<string, boolean>;
+    }>
+  ) {
     return this.request<AuthUser>(`/users/${id}`, {
       method: 'PUT',
       body: JSON.stringify(patch),
@@ -335,40 +365,56 @@ class ApiClient {
   }
 
   // Audit endpoints
-  async createAuditEvent(payload: { action: string; targetType?: string; targetId?: string; details?: any }) {
+  async createAuditEvent(payload: {
+    action: string;
+    targetType?: string;
+    targetId?: string;
+    details?: any;
+  }) {
     return this.request<{ id: string }>(`/audit/events`, {
       method: 'POST',
       body: JSON.stringify(payload),
     });
   }
 
-  async getAuditEvents(params?: { start?: string; end?: string; action?: string; actorId?: string }) {
+  async getAuditEvents(params?: {
+    start?: string;
+    end?: string;
+    action?: string;
+    actorId?: string;
+  }) {
     const query = new URLSearchParams();
     if (params?.start) query.append('start', params.start);
     if (params?.end) query.append('end', params.end);
     if (params?.action) query.append('action', params.action);
     if (params?.actorId) query.append('actorId', params.actorId);
     const queryString = query.toString();
-    return this.request<Array<{
-      id: string;
-      actor_id: string;
-      actor_login: string;
-      actor_name: string;
-      action: string;
-      target_type: string | null;
-      target_id: string | null;
-      details: string | null;
-      created_at: string;
-    }>>(`/audit/events${queryString ? `?${queryString}` : ''}`);
+    return this.request<
+      Array<{
+        id: string;
+        actor_id: string;
+        actor_login: string;
+        actor_name: string;
+        action: string;
+        target_type: string | null;
+        target_id: string | null;
+        details: string | null;
+        created_at: string;
+      }>
+    >(`/audit/events${queryString ? `?${queryString}` : ''}`);
   }
 
   // Backup endpoints
   async createBackup() {
-    return this.request<{ id: string; filename: string; size: number }>(`/backup`, { method: 'POST' });
+    return this.request<{ id: string; filename: string; size: number }>(`/backup`, {
+      method: 'POST',
+    });
   }
 
   async listBackups() {
-    return this.request<Array<{ id: string; filename: string; size: number; timestamp: string }>>(`/backup`);
+    return this.request<Array<{ id: string; filename: string; size: number; timestamp: string }>>(
+      `/backup`
+    );
   }
 
   async downloadBackup(id: string) {
@@ -402,14 +448,23 @@ class ApiClient {
   }
 
   async getBackupConfig() {
-    return this.request<{ enabled: boolean; schedule: string; retentionDays: number }>(`/backup-config`);
+    return this.request<{ enabled: boolean; schedule: string; retentionDays: number }>(
+      `/backup-config`
+    );
   }
 
-  async updateBackupConfig(config: { enabled?: boolean; schedule?: string; retentionDays?: number }) {
-    return this.request<{ enabled: boolean; schedule: string; retentionDays: number }>(`/backup-config`, {
-      method: 'PUT',
-      body: JSON.stringify(config),
-    });
+  async updateBackupConfig(config: {
+    enabled?: boolean;
+    schedule?: string;
+    retentionDays?: number;
+  }) {
+    return this.request<{ enabled: boolean; schedule: string; retentionDays: number }>(
+      `/backup-config`,
+      {
+        method: 'PUT',
+        body: JSON.stringify(config),
+      }
+    );
   }
 
   async triggerAutoBackup() {
@@ -421,7 +476,11 @@ class ApiClient {
   // =====================
   // Monthly Reports (Financial Cycle Closure)
   // =====================
-  async generateMonthlyReport(data?: { month?: number; year?: number; clearOperational?: boolean }) {
+  async generateMonthlyReport(data?: {
+    month?: number;
+    year?: number;
+    clearOperational?: boolean;
+  }) {
     return this.request<{
       success: boolean;
       message: string;
@@ -448,17 +507,19 @@ class ApiClient {
     if (params?.year) query.append('year', params.year.toString());
     if (params?.limit) query.append('limit', params.limit.toString());
     const queryString = query.toString();
-    return this.request<Array<{
-      id: string;
-      report_month: number;
-      report_year: number;
-      generated_at: string;
-      operator_name: string;
-      total_revenue: number;
-      avulsos_revenue: number;
-      mensalistas_revenue: number;
-      status: string;
-    }>>(`/reports/monthly${queryString ? `?${queryString}` : ''}`);
+    return this.request<
+      Array<{
+        id: string;
+        report_month: number;
+        report_year: number;
+        generated_at: string;
+        operator_name: string;
+        total_revenue: number;
+        avulsos_revenue: number;
+        mensalistas_revenue: number;
+        status: string;
+      }>
+    >(`/reports/monthly${queryString ? `?${queryString}` : ''}`);
   }
 
   async getMonthlyReportById(id: string) {

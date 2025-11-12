@@ -4,7 +4,13 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { Printer } from 'lucide-react';
 import { format } from 'date-fns';
@@ -64,12 +70,12 @@ export const PaymentDialog = ({ open, onOpenChange, customer, onSaved }: Payment
   const fetchTemplate = async () => {
     try {
       const res = await fetch('http://localhost:3000/receipt-templates/default/monthly_payment', {
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
       });
       if (res.ok) {
         const data = await res.json();
         setTemplate(data);
-        
+
         // Professional: Use explicit type for custom fields
         type CustomField = {
           name: string;
@@ -157,7 +163,10 @@ export const PaymentDialog = ({ open, onOpenChange, customer, onSaved }: Payment
 
             <div>
               <Label htmlFor="paymentMethod">Forma de Pagamento</Label>
-              <Select value={paymentMethod} onValueChange={(v) => setPaymentMethod(v as PaymentMethod)}>
+              <Select
+                value={paymentMethod}
+                onValueChange={(v) => setPaymentMethod(v as PaymentMethod)}
+              >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -200,16 +209,24 @@ export const PaymentDialog = ({ open, onOpenChange, customer, onSaved }: Payment
           </form>
         ) : (
           <div>
-            <div ref={receiptRef} className="bg-white text-black p-8 rounded-lg border-2 border-gray-300">
+            <div
+              ref={receiptRef}
+              className="bg-white text-black p-8 rounded-lg border-2 border-gray-300"
+            >
               {/* Header */}
               {template?.showCompanyName !== false && (
                 <div className="text-center mb-6">
-                  <h2 className="text-2xl font-bold" style={{ color: template?.primaryColor || '#000000' }}>
+                  <h2
+                    className="text-2xl font-bold"
+                    style={{ color: template?.primaryColor || '#000000' }}
+                  >
                     {companyConfig.name}
                   </h2>
                   {template?.showCompanyDetails !== false && (
                     <>
-                      {companyConfig.legalName && <p className="text-sm">{companyConfig.legalName}</p>}
+                      {companyConfig.legalName && (
+                        <p className="text-sm">{companyConfig.legalName}</p>
+                      )}
                       {companyConfig.cnpj && <p className="text-sm">CNPJ: {companyConfig.cnpj}</p>}
                       {companyConfig.address && <p className="text-sm">{companyConfig.address}</p>}
                       {companyConfig.phone && <p className="text-sm">Tel: {companyConfig.phone}</p>}
@@ -230,20 +247,31 @@ export const PaymentDialog = ({ open, onOpenChange, customer, onSaved }: Payment
 
               {/* Receipt Body */}
               <div className="space-y-3 mb-6">
-                <p><strong>Cliente:</strong> {customer.name}</p>
+                <p>
+                  <strong>Cliente:</strong> {customer.name}
+                </p>
                 {template?.showPlate !== false && (
-                  <p><strong>Placas:</strong> {customer.plates.join(', ')}</p>
+                  <p>
+                    <strong>Placas:</strong> {customer.plates.join(', ')}
+                  </p>
                 )}
                 {template?.showDate !== false && (
-                  <p><strong>Data do Pagamento:</strong> {format(new Date(paymentDate), 'dd/MM/yyyy', { locale: ptBR })}</p>
+                  <p>
+                    <strong>Data do Pagamento:</strong>{' '}
+                    {format(new Date(paymentDate), 'dd/MM/yyyy', { locale: ptBR })}
+                  </p>
                 )}
                 {template?.showPaymentMethod !== false && (
-                  <p><strong>Forma de Pagamento:</strong> {paymentMethod}</p>
+                  <p>
+                    <strong>Forma de Pagamento:</strong> {paymentMethod}
+                  </p>
                 )}
                 {template?.showValue !== false && (
-                  <p><strong>Valor Pago:</strong> R$ {customer.value.toFixed(2)}</p>
+                  <p>
+                    <strong>Valor Pago:</strong> R$ {customer.value.toFixed(2)}
+                  </p>
                 )}
-                
+
                 {/* Custom Fields */}
                 {template?.customFields?.map((field) => (
                   <p key={field.name}>
@@ -271,9 +299,7 @@ export const PaymentDialog = ({ open, onOpenChange, customer, onSaved }: Payment
 
               {/* Footer Text */}
               {template?.footerText && (
-                <div className="mt-4 text-center text-sm text-gray-600">
-                  {template.footerText}
-                </div>
+                <div className="mt-4 text-center text-sm text-gray-600">{template.footerText}</div>
               )}
             </div>
 

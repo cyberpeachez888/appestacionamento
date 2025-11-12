@@ -58,7 +58,7 @@ export const IntegrationsPage = () => {
 
       // Load SMTP config
       const smtpRes = await fetch('/api/integrations/configs/smtp', {
-        headers: { 'Authorization': `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${token}` },
       });
       if (smtpRes.ok) {
         const smtp = await smtpRes.json();
@@ -73,7 +73,7 @@ export const IntegrationsPage = () => {
 
       // Load SMS config
       const smsRes = await fetch('/api/integrations/configs/sms', {
-        headers: { 'Authorization': `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${token}` },
       });
       if (smsRes.ok) {
         const sms = await smsRes.json();
@@ -85,7 +85,7 @@ export const IntegrationsPage = () => {
 
       // Load WhatsApp config
       const whatsappRes = await fetch('/api/integrations/configs/whatsapp', {
-        headers: { 'Authorization': `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${token}` },
       });
       if (whatsappRes.ok) {
         const whatsapp = await whatsappRes.json();
@@ -98,7 +98,7 @@ export const IntegrationsPage = () => {
       toast({
         variant: 'destructive',
         title: 'Erro',
-        description: 'Erro ao carregar configurações'
+        description: 'Erro ao carregar configurações',
       });
     } finally {
       setLoading(false);
@@ -113,7 +113,7 @@ export const IntegrationsPage = () => {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
           enabled: smtpEnabled,
@@ -123,15 +123,15 @@ export const IntegrationsPage = () => {
             user: smtpUser,
             pass: smtpPass,
             secure: smtpSecure,
-            fromEmail: smtpFromEmail
-          }
-        })
+            fromEmail: smtpFromEmail,
+          },
+        }),
       });
 
       if (response.ok) {
         toast({
           title: 'Sucesso',
-          description: 'Configuração SMTP salva com sucesso'
+          description: 'Configuração SMTP salva com sucesso',
         });
       } else {
         throw new Error('Erro ao salvar configuração');
@@ -140,7 +140,7 @@ export const IntegrationsPage = () => {
       toast({
         variant: 'destructive',
         title: 'Erro',
-        description: 'Erro ao salvar configuração SMTP'
+        description: 'Erro ao salvar configuração SMTP',
       });
     } finally {
       setLoading(false);
@@ -155,22 +155,22 @@ export const IntegrationsPage = () => {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
           enabled: smsEnabled,
           config: {
             accountSid: twilioAccountSid,
             authToken: twilioAuthToken,
-            fromNumber: twilioFromNumber
-          }
-        })
+            fromNumber: twilioFromNumber,
+          },
+        }),
       });
 
       if (response.ok) {
         toast({
           title: 'Sucesso',
-          description: 'Configuração SMS salva com sucesso'
+          description: 'Configuração SMS salva com sucesso',
         });
       } else {
         throw new Error('Erro ao salvar configuração');
@@ -179,7 +179,7 @@ export const IntegrationsPage = () => {
       toast({
         variant: 'destructive',
         title: 'Erro',
-        description: 'Erro ao salvar configuração SMS'
+        description: 'Erro ao salvar configuração SMS',
       });
     } finally {
       setLoading(false);
@@ -194,21 +194,21 @@ export const IntegrationsPage = () => {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
           enabled: whatsappEnabled,
           config: {
             phoneNumberId: whatsappPhoneNumberId,
-            accessToken: whatsappAccessToken
-          }
-        })
+            accessToken: whatsappAccessToken,
+          },
+        }),
       });
 
       if (response.ok) {
         toast({
           title: 'Sucesso',
-          description: 'Configuração WhatsApp salva com sucesso'
+          description: 'Configuração WhatsApp salva com sucesso',
         });
       } else {
         throw new Error('Erro ao salvar configuração');
@@ -217,7 +217,7 @@ export const IntegrationsPage = () => {
       toast({
         variant: 'destructive',
         title: 'Erro',
-        description: 'Erro ao salvar configuração WhatsApp'
+        description: 'Erro ao salvar configuração WhatsApp',
       });
     } finally {
       setLoading(false);
@@ -229,7 +229,7 @@ export const IntegrationsPage = () => {
       toast({
         variant: 'destructive',
         title: 'Erro',
-        description: 'Informe um email para teste'
+        description: 'Informe um email para teste',
       });
       return;
     }
@@ -241,15 +241,15 @@ export const IntegrationsPage = () => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ to: testEmail })
+        body: JSON.stringify({ to: testEmail }),
       });
 
       if (response.ok) {
         toast({
           title: 'Email Enviado',
-          description: 'Email de teste enviado com sucesso!'
+          description: 'Email de teste enviado com sucesso!',
         });
       } else {
         const error = await response.json();
@@ -259,7 +259,7 @@ export const IntegrationsPage = () => {
       toast({
         variant: 'destructive',
         title: 'Erro',
-        description: err.message || 'Erro ao enviar email de teste'
+        description: err.message || 'Erro ao enviar email de teste',
       });
     } finally {
       setTestingEmail(false);
@@ -271,7 +271,7 @@ export const IntegrationsPage = () => {
       toast({
         variant: 'destructive',
         title: 'Erro',
-        description: 'Informe um telefone para teste'
+        description: 'Informe um telefone para teste',
       });
       return;
     }
@@ -283,15 +283,15 @@ export const IntegrationsPage = () => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ to: testPhone })
+        body: JSON.stringify({ to: testPhone }),
       });
 
       if (response.ok) {
         toast({
           title: 'SMS Enviado',
-          description: 'SMS de teste enviado com sucesso!'
+          description: 'SMS de teste enviado com sucesso!',
         });
       } else {
         const error = await response.json();
@@ -301,7 +301,7 @@ export const IntegrationsPage = () => {
       toast({
         variant: 'destructive',
         title: 'Erro',
-        description: err.message || 'Erro ao enviar SMS de teste'
+        description: err.message || 'Erro ao enviar SMS de teste',
       });
     } finally {
       setTestingSMS(false);
@@ -313,7 +313,7 @@ export const IntegrationsPage = () => {
       toast({
         variant: 'destructive',
         title: 'Erro',
-        description: 'Informe um telefone para teste'
+        description: 'Informe um telefone para teste',
       });
       return;
     }
@@ -325,15 +325,15 @@ export const IntegrationsPage = () => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ to: testPhone })
+        body: JSON.stringify({ to: testPhone }),
       });
 
       if (response.ok) {
         toast({
           title: 'WhatsApp Enviado',
-          description: 'Mensagem de teste enviada com sucesso!'
+          description: 'Mensagem de teste enviada com sucesso!',
         });
       } else {
         const error = await response.json();
@@ -343,7 +343,7 @@ export const IntegrationsPage = () => {
       toast({
         variant: 'destructive',
         title: 'Erro',
-        description: err.message || 'Erro ao enviar WhatsApp de teste'
+        description: err.message || 'Erro ao enviar WhatsApp de teste',
       });
     } finally {
       setTestingWhatsApp(false);
@@ -384,7 +384,9 @@ export const IntegrationsPage = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <CardTitle>Configuração SMTP</CardTitle>
-                  <CardDescription>Configure o servidor de email para envio de recibos e notificações</CardDescription>
+                  <CardDescription>
+                    Configure o servidor de email para envio de recibos e notificações
+                  </CardDescription>
                 </div>
                 <div className="flex items-center space-x-2">
                   <Label htmlFor="smtp-enabled">Ativo</Label>
@@ -453,17 +455,14 @@ export const IntegrationsPage = () => {
               </div>
 
               <div className="flex items-center space-x-2">
-                <Switch
-                  id="smtp-secure"
-                  checked={smtpSecure}
-                  onCheckedChange={setSmtpSecure}
-                />
+                <Switch id="smtp-secure" checked={smtpSecure} onCheckedChange={setSmtpSecure} />
                 <Label htmlFor="smtp-secure">Usar SSL/TLS</Label>
               </div>
 
               <Alert>
                 <AlertDescription className="text-sm">
-                  <strong>Gmail:</strong> Use smtp.gmail.com, porta 587, e crie uma "Senha de app" nas configurações de segurança do Google.
+                  <strong>Gmail:</strong> Use smtp.gmail.com, porta 587, e crie uma "Senha de app"
+                  nas configurações de segurança do Google.
                 </AlertDescription>
               </Alert>
 
@@ -471,7 +470,7 @@ export const IntegrationsPage = () => {
                 <Button onClick={saveSMTPConfig} disabled={loading}>
                   Salvar Configuração
                 </Button>
-                
+
                 <div className="flex gap-2 ml-auto">
                   <Input
                     placeholder="email@teste.com"
@@ -504,11 +503,7 @@ export const IntegrationsPage = () => {
                 </div>
                 <div className="flex items-center space-x-2">
                   <Label htmlFor="sms-enabled">Ativo</Label>
-                  <Switch
-                    id="sms-enabled"
-                    checked={smsEnabled}
-                    onCheckedChange={setSmsEnabled}
-                  />
+                  <Switch id="sms-enabled" checked={smsEnabled} onCheckedChange={setSmsEnabled} />
                 </div>
               </div>
             </CardHeader>
@@ -546,7 +541,15 @@ export const IntegrationsPage = () => {
 
               <Alert>
                 <AlertDescription className="text-sm">
-                  Obtenha suas credenciais no <a href="https://console.twilio.com" target="_blank" rel="noopener noreferrer" className="underline">Console Twilio</a>
+                  Obtenha suas credenciais no{' '}
+                  <a
+                    href="https://console.twilio.com"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="underline"
+                  >
+                    Console Twilio
+                  </a>
                 </AlertDescription>
               </Alert>
 
@@ -554,7 +557,7 @@ export const IntegrationsPage = () => {
                 <Button onClick={saveSMSConfig} disabled={loading}>
                   Salvar Configuração
                 </Button>
-                
+
                 <div className="flex gap-2 ml-auto">
                   <Input
                     placeholder="+5511999999999"
@@ -619,7 +622,15 @@ export const IntegrationsPage = () => {
 
               <Alert>
                 <AlertDescription className="text-sm">
-                  Configure no <a href="https://developers.facebook.com" target="_blank" rel="noopener noreferrer" className="underline">Meta for Developers</a>
+                  Configure no{' '}
+                  <a
+                    href="https://developers.facebook.com"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="underline"
+                  >
+                    Meta for Developers
+                  </a>
                 </AlertDescription>
               </Alert>
 
@@ -627,7 +638,7 @@ export const IntegrationsPage = () => {
                 <Button onClick={saveWhatsAppConfig} disabled={loading}>
                   Salvar Configuração
                 </Button>
-                
+
                 <div className="flex gap-2 ml-auto">
                   <Input
                     placeholder="+5511999999999"

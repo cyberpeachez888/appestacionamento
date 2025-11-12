@@ -4,14 +4,16 @@
 
 **Erro:** "Não foi possível carregar as regras de precificação"
 
-**Causa Raiz:** 
+**Causa Raiz:**
 O arquivo `/backend/src/routes/pricingRules.js` estava importando middlewares inexistentes:
+
 - ❌ `authenticateToken` de `authMiddleware.js` (não existe)
 - ❌ `checkPermission` de `permissionMiddleware.js` (não existe)
 
 ## ✅ CORREÇÃO APLICADA
 
 Corrigido imports para usar os middlewares corretos do sistema:
+
 - ✅ `requireAuth` de `../middleware/auth.js`
 - ✅ `requirePermission` de `../middleware/auth.js`
 
@@ -31,6 +33,7 @@ npm start
 ```
 
 **Verificação:** Deve aparecer:
+
 ```
 Backend running on http://localhost:3000
 Scheduled backup service initialized
@@ -78,6 +81,7 @@ node /workspaces/appestacionamento/backend/test-pricing-rules.js
 ```
 
 **Resultado esperado:**
+
 ```
 ✅ ALL TESTS PASSED! System is ready.
 ```
@@ -92,6 +96,7 @@ Adicionei logs detalhados no componente. Abra o **Console do Navegador** (F12) e
 ```
 
 Se houver erro, verá:
+
 ```
 ❌ Error loading pricing rules: [mensagem de erro]
 Error details: { message: ..., status: ..., rateId: ... }

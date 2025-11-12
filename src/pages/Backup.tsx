@@ -24,7 +24,9 @@ export default function Backup() {
     }
   };
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    load();
+  }, []);
 
   const create = async () => {
     setLoading(true);
@@ -34,7 +36,9 @@ export default function Backup() {
       await load();
     } catch (err: any) {
       toast({ title: 'Erro', description: err.message, variant: 'destructive' });
-    } finally { setLoading(false); }
+    } finally {
+      setLoading(false);
+    }
   };
 
   const download = async (id: string, filename: string) => {
@@ -68,10 +72,10 @@ export default function Backup() {
   };
 
   const handleRestored = async () => {
-    toast({ 
-      title: 'Dados restaurados', 
+    toast({
+      title: 'Dados restaurados',
       description: 'Recarregue a página para ver as alterações',
-      variant: 'default'
+      variant: 'default',
     });
     await load();
   };
@@ -118,7 +122,7 @@ export default function Backup() {
                   </td>
                 </tr>
               ) : (
-                backups.map(b => (
+                backups.map((b) => (
                   <tr key={b.id} className="border-t hover:bg-muted/20">
                     <td className="px-4 py-3 font-mono text-sm">{b.filename}</td>
                     <td className="px-4 py-3 text-sm">{(b.size / 1024).toFixed(1)} KB</td>
@@ -126,27 +130,27 @@ export default function Backup() {
                       {new Date(b.timestamp).toLocaleString('pt-BR')}
                     </td>
                     <td className="px-4 py-3 text-right space-x-2">
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
+                      <Button
+                        variant="outline"
+                        size="sm"
                         onClick={() => download(b.id, b.filename)}
                         title="Baixar backup"
                       >
                         <Download className="h-4 w-4 mr-1" />
                         Baixar
                       </Button>
-                      <Button 
-                        variant="default" 
-                        size="sm" 
+                      <Button
+                        variant="default"
+                        size="sm"
                         onClick={() => openRestore(b.id)}
                         title="Restaurar este backup"
                       >
                         <Upload className="h-4 w-4 mr-1" />
                         Restaurar
                       </Button>
-                      <Button 
-                        variant="destructive" 
-                        size="sm" 
+                      <Button
+                        variant="destructive"
+                        size="sm"
                         onClick={() => remove(b.id)}
                         title="Excluir backup"
                       >

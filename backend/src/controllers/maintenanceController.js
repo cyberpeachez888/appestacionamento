@@ -30,7 +30,7 @@ export default {
           target_id: t.id,
           date: t.exit_time || new Date().toISOString(),
           value: amount,
-          method: 'cash'
+          method: 'cash',
         });
         created++;
       }
@@ -38,7 +38,7 @@ export default {
     } catch (err) {
       res.status(500).json({ error: err.message || err });
     }
-  }
+  },
 };
 
 // Non-default export for seeding admin in development fallback
@@ -62,7 +62,10 @@ export async function seedAdmin(req, res) {
 
     const passwordCheck = validatePassword(password);
     if (!passwordCheck.valid) {
-      return res.status(400).json({ error: 'Senha não atende aos requisitos de segurança', errors: passwordCheck.errors });
+      return res.status(400).json({
+        error: 'Senha não atende aos requisitos de segurança',
+        errors: passwordCheck.errors,
+      });
     }
 
     const adminLogin = (login || 'admin').trim();
@@ -70,7 +73,11 @@ export async function seedAdmin(req, res) {
       return res.status(400).json({ error: 'Login obrigatório' });
     }
 
-    const { data: existing } = await supabase.from('users').select('*').eq('login', adminLogin).limit(1);
+    const { data: existing } = await supabase
+      .from('users')
+      .select('*')
+      .eq('login', adminLogin)
+      .limit(1);
     if (existing && existing.length) {
       return res.json({ status: 'exists', login: adminLogin });
     }
@@ -90,7 +97,7 @@ export async function seedAdmin(req, res) {
       is_first_login: true,
       created_at: now,
       password_changed_at: now,
-      password_expires_at: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString()
+      password_expires_at: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString(),
     };
     await supabase.from('users').insert(adminUser);
     res.json({ status: 'created', login: adminLogin });

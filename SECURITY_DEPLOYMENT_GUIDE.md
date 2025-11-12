@@ -3,9 +3,11 @@
 ## ✅ FASE 1 - SECURITY BASICS - IMPLEMENTATION COMPLETE
 
 ### Overview
+
 This guide covers the deployment of Phase 1 security enhancements to protect sensitive business data.
 
 **Features Implemented:**
+
 - ✅ Login attempt limiting (5 attempts per 15 minutes)
 - ✅ Account lockout (30 minutes after 5 failed attempts)
 - ✅ Password strength validation (8+ chars, uppercase, lowercase, digit, symbol)
@@ -27,6 +29,7 @@ npm install express-rate-limit password-validator zxcvbn
 ```
 
 **Dependencies Added:**
+
 - `express-rate-limit@7.1.5` - Rate limiting middleware
 - `password-validator@5.3.0` - Password schema validation
 - `zxcvbn@4.4.2` - Password strength estimation
@@ -40,6 +43,7 @@ Execute the SQL migration in Supabase SQL Editor:
 ```
 
 **Migration Creates:**
+
 1. **login_attempts** table
    - Tracks all login attempts (success/failure)
    - Records IP address and user agent
@@ -104,18 +108,21 @@ curl http://localhost:3000/api/auth/password-requirements
 ### 1. Login Attempt Limiting
 
 **Behavior:**
+
 - Maximum 5 failed login attempts per username
 - 15-minute rolling window
 - Account locked for 30 minutes after 5 failures
 - IP-based rate limiting: 5 requests per 15 minutes
 
 **Implementation:**
+
 - `securityService.js::logLoginAttempt()` - Records all attempts
 - `securityService.js::getFailedAttempts()` - Counts failures
 - `securityService.js::lockAccount()` - Creates lock
 - `rateLimiter.js::loginLimiter` - IP-based rate limiting
 
 **Error Messages:**
+
 - `"Credenciais inválidas. X tentativa(s) restante(s)."`
 - `"Muitas tentativas falhadas. Conta bloqueada por 30 minutos."`
 - `"Conta bloqueada. Tente novamente em X minutos."`
@@ -123,6 +130,7 @@ curl http://localhost:3000/api/auth/password-requirements
 ### 2. Password Strength Validation
 
 **Requirements:**
+
 - Minimum 8 characters
 - At least 1 uppercase letter
 - At least 1 lowercase letter
@@ -133,6 +141,7 @@ curl http://localhost:3000/api/auth/password-requirements
 - Not in weak password blacklist (26 common passwords)
 
 **Weak Password Blacklist:**
+
 ```
 password, admin, 123456, 12345678, qwerty, abc123, password123,
 admin123, letmein, welcome, monkey, 1234567890, changeme,
@@ -141,12 +150,14 @@ password1, 123456789, 12345, 1234, 111111, 1234567, dragon,
 ```
 
 **Implementation:**
+
 - `securityService.js::validatePassword()` - Main validation
 - Uses `password-validator` for schema
 - Uses `zxcvbn` for strength estimation
 - Returns validation errors and suggestions
 
 **API Endpoint:**
+
 ```
 POST /api/auth/validate-password
 Body: { "password": "YourPassword123!" }
@@ -161,11 +172,13 @@ Response: {
 ### 3. Password Reuse Prevention
 
 **Behavior:**
+
 - Checks last 3 passwords
 - Uses bcrypt for secure comparison
 - Automatic cleanup of old password history
 
 **Implementation:**
+
 - `securityService.js::isPasswordReused()` - Checks history
 - `password_history` table stores hashed passwords
 - Trigger `password_history_trigger` maintains 3-password limit
@@ -173,17 +186,20 @@ Response: {
 ### 4. Force Password Change
 
 **Triggers:**
+
 - First login (`is_first_login = true`)
 - Admin sets `must_change_password = true`
 - Password expired (>90 days since `password_changed_at`)
 
 **Flow:**
+
 1. User logs in successfully
 2. Login response includes `mustChangePassword: true`
 3. Frontend shows password change dialog
 4. User must change password before accessing system
 
 **Login Response Example:**
+
 ```json
 {
   "token": "jwt-token",
@@ -196,11 +212,13 @@ Response: {
 ### 5. Password Expiration
 
 **Policy:**
+
 - Passwords expire after 90 days
 - `password_expires_at` set on password creation/change
 - Login blocks if password expired
 
 **Implementation:**
+
 - `securityService.js::isPasswordExpired()` - Checks expiration
 - Login returns 403 with `mustChangePassword: true`
 - Frontend redirects to password change
@@ -208,12 +226,14 @@ Response: {
 ### 6. Enhanced Audit Logging
 
 **Logged Events:**
+
 - All login attempts (success/failure)
 - Account lock/unlock events
 - Password changes
 - Failed password validations
 
 **Data Captured:**
+
 - Username/login
 - IP address
 - User agent
@@ -221,6 +241,7 @@ Response: {
 - Success/failure reason
 
 **Implementation:**
+
 - `login_attempts` table stores all login events
 - Auto-cleanup after 30 days
 - Query for security analytics
@@ -242,6 +263,7 @@ Response: {
    - Can be applied to general API routes (optional)
 
 **Headers Returned:**
+
 - `RateLimit-Limit` - Request limit
 - `RateLimit-Remaining` - Remaining requests
 - `RateLimit-Reset` - Reset timestamp
@@ -315,13 +337,15 @@ curl -X POST http://localhost:3000/api/auth/change-password \
 **Objective:** Verify first login forces password change
 
 1. Create new user with SQL:
+
 ```sql
 INSERT INTO users (name, email, login, password_hash, role, is_first_login, must_change_password)
-VALUES ('Test User', 'test@example.com', 'testuser', 
+VALUES ('Test User', 'test@example.com', 'testuser',
   '$2a$10$hashedpassword', 'operator', true, true);
 ```
 
 2. Login:
+
 ```bash
 curl -X POST http://localhost:3000/api/auth/login \
   -H "Content-Type: application/json" \
@@ -329,6 +353,7 @@ curl -X POST http://localhost:3000/api/auth/login \
 ```
 
 3. Expected response:
+
 ```json
 {
   "token": "...",
@@ -345,13 +370,15 @@ curl -X POST http://localhost:3000/api/auth/login \
 **Objective:** Verify expired passwords force change
 
 1. Set password expiration date to past:
+
 ```sql
-UPDATE users 
+UPDATE users
 SET password_expires_at = NOW() - INTERVAL '1 day'
 WHERE login = 'testuser';
 ```
 
 2. Try to login:
+
 ```bash
 curl -X POST http://localhost:3000/api/auth/login \
   -H "Content-Type: application/json" \
@@ -384,7 +411,7 @@ done
 ### View Recent Login Attempts
 
 ```sql
-SELECT 
+SELECT
   login,
   ip_address,
   success,
@@ -398,7 +425,7 @@ LIMIT 50;
 ### View Locked Accounts
 
 ```sql
-SELECT 
+SELECT
   u.login,
   u.name,
   al.locked_until,
@@ -413,7 +440,7 @@ ORDER BY al.locked_until DESC;
 ### View Failed Login Statistics
 
 ```sql
-SELECT 
+SELECT
   login,
   COUNT(*) as failed_attempts,
   MAX(created_at) as last_attempt
@@ -427,12 +454,12 @@ ORDER BY failed_attempts DESC;
 ### View Password Expiration Status
 
 ```sql
-SELECT 
+SELECT
   login,
   name,
   password_changed_at,
   password_expires_at,
-  CASE 
+  CASE
     WHEN password_expires_at < NOW() THEN 'EXPIRED'
     WHEN password_expires_at < NOW() + INTERVAL '7 days' THEN 'EXPIRING SOON'
     ELSE 'VALID'
@@ -461,6 +488,7 @@ DELETE FROM account_locks WHERE user_id = 'user-id-here';
 **Cause:** Lock didn't expire or database function issue
 
 **Solution:**
+
 ```sql
 -- Check lock status
 SELECT * FROM account_locks WHERE user_id = 'user-id';
@@ -478,6 +506,7 @@ DELETE FROM account_locks WHERE user_id = 'user-id';
 
 **Solution:**
 Edit `/backend/src/services/securityService.js`:
+
 ```javascript
 // Change minimum strength score (0-4)
 if (strength.score < 2) { // Change to 1 for less strict
@@ -491,6 +520,7 @@ if (strength.score < 2) { // Change to 1 for less strict
 
 **Solution:**
 Edit `/backend/src/middleware/rateLimiter.js`:
+
 ```javascript
 // Increase max attempts or window
 export const loginLimiter = rateLimit({
@@ -506,12 +536,14 @@ export const loginLimiter = rateLimit({
 
 **Solution:**
 Edit `/backend/src/services/securityService.js`:
+
 ```javascript
 // Change expiration period
 const PASSWORD_EXPIRATION_DAYS = 180; // Change from 90 to 180
 ```
 
 Update migration SQL:
+
 ```sql
 -- Change default expiration in create-security-tables.sql
 password_expires_at = NOW() + INTERVAL '180 days'
@@ -522,9 +554,11 @@ password_expires_at = NOW() + INTERVAL '180 days'
 ## 📝 API Endpoints Reference
 
 ### POST /api/auth/login
+
 **Rate Limit:** 5 requests / 15 minutes per IP
 **Body:** `{ "login": "string", "password": "string" }`
 **Response:**
+
 ```json
 {
   "token": "jwt-token",
@@ -535,9 +569,11 @@ password_expires_at = NOW() + INTERVAL '180 days'
 ```
 
 ### POST /api/auth/validate-password
+
 **Auth Required:** Yes
 **Body:** `{ "password": "string" }`
 **Response:**
+
 ```json
 {
   "valid": true/false,
@@ -548,10 +584,12 @@ password_expires_at = NOW() + INTERVAL '180 days'
 ```
 
 ### POST /api/auth/change-password
+
 **Auth Required:** Yes
 **Rate Limit:** 3 requests / hour per IP
 **Body:** `{ "currentPassword": "string", "newPassword": "string" }`
 **Response:**
+
 ```json
 {
   "message": "Senha alterada com sucesso",
@@ -560,8 +598,10 @@ password_expires_at = NOW() + INTERVAL '180 days'
 ```
 
 ### GET /api/auth/password-requirements
+
 **Auth Required:** No
 **Response:**
+
 ```json
 {
   "minLength": 8,
@@ -581,16 +621,19 @@ password_expires_at = NOW() + INTERVAL '180 days'
 ## 🎯 Next Steps (Future Phases)
 
 ### Phase 2: Session Management (4h)
+
 - Inactivity timeout (30 minutes)
 - Auto-logout on browser close
 - Session refresh mechanism
 
 ### Phase 3: Two-Factor Authentication (8h)
+
 - SMS/Email OTP
 - TOTP (Google Authenticator)
 - Backup codes
 
 ### Phase 4: IP Whitelist/Blacklist (4h)
+
 - Admin IP whitelist
 - Suspicious IP blacklist
 - Geolocation blocking
@@ -621,6 +664,7 @@ Before deploying to production:
 ## 📞 Support
 
 For issues or questions:
+
 - Check troubleshooting section above
 - Review `login_attempts` table for detailed logs
 - Check backend logs: `tail -f /tmp/backend.log`

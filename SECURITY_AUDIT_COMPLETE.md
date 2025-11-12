@@ -5,12 +5,15 @@
 ### ✅ O QUE JÁ EXISTE
 
 #### 1. **Autenticação JWT Básica** ✅
+
 **Localização:**
+
 - Backend: `/backend/src/controllers/authController.js`
 - Middleware: `/backend/src/middleware/auth.js`
 - Frontend: `/src/contexts/AuthContext.tsx`
 
 **Funcionalidades Implementadas:**
+
 - ✅ Login com usuário/senha
 - ✅ Hash de senha com bcrypt
 - ✅ Token JWT (12h de expiração)
@@ -19,6 +22,7 @@
 - ✅ Auto-attach do token nas requisições
 
 **Estrutura Atual:**
+
 ```javascript
 // Token JWT contém:
 {
@@ -34,9 +38,11 @@
 ---
 
 #### 2. **RBAC (Role-Based Access Control)** ✅
+
 **Localização:** `/backend/src/middleware/auth.js`
 
 **Funcionalidades Implementadas:**
+
 - ✅ Roles: `admin` e `operator`
 - ✅ Permissions granulares:
   - `openCloseCash` - Abrir/fechar caixa e operações
@@ -49,6 +55,7 @@
   - `manageBackups` - Backups do sistema
 
 **Middlewares:**
+
 ```javascript
 - requireAuth() → Valida token JWT
 - requireAdmin() → Apenas admin
@@ -59,9 +66,11 @@
 ---
 
 #### 3. **Frontend Protection** ✅
+
 **Localização:** `/src/App.tsx`, `/src/contexts/AuthContext.tsx`
 
 **Funcionalidades Implementadas:**
+
 - ✅ Component `<Protected>` para rotas protegidas
 - ✅ Verificação de permissões no AuthContext
 - ✅ Redirect automático para `/login` se não autenticado
@@ -71,15 +80,18 @@
 ---
 
 #### 4. **Audit Logging** ✅ (Parcial)
+
 **Localização:** `/backend/src/controllers/auditController.js`
 
 **Funcionalidades Implementadas:**
+
 - ✅ Tabela `user_events` para logs
 - ✅ Registro de ações: create, update, delete
 - ✅ Logs de backup, usuários, tickets, payments
 - ✅ Campos: actor_id, actor_name, action, target_type, target_id, details
 
 **Limitações:**
+
 - ❌ Não loga tentativas de login falhadas
 - ❌ Não loga mudanças de permissão
 - ❌ Não detecta acessos suspeitos
@@ -91,6 +103,7 @@
 ### 1. ❌ **Two-Factor Authentication (2FA)**
 
 **O que precisa:**
+
 - ❌ TOTP (Time-based One-Time Password) com Google Authenticator/Authy
 - ❌ QR Code para setup inicial
 - ❌ Backup codes (recovery codes)
@@ -101,6 +114,7 @@
 **Impacto:** Atualmente qualquer um com usuário/senha pode acessar. Sem segunda camada de segurança.
 
 **Tabelas necessárias:**
+
 ```sql
 CREATE TABLE two_factor_auth (
   user_id UUID PRIMARY KEY REFERENCES users(id),
@@ -117,6 +131,7 @@ CREATE TABLE two_factor_auth (
 ### 2. ❌ **Session Timeout & Auto-Logout**
 
 **O que precisa:**
+
 - ❌ Timeout configurável (padrão: 30 minutos de inatividade)
 - ❌ Auto-logout após período de inatividade
 - ❌ Warning antes de expirar ("Sessão expirando em 2 minutos...")
@@ -126,6 +141,7 @@ CREATE TABLE two_factor_auth (
 **Impacto:** Token dura 12h fixas. Se alguém deixar PC aberto, acesso permanece por 12h.
 
 **Implementação necessária:**
+
 ```typescript
 // Frontend: Detect user activity
 useEffect(() => {
@@ -148,6 +164,7 @@ useEffect(() => {
 ### 3. ❌ **Login Attempt Limits & Account Lockout**
 
 **O que precisa:**
+
 - ❌ Rate limiting: máx 5 tentativas em 15 minutos
 - ❌ Bloqueio temporário após N falhas (ex: 30 minutos)
 - ❌ Notificação de bloqueio ao admin
@@ -158,6 +175,7 @@ useEffect(() => {
 **Impacto:** Atualmente permite tentativas ilimitadas de brute-force.
 
 **Tabela necessária:**
+
 ```sql
 CREATE TABLE login_attempts (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -182,6 +200,7 @@ CREATE TABLE account_locks (
 ### 4. ❌ **Password Strength Requirements**
 
 **O que precisa:**
+
 - ❌ Validação de força de senha:
   - Mínimo 8 caracteres
   - Pelo menos 1 maiúscula
@@ -195,6 +214,7 @@ CREATE TABLE account_locks (
 **Impacto:** Atualmente aceita qualquer senha, mesmo "123".
 
 **Tabela necessária:**
+
 ```sql
 CREATE TABLE password_history (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -203,7 +223,7 @@ CREATE TABLE password_history (
   created_at TIMESTAMP DEFAULT NOW()
 );
 
-ALTER TABLE users 
+ALTER TABLE users
 ADD COLUMN password_changed_at TIMESTAMP DEFAULT NOW(),
 ADD COLUMN password_expires_at TIMESTAMP;
 ```
@@ -213,6 +233,7 @@ ADD COLUMN password_expires_at TIMESTAMP;
 ### 5. ❌ **Force Password Change on First Login**
 
 **O que precisa:**
+
 - ❌ Flag `must_change_password` no usuário
 - ❌ Tela de mudança obrigatória após primeiro login
 - ❌ Não permitir acesso ao sistema até trocar senha
@@ -221,8 +242,9 @@ ADD COLUMN password_expires_at TIMESTAMP;
 **Impacto:** Usuários novos começam com senha padrão (inseguro).
 
 **Alteração necessária:**
+
 ```sql
-ALTER TABLE users 
+ALTER TABLE users
 ADD COLUMN must_change_password BOOLEAN DEFAULT FALSE,
 ADD COLUMN is_first_login BOOLEAN DEFAULT TRUE;
 ```
@@ -232,6 +254,7 @@ ADD COLUMN is_first_login BOOLEAN DEFAULT TRUE;
 ### 6. ❌ **IP Whitelist/Blacklist**
 
 **O que precisa:**
+
 - ❌ Configuração de IPs permitidos (whitelist)
 - ❌ Bloqueio de IPs suspeitos (blacklist)
 - ❌ Detecção automática de IPs com muitas falhas
@@ -241,6 +264,7 @@ ADD COLUMN is_first_login BOOLEAN DEFAULT TRUE;
 **Impacto:** Qualquer IP pode tentar acessar. Sem proteção contra ataques externos.
 
 **Tabela necessária:**
+
 ```sql
 CREATE TABLE ip_access_control (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -260,6 +284,7 @@ CREATE TABLE ip_access_control (
 **O que já existe:** Audit básico de CRUD operations
 
 **O que falta:**
+
 - ❌ Log de tentativas de login (sucesso e falha)
 - ❌ Log de mudanças de senha
 - ❌ Log de mudanças de permissões
@@ -268,36 +293,37 @@ CREATE TABLE ip_access_control (
 - ❌ Dashboard de segurança para admin
 
 **Eventos adicionais necessários:**
+
 ```javascript
 // Novos tipos de eventos:
-- 'auth.login.success'
-- 'auth.login.failed'
-- 'auth.logout'
-- 'auth.token.expired'
-- 'auth.password.changed'
-- 'auth.password.reset'
-- 'auth.2fa.enabled'
-- 'auth.2fa.disabled'
-- 'auth.2fa.verified'
-- 'auth.2fa.failed'
-- 'security.ip.blocked'
-- 'security.account.locked'
-- 'security.permission.changed'
+-'auth.login.success' -
+  'auth.login.failed' -
+  'auth.logout' -
+  'auth.token.expired' -
+  'auth.password.changed' -
+  'auth.password.reset' -
+  'auth.2fa.enabled' -
+  'auth.2fa.disabled' -
+  'auth.2fa.verified' -
+  'auth.2fa.failed' -
+  'security.ip.blocked' -
+  'security.account.locked' -
+  'security.permission.changed';
 ```
 
 ---
 
 ## 📋 MATRIZ DE PRIORIDADES
 
-| Funcionalidade | Complexidade | Impacto Segurança | Prioridade | Estimativa |
-|----------------|--------------|-------------------|------------|------------|
-| **Login Attempt Limits** | 🟡 Média | 🔴 Crítico | 🔴 ALTA | 4h |
-| **Password Strength** | 🟢 Baixa | 🔴 Crítico | 🔴 ALTA | 2h |
-| **Force Password Change** | 🟢 Baixa | 🟡 Alto | 🟠 MÉDIA | 2h |
-| **Session Timeout** | 🟡 Média | 🟡 Alto | 🟠 MÉDIA | 4h |
-| **Enhanced Audit Log** | 🟢 Baixa | 🟡 Alto | 🟠 MÉDIA | 3h |
-| **Two-Factor Auth (2FA)** | 🔴 Alta | 🟡 Alto | 🟠 MÉDIA | 8h |
-| **IP Whitelist/Blacklist** | 🟡 Média | 🟢 Médio | 🟢 BAIXA | 4h |
+| Funcionalidade             | Complexidade | Impacto Segurança | Prioridade | Estimativa |
+| -------------------------- | ------------ | ----------------- | ---------- | ---------- |
+| **Login Attempt Limits**   | 🟡 Média     | 🔴 Crítico        | 🔴 ALTA    | 4h         |
+| **Password Strength**      | 🟢 Baixa     | 🔴 Crítico        | 🔴 ALTA    | 2h         |
+| **Force Password Change**  | 🟢 Baixa     | 🟡 Alto           | 🟠 MÉDIA   | 2h         |
+| **Session Timeout**        | 🟡 Média     | 🟡 Alto           | 🟠 MÉDIA   | 4h         |
+| **Enhanced Audit Log**     | 🟢 Baixa     | 🟡 Alto           | 🟠 MÉDIA   | 3h         |
+| **Two-Factor Auth (2FA)**  | 🔴 Alta      | 🟡 Alto           | 🟠 MÉDIA   | 8h         |
+| **IP Whitelist/Blacklist** | 🟡 Média     | 🟢 Médio          | 🟢 BAIXA   | 4h         |
 
 **Total Estimado:** ~27 horas de desenvolvimento
 
@@ -310,12 +336,14 @@ CREATE TABLE ip_access_control (
 **Por quê:** Proteção imediata contra ataques mais comuns
 
 **Entregas:**
+
 1. Login attempt limits (rate limiting + account lockout)
 2. Password strength requirements
 3. Force password change on first login
 4. Enhanced audit logging (login attempts)
 
 **Benefícios:**
+
 - ✅ Previne brute-force attacks
 - ✅ Força senhas fortes
 - ✅ Rastreamento completo de acessos
@@ -328,12 +356,14 @@ CREATE TABLE ip_access_control (
 **Por quê:** Previne sessões abandonadas e vazamento de acesso
 
 **Entregas:**
+
 1. Session timeout configurável
 2. Auto-logout por inatividade
 3. Warning de expiração
 4. Logout de todas as sessões (force logout global)
 
 **Benefícios:**
+
 - ✅ Reduz janela de vulnerabilidade
 - ✅ Logout automático em PCs públicos
 - ✅ Controle de sessões ativas
@@ -345,12 +375,14 @@ CREATE TABLE ip_access_control (
 **Por quê:** Camada extra de proteção para contas sensíveis
 
 **Entregas:**
+
 1. Setup de TOTP com QR code
 2. Verificação de código na login
 3. Backup codes para recuperação
 4. Interface de gerenciamento de 2FA
 
 **Benefícios:**
+
 - ✅ Proteção mesmo com senha vazada
 - ✅ Compliance com normas de segurança
 - ✅ Opção premium para clientes enterprise
@@ -362,12 +394,14 @@ CREATE TABLE ip_access_control (
 **Por quê:** Restrição geográfica e bloqueio de ataques
 
 **Entregas:**
+
 1. Whitelist de IPs confiáveis
 2. Blacklist automática de IPs suspeitos
 3. Interface de gerenciamento
 4. Logs de bloqueios
 
 **Benefícios:**
+
 - ✅ Acesso restrito por localização
 - ✅ Bloqueio automático de atacantes
 - ✅ Menor superfície de ataque
@@ -376,30 +410,33 @@ CREATE TABLE ip_access_control (
 
 ## 📊 SCORE DE SEGURANÇA ATUAL
 
-| Categoria | Score Atual | Score Meta | Gap |
-|-----------|-------------|------------|-----|
-| Autenticação | 60% | 95% | ❌ 35% |
-| Autorização | 85% | 95% | ⚠️ 10% |
-| Auditoria | 50% | 90% | ❌ 40% |
-| Proteção de Conta | 30% | 90% | 🔴 60% |
-| Session Management | 40% | 85% | ❌ 45% |
-| **TOTAL** | **53%** | **91%** | **🔴 38%** |
+| Categoria          | Score Atual | Score Meta | Gap        |
+| ------------------ | ----------- | ---------- | ---------- |
+| Autenticação       | 60%         | 95%        | ❌ 35%     |
+| Autorização        | 85%         | 95%        | ⚠️ 10%     |
+| Auditoria          | 50%         | 90%        | ❌ 40%     |
+| Proteção de Conta  | 30%         | 90%        | 🔴 60%     |
+| Session Management | 40%         | 85%        | ❌ 45%     |
+| **TOTAL**          | **53%**     | **91%**    | **🔴 38%** |
 
 ---
 
 ## 🚦 RISCOS ATUAIS
 
 ### 🔴 **CRÍTICO**
+
 1. **Brute-force attacks** - Sem limite de tentativas
 2. **Senhas fracas** - Aceita "123", "admin", etc
 3. **Sessões eternas** - Token de 12h sem inatividade check
 
 ### 🟡 **ALTO**
+
 4. **Sem 2FA** - Apenas senha como barreira
 5. **Primeiro login inseguro** - Senha padrão não obriga troca
 6. **Logs incompletos** - Não rastreia falhas de login
 
 ### 🟢 **MÉDIO**
+
 7. **Sem controle de IP** - Qualquer origem pode tentar
 8. **Sem expiração de senha** - Mesma senha por anos
 
@@ -408,19 +445,23 @@ CREATE TABLE ip_access_control (
 ## 🛠️ TECNOLOGIAS RECOMENDADAS
 
 ### Para 2FA:
+
 - `speakeasy` - TOTP generation/verification
 - `qrcode` - QR code generation
 - `otpauth-url` - Standard TOTP URI
 
 ### Para Rate Limiting:
+
 - `express-rate-limit` - Request rate limiting
 - `express-slow-down` - Gradual slowdown
 
 ### Para Password Validation:
+
 - `zxcvbn` - Password strength estimation
 - `password-validator` - Customizable validation
 
 ### Para Session Management:
+
 - `express-session` - Session middleware
 - `connect-redis` - Session store (opcional)
 
@@ -429,6 +470,7 @@ CREATE TABLE ip_access_control (
 ## 📈 IMPACTO ESPERADO
 
 Após implementação completa:
+
 - ✅ Redução de 95% em tentativas de brute-force
 - ✅ 100% de senhas fortes obrigatórias
 - ✅ Rastreamento completo de 100% das ações de segurança

@@ -15,7 +15,7 @@ export default {
   /**
    * Generate Monthly Report
    * POST /api/reports/monthly
-   * 
+   *
    * Body: {
    *   month: number,     // 1-12 (optional, defaults to previous month)
    *   year: number,      // e.g., 2025 (optional, defaults to current year)
@@ -48,14 +48,16 @@ export default {
         .maybeSingle();
 
       if (checkError && checkError.code !== 'PGRST116') {
-        return res.status(500).json({ error: 'Error checking existing reports', details: checkError.message });
+        return res
+          .status(500)
+          .json({ error: 'Error checking existing reports', details: checkError.message });
       }
 
       if (existingReport) {
         return res.status(409).json({
           error: 'Report already exists',
           message: `Um relatório para ${reportMonth}/${reportYear} já foi gerado em ${new Date(existingReport.generated_at).toLocaleString('pt-BR')}.`,
-          existingReportId: existingReport.id
+          existingReportId: existingReport.id,
         });
       }
 
@@ -87,37 +89,39 @@ export default {
         .order('date', { ascending: true });
 
       if (paymentsError) {
-        return res.status(500).json({ error: 'Error fetching payments', details: paymentsError.message });
+        return res
+          .status(500)
+          .json({ error: 'Error fetching payments', details: paymentsError.message });
       }
 
       console.log(`💰 Found ${payments?.length || 0} payments in period`);
 
       // === STEP 3: Calculate Financial Summary ===
       const totalRevenue = payments.reduce((sum, p) => sum + (Number(p.value) || 0), 0);
-      
+
       const avulsosRevenue = payments
-        .filter(p => p.target_type === 'ticket')
+        .filter((p) => p.target_type === 'ticket')
         .reduce((sum, p) => sum + (Number(p.value) || 0), 0);
-      
+
       const mensalistasRevenue = payments
-        .filter(p => p.target_type === 'monthly_customer')
+        .filter((p) => p.target_type === 'monthly_customer')
         .reduce((sum, p) => sum + (Number(p.value) || 0), 0);
 
       // Payment methods breakdown
       const cashTotal = payments
-        .filter(p => p.method === 'cash' || p.method === 'Dinheiro')
+        .filter((p) => p.method === 'cash' || p.method === 'Dinheiro')
         .reduce((sum, p) => sum + (Number(p.value) || 0), 0);
-      
+
       const pixTotal = payments
-        .filter(p => p.method === 'pix' || p.method === 'Pix')
+        .filter((p) => p.method === 'pix' || p.method === 'Pix')
         .reduce((sum, p) => sum + (Number(p.value) || 0), 0);
-      
+
       const debitCardTotal = payments
-        .filter(p => p.method === 'debit_card' || p.method === 'Cartão Débito')
+        .filter((p) => p.method === 'debit_card' || p.method === 'Cartão Débito')
         .reduce((sum, p) => sum + (Number(p.value) || 0), 0);
-      
+
       const creditCardTotal = payments
-        .filter(p => p.method === 'credit_card' || p.method === 'Cartão Crédito')
+        .filter((p) => p.method === 'credit_card' || p.method === 'Cartão Crédito')
         .reduce((sum, p) => sum + (Number(p.value) || 0), 0);
 
       // === STEP 4: Fetch Operational Data ===
@@ -136,7 +140,7 @@ export default {
       console.log(`🎫 Found ${tickets?.length || 0} tickets in period`);
 
       const totalTickets = tickets?.length || 0;
-      const ticketsClosed = tickets?.filter(t => t.status === 'closed').length || 0;
+      const ticketsClosed = tickets?.filter((t) => t.status === 'closed').length || 0;
 
       // Monthly customers snapshot
       const { data: monthlyCustomers, error: customersError } = await supabase
@@ -148,7 +152,9 @@ export default {
       }
 
       const monthlyCustomersCount = monthlyCustomers?.length || 0;
-      const monthlyPaymentsCount = payments.filter(p => p.target_type === 'monthly_customer').length;
+      const monthlyPaymentsCount = payments.filter(
+        (p) => p.target_type === 'monthly_customer'
+      ).length;
 
       // === STEP 5: Build Comprehensive Report JSON ===
       const reportJson = {
@@ -156,19 +162,19 @@ export default {
           month: reportMonth,
           year: reportYear,
           startDate,
-          endDate
+          endDate,
         },
         company: {
           name: companyConfig?.name || 'Estacionamento',
           legalName: companyConfig?.legal_name || '',
           cnpj: companyConfig?.cnpj || '',
           address: companyConfig?.address || '',
-          phone: companyConfig?.phone || ''
+          phone: companyConfig?.phone || '',
         },
         operator: {
           id: user.id,
           name: user.name,
-          login: user.login
+          login: user.login,
         },
         financial: {
           totalRevenue,
@@ -178,16 +184,16 @@ export default {
             cash: cashTotal,
             pix: pixTotal,
             debitCard: debitCardTotal,
-            creditCard: creditCardTotal
-          }
+            creditCard: creditCardTotal,
+          },
         },
         operational: {
           totalTickets,
           ticketsClosed,
           monthlyCustomersCount,
-          monthlyPaymentsCount
+          monthlyPaymentsCount,
         },
-        generatedAt: new Date().toISOString()
+        generatedAt: new Date().toISOString(),
       };
 
       // === STEP 6: Create Monthly Report Record ===
@@ -218,7 +224,7 @@ export default {
         payments_data: payments || [],
         monthly_customers_data: monthlyCustomers || [],
         report_json: reportJson,
-        status: 'completed'
+        status: 'completed',
       };
 
       const { data: savedReport, error: saveError } = await supabase
@@ -233,7 +239,7 @@ export default {
 
       // === STEP 7: Archive Tickets to Archive Table (Optional) ===
       if (tickets && tickets.length > 0) {
-        const archivedTickets = tickets.map(t => ({
+        const archivedTickets = tickets.map((t) => ({
           id: uuid(),
           report_id: reportId,
           original_ticket_id: t.id,
@@ -244,7 +250,7 @@ export default {
           duration_minutes: t.duration_minutes,
           amount: t.amount,
           status: t.status,
-          metadata: t.metadata
+          metadata: t.metadata,
         }));
 
         const { error: archiveError } = await supabase
@@ -264,8 +270,8 @@ export default {
       if (clearOperational) {
         // Clear tickets for the period
         if (tickets && tickets.length > 0) {
-          const ticketIds = tickets.map(t => t.id);
-          
+          const ticketIds = tickets.map((t) => t.id);
+
           const { error: deleteTicketsError } = await supabase
             .from('tickets')
             .delete()
@@ -281,9 +287,9 @@ export default {
         // Clear payments for the period (avulsos only - don't clear monthly customer payments)
         if (payments && payments.length > 0) {
           const paymentIds = payments
-            .filter(p => p.target_type !== 'monthly_customer') // Keep monthly customer payments
-            .map(p => p.id);
-          
+            .filter((p) => p.target_type !== 'monthly_customer') // Keep monthly customer payments
+            .map((p) => p.id);
+
           if (paymentIds.length > 0) {
             const { error: deletePaymentsError } = await supabase
               .from('payments')
@@ -309,8 +315,8 @@ export default {
           period: `${reportMonth}/${reportYear}`,
           totalRevenue,
           ticketsCleared: clearedTickets,
-          paymentsCleared: clearedPayments
-        }
+          paymentsCleared: clearedPayments,
+        },
       });
 
       // === STEP 10: Return Success Response ===
@@ -329,10 +335,9 @@ export default {
           operationalCleared: clearOperational,
           clearedTickets,
           clearedPayments,
-          generatedAt: savedReport.generated_at
-        }
+          generatedAt: savedReport.generated_at,
+        },
       });
-
     } catch (err) {
       console.error('Error generating monthly report:', err);
       res.status(500).json({ error: 'Internal server error', details: err.message });
@@ -342,7 +347,7 @@ export default {
   /**
    * List Monthly Reports
    * GET /api/reports/monthly
-   * 
+   *
    * Query params:
    * - year: number (optional, filter by year)
    * - limit: number (optional, default 12)
@@ -353,7 +358,9 @@ export default {
 
       let query = supabase
         .from('monthly_reports')
-        .select('id, report_month, report_year, generated_at, operator_name, total_revenue, avulsos_revenue, mensalistas_revenue, status')
+        .select(
+          'id, report_month, report_year, generated_at, operator_name, total_revenue, avulsos_revenue, mensalistas_revenue, status'
+        )
         .order('report_year', { ascending: false })
         .order('report_month', { ascending: false })
         .limit(Number(limit));
@@ -417,10 +424,7 @@ export default {
         return res.status(403).json({ error: 'Admin permission required' });
       }
 
-      const { error } = await supabase
-        .from('monthly_reports')
-        .delete()
-        .eq('id', id);
+      const { error } = await supabase.from('monthly_reports').delete().eq('id', id);
 
       if (error) {
         return res.status(500).json({ error: 'Error deleting report', details: error.message });
@@ -430,7 +434,7 @@ export default {
         actor: user,
         action: 'monthlyReport.delete',
         targetType: 'monthly_report',
-        targetId: id
+        targetId: id,
       });
 
       res.status(204).send();
@@ -438,5 +442,5 @@ export default {
       console.error('Error deleting monthly report:', err);
       res.status(500).json({ error: 'Internal server error', details: err.message });
     }
-  }
+  },
 };

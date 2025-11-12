@@ -15,6 +15,7 @@
 **Problema:** Havia dois `useEffect` separados que podiam causar race condition. O token era setado em um efeito, mas o bootstrap rodava em outro, possivelmente antes do token estar configurado no API client.
 
 **Solução:**
+
 ```typescript
 // ANTES: Dois useEffect separados
 useEffect(() => {
@@ -33,7 +34,7 @@ useEffect(() => {
   const bootstrap = async () => {
     setLoading(true);
     api.setAuthToken(token); // ← Configurar token ANTES de tentar getCurrentUser
-    
+
     try {
       if (token) {
         const me = await api.getCurrentUser();
@@ -64,6 +65,7 @@ useEffect(() => {
 **Problema:** Quando a migração SQL não foi executada, o endpoint `/backup-config` retorna 404, fazendo o componente mostrar erro toast e possivelmente quebrar a renderização da aba.
 
 **Solução:**
+
 ```typescript
 // ANTES: Mostrava toast de erro para qualquer falha
 const loadConfig = async () => {
@@ -72,7 +74,11 @@ const loadConfig = async () => {
     const data = await api.getBackupConfig();
     setConfig(data);
   } catch (err: any) {
-    toast({ title: 'Erro ao carregar configuração', description: err.message, variant: 'destructive' });
+    toast({
+      title: 'Erro ao carregar configuração',
+      description: err.message,
+      variant: 'destructive',
+    });
   } finally {
     setLoading(false);
   }
@@ -88,7 +94,11 @@ const loadConfig = async () => {
     console.error('Erro ao carregar configuração de backup:', err);
     // Don't show error toast if it's just missing config (404) - use defaults
     if (!err.message?.includes('404') && !err.message?.includes('Not Found')) {
-      toast({ title: 'Erro ao carregar configuração', description: err.message, variant: 'destructive' });
+      toast({
+        title: 'Erro ao carregar configuração',
+        description: err.message,
+        variant: 'destructive',
+      });
     }
     // Keep default config state (enabled: false, schedule: '0 2 * * *', retentionDays: 30)
   } finally {
@@ -106,6 +116,7 @@ const loadConfig = async () => {
 **Problema:** Se a API falhar ao carregar tipos de veículos, o select fica vazio, impossibilitando criar/editar tarifas.
 
 **Solução:**
+
 ```typescript
 // ANTES: Apenas logava erro no console
 const fetchVehicleTypes = async () => {
@@ -147,6 +158,7 @@ const fetchVehicleTypes = async () => {
 ## 🧪 Como Testar as Correções
 
 ### Teste 1: Autenticação
+
 1. Abra o DevTools (F12) > Application > Storage
 2. Clique em "Clear site data" para limpar localStorage/sessionStorage
 3. Recarregue a página (F5)
@@ -155,16 +167,18 @@ const fetchVehicleTypes = async () => {
 6. ✅ Deve autenticar e redirecionar para dashboard
 
 ### Teste 2: Aba de Backup
+
 1. Login como admin
 2. Vá em "Configurações"
 3. Clique na aba "Backups Automáticos" (terceira aba)
 4. ✅ A aba deve abrir SEM erros (mesmo que a migração SQL não tenha sido executada)
 5. ✅ Deve mostrar configuração padrão:
    - Backup Automático: Desabilitado
-   - Schedule: 0 2 * * *
+   - Schedule: 0 2 \* \* \*
    - Retenção: 30 dias
 
 ### Teste 3: Select de Veículos
+
 1. Vá para página "Tarifas"
 2. Olhe o campo "Tipo de Veículo"
 3. Clique no select
@@ -190,22 +204,24 @@ location.reload();
 // Testar endpoint de tipos de veículos
 fetch('/api/vehicleTypes', {
   headers: {
-    'Authorization': 'Bearer ' + (localStorage.getItem('auth:token') || sessionStorage.getItem('auth:token'))
-  }
+    Authorization:
+      'Bearer ' + (localStorage.getItem('auth:token') || sessionStorage.getItem('auth:token')),
+  },
 })
-.then(r => r.json())
-.then(data => console.log('Vehicle types:', data))
-.catch(err => console.error('Error:', err));
+  .then((r) => r.json())
+  .then((data) => console.log('Vehicle types:', data))
+  .catch((err) => console.error('Error:', err));
 
 // Testar endpoint de backup config
 fetch('/api/backup-config', {
   headers: {
-    'Authorization': 'Bearer ' + (localStorage.getItem('auth:token') || sessionStorage.getItem('auth:token'))
-  }
+    Authorization:
+      'Bearer ' + (localStorage.getItem('auth:token') || sessionStorage.getItem('auth:token')),
+  },
 })
-.then(r => r.json())
-.then(data => console.log('Backup config:', data))
-.catch(err => console.error('Error:', err));
+  .then((r) => r.json())
+  .then((data) => console.log('Backup config:', data))
+  .catch((err) => console.error('Error:', err));
 ```
 
 ---
@@ -217,11 +233,12 @@ fetch('/api/backup-config', {
    - OU: Ctrl+Shift+Delete > Limpar dados de navegação
 
 2. **Reiniciar servidores:**
+
    ```bash
    # Parar processos existentes
    pkill -f "node.*server.js"
    pkill -f "vite"
-   
+
    # Iniciar novamente
    Terminal 1: cd backend && npm start
    Terminal 2: npm run dev
@@ -232,13 +249,14 @@ fetch('/api/backup-config', {
    - Executar `/backend/add-manageBackups-permission.sql` no Supabase
 
 4. **Verificar dados no banco:**
+
    ```sql
    -- Verificar se tipos de veículos existem
    SELECT * FROM vehicle_types;
-   
+
    -- Verificar se colunas de backup existem
-   SELECT column_name FROM information_schema.columns 
-   WHERE table_name = 'company_config' 
+   SELECT column_name FROM information_schema.columns
+   WHERE table_name = 'company_config'
    AND column_name LIKE 'backup%';
    ```
 
@@ -260,6 +278,7 @@ Após aplicar as correções, verifique:
 
 **Data:** 10/11/2025  
 **Arquivos Modificados:**
+
 - `/src/contexts/AuthContext.tsx`
 - `/src/components/BackupSettingsSection.tsx`
 - `/src/components/VehicleTypeSelect.tsx`

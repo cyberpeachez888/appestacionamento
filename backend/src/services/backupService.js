@@ -82,18 +82,20 @@ export async function createFullBackup({ createdBy } = {}) {
 
 export function listBackups() {
   ensureDir();
-  const files = fs.readdirSync(BACKUP_DIR).filter(f => f.endsWith('.json'));
-  return files.map(f => {
-    const p = path.join(BACKUP_DIR, f);
-    const stats = fs.statSync(p);
-    return {
-      id: f,
-      filename: f,
-      path: p,
-      size: stats.size,
-      timestamp: stats.mtime.toISOString(),
-    };
-  }).sort((a,b) => (a.timestamp < b.timestamp ? 1 : -1));
+  const files = fs.readdirSync(BACKUP_DIR).filter((f) => f.endsWith('.json'));
+  return files
+    .map((f) => {
+      const p = path.join(BACKUP_DIR, f);
+      const stats = fs.statSync(p);
+      return {
+        id: f,
+        filename: f,
+        path: p,
+        size: stats.size,
+        timestamp: stats.mtime.toISOString(),
+      };
+    })
+    .sort((a, b) => (a.timestamp < b.timestamp ? 1 : -1));
 }
 
 export function getBackupPath(id) {
@@ -122,7 +124,7 @@ export async function previewBackupFile(filePath) {
   const payload = JSON.parse(raw);
   const summary = {};
   for (const t of Object.keys(payload.data || {})) {
-    summary[t] = Array.isArray(payload.data[t]) ? payload.data[t].length : (payload.data[t] ? 1 : 0);
+    summary[t] = Array.isArray(payload.data[t]) ? payload.data[t].length : payload.data[t] ? 1 : 0;
   }
   return { metadata: payload.metadata || {}, summary };
 }
@@ -143,8 +145,8 @@ export async function restoreFromFile(filePath, { tables } = {}) {
     if (rows.length) {
       // chunk inserts to avoid large payloads
       const chunkSize = 500;
-      for (let i=0;i<rows.length;i+=chunkSize) {
-        const chunk = rows.slice(i, i+chunkSize);
+      for (let i = 0; i < rows.length; i += chunkSize) {
+        const chunk = rows.slice(i, i + chunkSize);
         const { error } = await supabase.from(t).insert(chunk);
         if (error) throw error;
       }
@@ -153,4 +155,11 @@ export async function restoreFromFile(filePath, { tables } = {}) {
   return { restored: toRestore.length };
 }
 
-export default { createFullBackup, listBackups, getBackupPath, deleteBackup, previewBackupFile, restoreFromFile };
+export default {
+  createFullBackup,
+  listBackups,
+  getBackupPath,
+  deleteBackup,
+  previewBackupFile,
+  restoreFromFile,
+};

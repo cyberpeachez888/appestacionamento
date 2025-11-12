@@ -20,8 +20,9 @@ The Analytics Dashboard Settings feature requires database tables that haven't b
 ### Step 3: Verify Tables Created
 
 After executing, you should see 5 new tables:
+
 - ✅ `dashboard_settings` - User preferences
-- ✅ `dashboard_widgets` - Dashboard widget configurations  
+- ✅ `dashboard_widgets` - Dashboard widget configurations
 - ✅ `kpi_thresholds` - KPI monitoring alerts
 - ✅ `report_schedules` - Automated report schedules
 - ✅ `kpi_alert_history` - Alert history tracking
@@ -37,9 +38,10 @@ After executing, you should see 5 new tables:
 ## Current Error Explanation
 
 The errors you're seeing:
+
 ```
 Error fetching schedules: SyntaxError: JSON.parse: unexpected character at line 1 column 1
-Error fetching thresholds: SyntaxError: JSON.parse: unexpected character at line 1 column 1  
+Error fetching thresholds: SyntaxError: JSON.parse: unexpected character at line 1 column 1
 Error fetching settings: SyntaxError: JSON.parse: unexpected character at line 1 column 1
 Error fetching widgets: SyntaxError: JSON.parse: unexpected character at line 1 column 1
 ```
@@ -53,6 +55,7 @@ Error fetching widgets: SyntaxError: JSON.parse: unexpected character at line 1 
 ## Default Data Included
 
 The migration will automatically create:
+
 - Default settings for all existing users (5-minute refresh, 24-month retention)
 - 4 sample widgets per user (Revenue Chart, Occupancy Rate, Recent Activity, Monthly Customers)
 - 2 example KPI thresholds per user (Minimum Daily Revenue, Maximum Occupancy Rate)
@@ -64,6 +67,7 @@ After migration, you can customize everything from the Dashboard Analytics page!
 ## Estimated Time
 
 ⏱️ **2-5 minutes total**
+
 - SQL execution: 30 seconds
-- Verification: 1 minute  
+- Verification: 1 minute
 - Testing: 1-3 minutes

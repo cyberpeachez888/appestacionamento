@@ -9,6 +9,7 @@ Complete end-of-month financial cycle closure system for parking management. Gen
 ## 🎯 Key Features
 
 ### 1. **Comprehensive Monthly Reports**
+
 - Complete financial summary for accounting purposes
 - Aggregates all revenues (Avulsos + Mensalistas)
 - Payment methods breakdown (Cash, PIX, Debit, Credit)
@@ -17,7 +18,9 @@ Complete end-of-month financial cycle closure system for parking management. Gen
 - Timestamp and period tracking
 
 ### 2. **Database Storage Strategy** ✅ RECOMMENDED
+
 **Why Database (Supabase)?**
+
 - ✅ Centralized access from any device
 - ✅ Automatic backups and disaster recovery
 - ✅ Multi-user access for all operators
@@ -28,6 +31,7 @@ Complete end-of-month financial cycle closure system for parking management. Gen
 - ✅ No local PC dependency
 
 ### 3. **Operational Table Cleanup**
+
 - Archives all tickets (entry/exit records)
 - Moves data to `archived_tickets` table
 - Clears operational table after archival
@@ -35,6 +39,7 @@ Complete end-of-month financial cycle closure system for parking management. Gen
 - Preserves all data in monthly report
 
 ### 4. **Report Viewing & Download**
+
 - Dedicated page to view all monthly reports
 - Filter by year and period
 - View detailed financial breakdowns
@@ -48,7 +53,9 @@ Complete end-of-month financial cycle closure system for parking management. Gen
 ### Backend
 
 #### SQL Schema
+
 **`backend/create-monthly-reports-table.sql`**
+
 - Creates `monthly_reports` table
 - Creates `archived_tickets` table
 - Indexes for performance
@@ -56,14 +63,18 @@ Complete end-of-month financial cycle closure system for parking management. Gen
 - Comprehensive data storage (JSONB fields)
 
 #### Controller
+
 **`backend/src/controllers/monthlyReportsController.js`**
+
 - `generateMonthly()` - Generate and archive report
 - `listMonthly()` - List all reports
 - `getMonthly()` - Get report details
 - `deleteMonthly()` - Admin-only deletion
 
 #### Routes
+
 **`backend/src/routes/index.js`** (updated)
+
 ```javascript
 POST   /api/reports/monthly      - Generate monthly report
 GET    /api/reports/monthly      - List all reports
@@ -74,36 +85,46 @@ DELETE /api/reports/monthly/:id  - Delete report (admin)
 ### Frontend
 
 #### API Client
+
 **`src/lib/api.ts`** (updated)
+
 - `generateMonthlyReport()` - Create new report
 - `getMonthlyReports()` - Fetch reports list
 - `getMonthlyReportById()` - Get report details
 - `deleteMonthlyReport()` - Delete report
 
 #### Components
+
 **`src/components/MonthlyReportDialog.tsx`**
+
 - Month and year selection
 - Clear operational records option
 - Confirmation with warnings
 - Loading states
 
 #### Pages
+
 **`src/pages/Financeiro.tsx`** (updated)
+
 - "Generate Monthly Report" button
 - Dialog integration
 - Success/error handling
 
 **`src/pages/RelatoriosMensais.tsx`** (new)
+
 - List all monthly reports
 - View detailed breakdowns
 - Download report documents
 - Filter and search capabilities
 
 #### Navigation
+
 **`src/App.tsx`** (updated)
+
 - Added `/relatorios-mensais` route
 
 **`src/components/Sidebar.tsx`** (updated)
+
 - Added "Relatórios Mensais" link
 
 ---
@@ -120,6 +141,7 @@ Run the SQL migration in your Supabase SQL Editor:
 ```
 
 This creates:
+
 - `monthly_reports` table
 - `archived_tickets` table
 - Indexes and constraints
@@ -155,34 +177,40 @@ This creates:
 ## 📋 Report Contents
 
 ### Company Information
+
 - Name and Legal Name
 - CNPJ
 - Address and Phone
 - Snapshot at time of generation
 
 ### Operator Information
+
 - Operator name
 - User ID
 - Generation timestamp
 
 ### Financial Summary
+
 - **Total Revenue**: All income for the period
 - **Avulsos Revenue**: One-time parking fees
 - **Mensalistas Revenue**: Monthly subscription payments
 
 ### Payment Methods Breakdown
+
 - Cash (Dinheiro)
 - PIX
 - Debit Card (Cartão Débito)
 - Credit Card (Cartão Crédito)
 
 ### Operational Statistics
+
 - Total tickets created
 - Tickets closed (completed)
 - Active monthly customers count
 - Monthly payments received
 
 ### Archived Data (JSONB)
+
 - All tickets from the period
 - All payments made
 - Monthly customers snapshot
@@ -195,15 +223,18 @@ This creates:
 ### Required Permission: `viewReports`
 
 **Who can access:**
+
 - Admins (all permissions)
 - Operators with `viewReports` permission
 
 **What they can do:**
+
 - Generate monthly reports
 - View past reports
 - Download report documents
 
 **Admin only:**
+
 - Delete monthly reports (corrections)
 
 ---
@@ -211,6 +242,7 @@ This creates:
 ## 🎨 User Interface
 
 ### Finance Page Updates
+
 ```
 ┌─────────────────────────────────────────┐
 │ Financeiro                              │
@@ -226,6 +258,7 @@ This creates:
 ```
 
 ### Monthly Report Dialog
+
 ```
 ┌───────────────────────────────────────┐
 │ Gerar Relatório Mensal            [X] │
@@ -247,6 +280,7 @@ This creates:
 ```
 
 ### Monthly Reports Page
+
 ```
 ┌─────────────────────────────────────────┐
 │ Relatórios Mensais                      │
@@ -312,6 +346,7 @@ This creates:
 ## 🛡️ Data Safety
 
 ### What's Preserved
+
 - ✅ All financial data (payments)
 - ✅ All operational data (tickets)
 - ✅ Monthly customers snapshot
@@ -320,11 +355,13 @@ This creates:
 - ✅ Complete audit trail
 
 ### What's Cleared
+
 - ❌ Operational tickets table (only if selected)
-- ℹ️  Data moved to archived_tickets
-- ℹ️  Also stored in report JSONB
+- ℹ️ Data moved to archived_tickets
+- ℹ️ Also stored in report JSONB
 
 ### Backup Strategy
+
 1. **Primary**: Supabase automatic backups
 2. **Secondary**: JSONB fields in report
 3. **Tertiary**: archived_tickets table
@@ -336,44 +373,44 @@ This creates:
 
 ### `monthly_reports` Table
 
-| Column | Type | Description |
-|--------|------|-------------|
-| `id` | UUID | Primary key |
-| `report_month` | INTEGER | 1-12 |
-| `report_year` | INTEGER | e.g., 2025 |
-| `generated_at` | TIMESTAMP | Creation time |
-| `company_name` | TEXT | Company name |
-| `company_cnpj` | TEXT | CNPJ |
-| `operator_id` | UUID | Who generated |
-| `operator_name` | TEXT | Operator name |
-| `total_revenue` | NUMERIC | Total income |
-| `avulsos_revenue` | NUMERIC | One-time parking |
-| `mensalistas_revenue` | NUMERIC | Monthly subscriptions |
-| `cash_total` | NUMERIC | Cash payments |
-| `pix_total` | NUMERIC | PIX payments |
-| `debit_card_total` | NUMERIC | Debit payments |
-| `credit_card_total` | NUMERIC | Credit payments |
-| `total_tickets` | INTEGER | Ticket count |
-| `tickets_closed` | INTEGER | Completed tickets |
-| `monthly_customers_count` | INTEGER | Subscriber count |
-| `tickets_data` | JSONB | Archived tickets |
-| `payments_data` | JSONB | All payments |
-| `report_json` | JSONB | Full structured data |
-| `status` | TEXT | 'completed' |
+| Column                    | Type      | Description           |
+| ------------------------- | --------- | --------------------- |
+| `id`                      | UUID      | Primary key           |
+| `report_month`            | INTEGER   | 1-12                  |
+| `report_year`             | INTEGER   | e.g., 2025            |
+| `generated_at`            | TIMESTAMP | Creation time         |
+| `company_name`            | TEXT      | Company name          |
+| `company_cnpj`            | TEXT      | CNPJ                  |
+| `operator_id`             | UUID      | Who generated         |
+| `operator_name`           | TEXT      | Operator name         |
+| `total_revenue`           | NUMERIC   | Total income          |
+| `avulsos_revenue`         | NUMERIC   | One-time parking      |
+| `mensalistas_revenue`     | NUMERIC   | Monthly subscriptions |
+| `cash_total`              | NUMERIC   | Cash payments         |
+| `pix_total`               | NUMERIC   | PIX payments          |
+| `debit_card_total`        | NUMERIC   | Debit payments        |
+| `credit_card_total`       | NUMERIC   | Credit payments       |
+| `total_tickets`           | INTEGER   | Ticket count          |
+| `tickets_closed`          | INTEGER   | Completed tickets     |
+| `monthly_customers_count` | INTEGER   | Subscriber count      |
+| `tickets_data`            | JSONB     | Archived tickets      |
+| `payments_data`           | JSONB     | All payments          |
+| `report_json`             | JSONB     | Full structured data  |
+| `status`                  | TEXT      | 'completed'           |
 
 ### `archived_tickets` Table
 
-| Column | Type | Description |
-|--------|------|-------------|
-| `id` | UUID | Primary key |
-| `report_id` | UUID | FK to monthly_reports |
-| `original_ticket_id` | UUID | Original ID |
-| `vehicle_plate` | TEXT | License plate |
-| `vehicle_type` | TEXT | Vehicle type |
-| `entry_time` | TIMESTAMP | Entry time |
-| `exit_time` | TIMESTAMP | Exit time |
-| `amount` | NUMERIC | Charged amount |
-| `status` | TEXT | Ticket status |
+| Column               | Type      | Description           |
+| -------------------- | --------- | --------------------- |
+| `id`                 | UUID      | Primary key           |
+| `report_id`          | UUID      | FK to monthly_reports |
+| `original_ticket_id` | UUID      | Original ID           |
+| `vehicle_plate`      | TEXT      | License plate         |
+| `vehicle_type`       | TEXT      | Vehicle type          |
+| `entry_time`         | TIMESTAMP | Entry time            |
+| `exit_time`          | TIMESTAMP | Exit time             |
+| `amount`             | NUMERIC   | Charged amount        |
+| `status`             | TEXT      | Ticket status         |
 
 ---
 
@@ -422,16 +459,19 @@ This creates:
 ### Report Generation Fails
 
 **Error: "Report already exists"**
+
 - One report per month is allowed
 - Delete existing report (admin) if needed
 - Or select different month/year
 
 **Error: "Database schema out of date"**
+
 - Run the SQL migration
 - Reload Supabase schema cache
 - Restart backend server
 
 **Error: "Unauthorized"**
+
 - Check user has `viewReports` permission
 - Verify auth token is valid
 - Re-login if necessary
@@ -439,11 +479,13 @@ This creates:
 ### Reports Not Showing
 
 **Empty list on Reports page**
+
 - No reports generated yet
 - Generate first report from Finance page
 - Check database for records
 
 **Can't view details**
+
 - Check network console for errors
 - Verify API endpoint is accessible
 - Check Supabase connection
@@ -451,6 +493,7 @@ This creates:
 ### Operational Table Not Clearing
 
 **Tickets still in table after report**
+
 - Check "Clear operational records" was selected
 - Verify no database errors in backend logs
 - Data should be in `archived_tickets` table
@@ -495,6 +538,7 @@ This creates:
 ## 🔮 Future Enhancements
 
 ### Phase 2 (Optional)
+
 - [ ] PDF generation (replace text documents)
 - [ ] Email reports to accounting
 - [ ] Automated monthly scheduling
@@ -506,6 +550,7 @@ This creates:
 - [ ] Multi-branch support
 
 ### Phase 3 (Advanced)
+
 - [ ] AI-powered insights
 - [ ] Predictive revenue analytics
 - [ ] Automated reconciliation
@@ -555,6 +600,7 @@ A: Supabase database (cloud), with automatic backups.
 ### Implementation Complete
 
 All requirements have been implemented:
+
 1. ✅ Storage strategy defined (database recommended)
 2. ✅ Monthly report generation button
 3. ✅ Comprehensive report contents

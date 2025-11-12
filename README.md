@@ -7,6 +7,7 @@
 TheProParkingApp é um sistema profissional de gestão de estacionamento desenvolvido para controle de entrada/saída de veículos, gestão de mensalistas, controle financeiro e relatórios detalhados.
 
 ### Funcionalidades Principais:
+
 - ✅ Controle de entrada e saída de veículos
 - ✅ Gestão de mensalistas
 - ✅ Cálculo automático de tarifas
@@ -71,19 +72,18 @@ npm run dev
 
 This project is built with:
 
-
 ### Authentication & RBAC
 
 This project uses JWT-based authentication for the backend API with role-based access control (admin/operator).
 
 - Endpoints:
-	- `POST /auth/login` → returns `{ token, user }`
-	- `GET /auth/me` → returns `{ user }` (requires Bearer token)
-	- `GET /users` (admin)
-	- `POST /users` (admin)
-	- `PUT /users/:id` (admin)
-	- `PUT /users/:id/password` (self or admin)
-	- `DELETE /users/:id` (admin)
+  - `POST /auth/login` → returns `{ token, user }`
+  - `GET /auth/me` → returns `{ user }` (requires Bearer token)
+  - `GET /users` (admin)
+  - `POST /users` (admin)
+  - `PUT /users/:id` (admin)
+  - `PUT /users/:id/password` (self or admin)
+  - `DELETE /users/:id` (admin)
 
 Environment variables:
 

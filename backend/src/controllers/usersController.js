@@ -7,7 +7,9 @@ const TABLE = 'users';
 
 export default {
   async list(req, res) {
-    const { data, error } = await supabase.from(TABLE).select('id,name,email,login,role,permissions,created_at');
+    const { data, error } = await supabase
+      .from(TABLE)
+      .select('id,name,email,login,role,permissions,created_at');
     if (error) return res.status(500).json({ error });
     res.json(data);
   },
@@ -15,7 +17,8 @@ export default {
   async create(req, res) {
     try {
       const { name, dateOfBirth, email, login, password, permissions, role } = req.body;
-      if (!name || !email || !login || !password) return res.status(400).json({ error: 'Missing required fields' });
+      if (!name || !email || !login || !password)
+        return res.status(400).json({ error: 'Missing required fields' });
       const password_hash = await bcrypt.hash(password, 10);
       const payload = {
         id: uuid(),
@@ -27,9 +30,19 @@ export default {
         role: role || 'operator',
         permissions: sanitizePermissions(permissions),
       };
-      const { data, error } = await supabase.from(TABLE).insert(payload).select('id,name,email,login,role,permissions,created_at').single();
+      const { data, error } = await supabase
+        .from(TABLE)
+        .insert(payload)
+        .select('id,name,email,login,role,permissions,created_at')
+        .single();
       if (error) return res.status(500).json({ error });
-      await logEvent({ actor: req.user, action: 'user.create', targetType: 'user', targetId: data.id, details: { role: data.role } });
+      await logEvent({
+        actor: req.user,
+        action: 'user.create',
+        targetType: 'user',
+        targetId: data.id,
+        details: { role: data.role },
+      });
       res.status(201).json(data);
     } catch (err) {
       res.status(500).json({ error: err.message || err });
@@ -47,9 +60,20 @@ export default {
       ...(role !== undefined ? { role } : {}),
       ...(permissions !== undefined ? { permissions: sanitizePermissions(permissions) } : {}),
     };
-    const { data, error } = await supabase.from(TABLE).update(patch).eq('id', id).select('id,name,email,login,role,permissions,created_at').single();
+    const { data, error } = await supabase
+      .from(TABLE)
+      .update(patch)
+      .eq('id', id)
+      .select('id,name,email,login,role,permissions,created_at')
+      .single();
     if (error) return res.status(500).json({ error });
-    await logEvent({ actor: req.user, action: 'user.update', targetType: 'user', targetId: id, details: { changed: Object.keys(patch) } });
+    await logEvent({
+      actor: req.user,
+      action: 'user.update',
+      targetType: 'user',
+      targetId: id,
+      details: { changed: Object.keys(patch) },
+    });
     res.json(data);
   },
 
@@ -72,7 +96,11 @@ export default {
       }
 
       // Fetch target user
-      const { data: targetUser, error: userErr } = await supabase.from(TABLE).select('*').eq('id', id).single();
+      const { data: targetUser, error: userErr } = await supabase
+        .from(TABLE)
+        .select('*')
+        .eq('id', id)
+        .single();
       if (userErr) return res.status(500).json({ error: userErr });
       if (!targetUser) return res.status(404).json({ error: 'User not found' });
 
@@ -84,7 +112,12 @@ export default {
       const password_hash = await bcrypt.hash(newPassword, 10);
       const { error } = await supabase.from(TABLE).update({ password_hash }).eq('id', id);
       if (error) return res.status(500).json({ error });
-      await logEvent({ actor: req.user, action: 'user.password.update', targetType: 'user', targetId: id });
+      await logEvent({
+        actor: req.user,
+        action: 'user.password.update',
+        targetType: 'user',
+        targetId: id,
+      });
       res.sendStatus(204);
     } catch (err) {
       res.status(500).json({ error: err.message || err });
@@ -98,12 +131,16 @@ export default {
       if (!actor) return res.status(401).json({ error: 'Unauthorized' });
 
       // Prevent deleting own account
-      if (actor.id === id) return res.status(400).json({ error: 'You cannot delete your own account' });
+      if (actor.id === id)
+        return res.status(400).json({ error: 'You cannot delete your own account' });
 
       // Prevent deleting the last admin
-      const { data: admins, error: adminsErr } = await supabase.from(TABLE).select('id').eq('role', 'admin');
+      const { data: admins, error: adminsErr } = await supabase
+        .from(TABLE)
+        .select('id')
+        .eq('role', 'admin');
       if (adminsErr) return res.status(500).json({ error: adminsErr });
-      const remainingAdmins = (admins || []).filter(u => u.id !== id);
+      const remainingAdmins = (admins || []).filter((u) => u.id !== id);
       if (remainingAdmins.length === 0) {
         return res.status(400).json({ error: 'Cannot delete the last admin user' });
       }
@@ -115,7 +152,7 @@ export default {
     } catch (err) {
       res.status(500).json({ error: err.message || err });
     }
-  }
+  },
 };
 
 // Whitelist + normalize boolean permissions

@@ -19,23 +19,52 @@ const PASSWORD_MIN_STRENGTH = 2; // 0-4 scale from zxcvbn
  */
 const passwordSchema = new PasswordValidator();
 passwordSchema
-  .is().min(8)                                    // Minimum length 8
-  .is().max(100)                                  // Maximum length 100
-  .has().uppercase()                              // Must have uppercase letters
-  .has().lowercase()                              // Must have lowercase letters
-  .has().digits()                                 // Must have digits
-  .has().symbols()                                // Must have symbols
-  .has().not().spaces();                          // Should not have spaces
+  .is()
+  .min(8) // Minimum length 8
+  .is()
+  .max(100) // Maximum length 100
+  .has()
+  .uppercase() // Must have uppercase letters
+  .has()
+  .lowercase() // Must have lowercase letters
+  .has()
+  .digits() // Must have digits
+  .has()
+  .symbols() // Must have symbols
+  .has()
+  .not()
+  .spaces(); // Should not have spaces
 
 /**
  * Common weak passwords to reject
  */
 const WEAK_PASSWORDS = new Set([
-  'password', 'password123', '123456', '12345678', 'qwerty', 
-  'abc123', 'monkey', '1234567', 'letmein', 'trustno1',
-  'dragon', 'baseball', 'iloveyou', 'master', 'sunshine',
-  'ashley', 'bailey', 'passw0rd', 'shadow', '123123',
-  'admin', 'admin123', 'root', 'toor', 'test', 'test123'
+  'password',
+  'password123',
+  '123456',
+  '12345678',
+  'qwerty',
+  'abc123',
+  'monkey',
+  '1234567',
+  'letmein',
+  'trustno1',
+  'dragon',
+  'baseball',
+  'iloveyou',
+  'master',
+  'sunshine',
+  'ashley',
+  'bailey',
+  'passw0rd',
+  'shadow',
+  '123123',
+  'admin',
+  'admin123',
+  'root',
+  'toor',
+  'test',
+  'test123',
 ]);
 
 /**
@@ -45,7 +74,7 @@ const WEAK_PASSWORDS = new Set([
  */
 export function validatePassword(password) {
   const errors = [];
-  
+
   // Check basic requirements
   const schemaErrors = passwordSchema.validate(password, { list: true });
   if (schemaErrors.length > 0) {
@@ -56,31 +85,31 @@ export function validatePassword(password) {
       lowercase: 'Senha deve conter pelo menos uma letra minúscula',
       digits: 'Senha deve conter pelo menos um número',
       symbols: 'Senha deve conter pelo menos um caractere especial (!@#$%^&*)',
-      spaces: 'Senha não pode conter espaços'
+      spaces: 'Senha não pode conter espaços',
     };
-    schemaErrors.forEach(err => {
+    schemaErrors.forEach((err) => {
       if (errorMessages[err]) errors.push(errorMessages[err]);
     });
   }
-  
+
   // Check if it's a commonly weak password
   if (WEAK_PASSWORDS.has(password.toLowerCase())) {
     errors.push('Esta senha é muito comum e insegura');
   }
-  
+
   // Check password strength using zxcvbn
   const strengthCheck = zxcvbn(password);
   const strength = strengthCheck.score; // 0-4
-  
+
   if (strength < PASSWORD_MIN_STRENGTH) {
     errors.push('Senha muito fraca. Use uma combinação mais complexa');
   }
-  
+
   return {
     valid: errors.length === 0,
     errors,
     strength,
-    feedback: strengthCheck.feedback
+    feedback: strengthCheck.feedback,
   };
 }
 
@@ -97,14 +126,14 @@ export async function isPasswordReused(userId, password) {
     .eq('user_id', userId)
     .order('created_at', { ascending: false })
     .limit(PASSWORD_HISTORY_LIMIT);
-  
+
   if (error || !history) return false;
-  
+
   for (const record of history) {
     const match = await bcrypt.compare(password, record.password_hash);
     if (match) return true;
   }
-  
+
   return false;
 }
 
@@ -114,13 +143,15 @@ export async function isPasswordReused(userId, password) {
  */
 export async function logLoginAttempt({ login, ipAddress, userAgent, success, failureReason }) {
   try {
-    await supabase.from('login_attempts').insert([{
-      login,
-      ip_address: ipAddress,
-      user_agent: userAgent,
-      success,
-      failure_reason: failureReason || null
-    }]);
+    await supabase.from('login_attempts').insert([
+      {
+        login,
+        ip_address: ipAddress,
+        user_agent: userAgent,
+        success,
+        failure_reason: failureReason || null,
+      },
+    ]);
   } catch (error) {
     console.error('Error logging login attempt:', error);
   }
@@ -134,19 +165,19 @@ export async function logLoginAttempt({ login, ipAddress, userAgent, success, fa
  */
 export async function getFailedAttempts(login, minutes = 15) {
   const cutoff = new Date(Date.now() - minutes * 60 * 1000).toISOString();
-  
+
   const { data, error } = await supabase
     .from('login_attempts')
     .select('id')
     .eq('login', login)
     .eq('success', false)
     .gte('created_at', cutoff);
-  
+
   if (error) {
     console.error('Error getting failed attempts:', error);
     return 0;
   }
-  
+
   return data?.length || 0;
 }
 
@@ -162,15 +193,15 @@ export async function checkAccountLock(userId) {
     .eq('user_id', userId)
     .gte('locked_until', new Date().toISOString())
     .maybeSingle();
-  
+
   if (error || !data) {
     return { isLocked: false, lockedUntil: null, reason: null };
   }
-  
+
   return {
     isLocked: true,
     lockedUntil: new Date(data.locked_until),
-    reason: data.lock_reason
+    reason: data.lock_reason,
   };
 }
 
@@ -182,15 +213,18 @@ export async function checkAccountLock(userId) {
 export async function lockAccount(userId, failedAttempts) {
   const lockedUntil = new Date(Date.now() + LOCKOUT_DURATION_MINUTES * 60 * 1000);
   const reason = `Account locked due to ${failedAttempts} failed login attempts`;
-  
-  await supabase
-    .from('account_locks')
-    .upsert([{
-      user_id: userId,
-      locked_until: lockedUntil.toISOString(),
-      lock_reason: reason,
-      failed_attempts: failedAttempts
-    }], { onConflict: 'user_id' });
+
+  await supabase.from('account_locks').upsert(
+    [
+      {
+        user_id: userId,
+        locked_until: lockedUntil.toISOString(),
+        lock_reason: reason,
+        failed_attempts: failedAttempts,
+      },
+    ],
+    { onConflict: 'user_id' }
+  );
 }
 
 /**
@@ -198,10 +232,7 @@ export async function lockAccount(userId, failedAttempts) {
  * @param {string} userId - User ID
  */
 export async function unlockAccount(userId) {
-  await supabase
-    .from('account_locks')
-    .delete()
-    .eq('user_id', userId);
+  await supabase.from('account_locks').delete().eq('user_id', userId);
 }
 
 /**
@@ -215,7 +246,7 @@ export async function updateLastLogin(userId, ipAddress) {
     .update({
       last_login_at: new Date().toISOString(),
       last_login_ip: ipAddress,
-      is_first_login: false
+      is_first_login: false,
     })
     .eq('id', userId);
 }
@@ -235,9 +266,6 @@ export function isPasswordExpired(user) {
  */
 export async function cleanupOldLoginAttempts() {
   const cutoff = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
-  
-  await supabase
-    .from('login_attempts')
-    .delete()
-    .lt('created_at', cutoff);
+
+  await supabase.from('login_attempts').delete().lt('created_at', cutoff);
 }

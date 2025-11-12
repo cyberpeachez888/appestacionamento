@@ -40,13 +40,13 @@ interface ReceiptTemplate {
   description: string;
   isDefault: boolean;
   isActive: boolean;
-  
+
   // Header
   showLogo: boolean;
   showCompanyName: boolean;
   showCompanyDetails: boolean;
   headerText?: string;
-  
+
   // Body fields
   showReceiptNumber: boolean;
   showDate: boolean;
@@ -60,7 +60,7 @@ interface ReceiptTemplate {
   showValue: boolean;
   showPaymentMethod: boolean;
   showOperator: boolean;
-  
+
   // Custom fields
   customFields: Array<{
     name: string;
@@ -69,7 +69,7 @@ interface ReceiptTemplate {
     required: boolean;
     defaultValue: string;
   }>;
-  
+
   // Footer
   showQrCode: boolean;
   qrCodeData?: string;
@@ -79,17 +79,17 @@ interface ReceiptTemplate {
   termsAndConditions?: string;
   footerText?: string;
   showSignatureLine: boolean;
-  
+
   // Styling
   primaryColor: string;
   secondaryColor: string;
   fontFamily: string;
-  
+
   // Email/WhatsApp
   emailSubject?: string;
   emailBodyHtml?: string;
   whatsappMessage?: string;
-  
+
   availableVariables: string[];
 }
 
@@ -149,7 +149,7 @@ export default function ModelosRecibos() {
       toast({
         variant: 'destructive',
         title: 'Erro',
-        description: 'Erro ao carregar modelos de recibo'
+        description: 'Erro ao carregar modelos de recibo',
       });
     }
   };
@@ -236,7 +236,7 @@ export default function ModelosRecibos() {
     setLoading(true);
     try {
       await api.deleteReceiptTemplate(deletingTemplate.id);
-      
+
       toast({
         title: 'Template excluído',
         description: 'O template foi removido com sucesso',
@@ -258,7 +258,7 @@ export default function ModelosRecibos() {
   const handleSetDefault = async (template: ReceiptTemplate) => {
     try {
       await api.setDefaultReceiptTemplate(template.id);
-      
+
       toast({
         title: 'Template padrão definido',
         description: `"${template.templateName}" agora é o template padrão`,
@@ -276,7 +276,7 @@ export default function ModelosRecibos() {
   const handleClone = async (template: ReceiptTemplate) => {
     try {
       await api.cloneReceiptTemplate(template.id);
-      
+
       toast({
         title: 'Template duplicado',
         description: 'Uma cópia do template foi criada',
@@ -346,90 +346,82 @@ export default function ModelosRecibos() {
             </div>
           ) : (
             filteredTemplates.map((template) => (
-            <div
-              key={template.id}
-              className={`bg-card border rounded-lg p-6 hover:shadow-md transition-shadow ${
-                template.isDefault ? 'border-primary' : ''
-              }`}
-            >
-              <div className="flex items-start justify-between mb-4">
-                <div className="flex-1">
-                  <div className="flex items-center gap-2">
-                    <h3 className="font-semibold">{template.templateName}</h3>
-                    {template.isDefault && (
-                      <Star className="h-4 w-4 text-primary fill-primary" />
-                    )}
+              <div
+                key={template.id}
+                className={`bg-card border rounded-lg p-6 hover:shadow-md transition-shadow ${
+                  template.isDefault ? 'border-primary' : ''
+                }`}
+              >
+                <div className="flex items-start justify-between mb-4">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                      <h3 className="font-semibold">{template.templateName}</h3>
+                      {template.isDefault && <Star className="h-4 w-4 text-primary fill-primary" />}
+                    </div>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      {getTypeLabel(template.templateType)}
+                    </p>
                   </div>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    {getTypeLabel(template.templateType)}
-                  </p>
+                  <div
+                    className={`px-2 py-1 rounded text-xs ${
+                      template.isActive
+                        ? 'bg-success/10 text-success'
+                        : 'bg-muted text-muted-foreground'
+                    }`}
+                  >
+                    {template.isActive ? 'Ativo' : 'Inativo'}
+                  </div>
                 </div>
-                <div
-                  className={`px-2 py-1 rounded text-xs ${
-                    template.isActive
-                      ? 'bg-success/10 text-success'
-                      : 'bg-muted text-muted-foreground'
-                  }`}
-                >
-                  {template.isActive ? 'Ativo' : 'Inativo'}
-                </div>
-              </div>
 
-              {template.description && (
-                <p className="text-sm text-muted-foreground mb-4">
-                  {template.description}
-                </p>
-              )}
-
-              <div className="flex flex-wrap gap-2 text-xs text-muted-foreground mb-4">
-                {template.showQrCode && <span className="bg-muted px-2 py-1 rounded">QR Code</span>}
-                {template.showBarcode && <span className="bg-muted px-2 py-1 rounded">Código de Barras</span>}
-                {template.customFields?.length > 0 && (
-                  <span className="bg-muted px-2 py-1 rounded">
-                    {template.customFields.length} campos extras
-                  </span>
+                {template.description && (
+                  <p className="text-sm text-muted-foreground mb-4">{template.description}</p>
                 )}
-              </div>
 
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleEdit(template)}
-                  className="flex-1"
-                >
-                  <Pencil className="h-3 w-3 mr-1" />
-                  Editar
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleClone(template)}
-                >
-                  <Copy className="h-3 w-3" />
-                </Button>
-                {!template.isDefault && (
+                <div className="flex flex-wrap gap-2 text-xs text-muted-foreground mb-4">
+                  {template.showQrCode && (
+                    <span className="bg-muted px-2 py-1 rounded">QR Code</span>
+                  )}
+                  {template.showBarcode && (
+                    <span className="bg-muted px-2 py-1 rounded">Código de Barras</span>
+                  )}
+                  {template.customFields?.length > 0 && (
+                    <span className="bg-muted px-2 py-1 rounded">
+                      {template.customFields.length} campos extras
+                    </span>
+                  )}
+                </div>
+
+                <div className="flex gap-2">
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => handleSetDefault(template)}
+                    onClick={() => handleEdit(template)}
+                    className="flex-1"
                   >
-                    <Star className="h-3 w-3" />
+                    <Pencil className="h-3 w-3 mr-1" />
+                    Editar
                   </Button>
-                )}
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    setDeletingTemplate(template);
-                    setDeleteDialogOpen(true);
-                  }}
-                  disabled={template.isDefault}
-                >
-                  <Trash2 className="h-3 w-3" />
-                </Button>
+                  <Button variant="outline" size="sm" onClick={() => handleClone(template)}>
+                    <Copy className="h-3 w-3" />
+                  </Button>
+                  {!template.isDefault && (
+                    <Button variant="outline" size="sm" onClick={() => handleSetDefault(template)}>
+                      <Star className="h-3 w-3" />
+                    </Button>
+                  )}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setDeletingTemplate(template);
+                      setDeleteDialogOpen(true);
+                    }}
+                    disabled={template.isDefault}
+                  >
+                    <Trash2 className="h-3 w-3" />
+                  </Button>
+                </div>
               </div>
-            </div>
             ))
           )}
         </div>
@@ -438,12 +430,8 @@ export default function ModelosRecibos() {
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>
-                {editingTemplate ? 'Editar Template' : 'Novo Template'}
-              </DialogTitle>
-              <DialogDescription>
-                Configure os campos e estilos do recibo
-              </DialogDescription>
+              <DialogTitle>{editingTemplate ? 'Editar Template' : 'Novo Template'}</DialogTitle>
+              <DialogDescription>Configure os campos e estilos do recibo</DialogDescription>
             </DialogHeader>
 
             <Tabs defaultValue="basic">
@@ -505,7 +493,9 @@ export default function ModelosRecibos() {
                     <Label>Template Padrão</Label>
                     <Switch
                       checked={formData.isDefault}
-                      onCheckedChange={(checked) => setFormData({ ...formData, isDefault: checked })}
+                      onCheckedChange={(checked) =>
+                        setFormData({ ...formData, isDefault: checked })
+                      }
                     />
                   </div>
                 </div>
@@ -517,7 +507,9 @@ export default function ModelosRecibos() {
                       <Label className="text-sm">Mostrar Logo</Label>
                       <Switch
                         checked={formData.showLogo}
-                        onCheckedChange={(checked) => setFormData({ ...formData, showLogo: checked })}
+                        onCheckedChange={(checked) =>
+                          setFormData({ ...formData, showLogo: checked })
+                        }
                       />
                     </div>
                     <div className="flex items-center justify-between">
@@ -573,7 +565,9 @@ export default function ModelosRecibos() {
                     <Label className="text-sm">Placa</Label>
                     <Switch
                       checked={formData.showPlate}
-                      onCheckedChange={(checked) => setFormData({ ...formData, showPlate: checked })}
+                      onCheckedChange={(checked) =>
+                        setFormData({ ...formData, showPlate: checked })
+                      }
                     />
                   </div>
                   <div className="flex items-center justify-between">
@@ -623,7 +617,9 @@ export default function ModelosRecibos() {
                     <Label className="text-sm">Valor</Label>
                     <Switch
                       checked={formData.showValue}
-                      onCheckedChange={(checked) => setFormData({ ...formData, showValue: checked })}
+                      onCheckedChange={(checked) =>
+                        setFormData({ ...formData, showValue: checked })
+                      }
                     />
                   </div>
                   <div className="flex items-center justify-between">
@@ -695,7 +691,9 @@ export default function ModelosRecibos() {
                     <Label>QR Code</Label>
                     <Switch
                       checked={formData.showQrCode}
-                      onCheckedChange={(checked) => setFormData({ ...formData, showQrCode: checked })}
+                      onCheckedChange={(checked) =>
+                        setFormData({ ...formData, showQrCode: checked })
+                      }
                     />
                   </div>
                   {formData.showQrCode && (
@@ -724,7 +722,9 @@ export default function ModelosRecibos() {
                         <Label className="text-sm">Dados do Código de Barras</Label>
                         <Input
                           value={formData.barcodeData || ''}
-                          onChange={(e) => setFormData({ ...formData, barcodeData: e.target.value })}
+                          onChange={(e) =>
+                            setFormData({ ...formData, barcodeData: e.target.value })
+                          }
                           placeholder="{{receiptNumber}}"
                         />
                       </div>
@@ -841,8 +841,8 @@ export default function ModelosRecibos() {
             <AlertDialogHeader>
               <AlertDialogTitle>Confirmar Exclusão</AlertDialogTitle>
               <AlertDialogDescription>
-                Tem certeza que deseja excluir o template "{deletingTemplate?.templateName}"?
-                Esta ação não pode ser desfeita.
+                Tem certeza que deseja excluir o template "{deletingTemplate?.templateName}"? Esta
+                ação não pode ser desfeita.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>

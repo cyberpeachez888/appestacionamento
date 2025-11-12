@@ -5,7 +5,13 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { Printer, Download } from 'lucide-react';
 import { format } from 'date-fns';
@@ -65,24 +71,26 @@ export const ReceiptDialog = ({ open, onOpenChange }: ReceiptDialogProps) => {
   const fetchTemplate = async () => {
     try {
       const res = await fetch('http://localhost:3000/receipt-templates/default/general_receipt', {
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
       });
       if (res.ok) {
         const data = await res.json();
         setTemplate(data);
-        
+
         // Initialize custom field values
         const initialValues: Record<string, string> = {};
         if (data.customFields) {
-          data.customFields.forEach((field: {
-            name: string;
-            label: string;
-            type: string;
-            required: boolean;
-            defaultValue: string;
-          }) => {
-            initialValues[field.name] = field.defaultValue || '';
-          });
+          data.customFields.forEach(
+            (field: {
+              name: string;
+              label: string;
+              type: string;
+              required: boolean;
+              defaultValue: string;
+            }) => {
+              initialValues[field.name] = field.defaultValue || '';
+            }
+          );
         }
         setCustomFieldValues(initialValues);
       }
@@ -154,7 +162,9 @@ export const ReceiptDialog = ({ open, onOpenChange }: ReceiptDialogProps) => {
               <Label>Forma de Pagamento</Label>
               <Select
                 value={formData.paymentMethod}
-                onValueChange={(v) => setFormData({ ...formData, paymentMethod: v as PaymentMethod })}
+                onValueChange={(v) =>
+                  setFormData({ ...formData, paymentMethod: v as PaymentMethod })
+                }
               >
                 <SelectTrigger>
                   <SelectValue />
@@ -190,11 +200,15 @@ export const ReceiptDialog = ({ open, onOpenChange }: ReceiptDialogProps) => {
             {/* Custom Fields from Template */}
             {template?.customFields?.map((field) => (
               <div key={field.name}>
-                <Label>{field.label} {field.required && '*'}</Label>
+                <Label>
+                  {field.label} {field.required && '*'}
+                </Label>
                 {field.type === 'textarea' ? (
                   <Textarea
                     value={customFieldValues[field.name] || ''}
-                    onChange={(e) => setCustomFieldValues({ ...customFieldValues, [field.name]: e.target.value })}
+                    onChange={(e) =>
+                      setCustomFieldValues({ ...customFieldValues, [field.name]: e.target.value })
+                    }
                     placeholder={field.label}
                     rows={3}
                   />
@@ -202,7 +216,9 @@ export const ReceiptDialog = ({ open, onOpenChange }: ReceiptDialogProps) => {
                   <Input
                     type={field.type}
                     value={customFieldValues[field.name] || ''}
-                    onChange={(e) => setCustomFieldValues({ ...customFieldValues, [field.name]: e.target.value })}
+                    onChange={(e) =>
+                      setCustomFieldValues({ ...customFieldValues, [field.name]: e.target.value })
+                    }
                     placeholder={field.label}
                   />
                 )}
@@ -220,16 +236,24 @@ export const ReceiptDialog = ({ open, onOpenChange }: ReceiptDialogProps) => {
           </form>
         ) : (
           <div>
-            <div ref={receiptRef} className="bg-white text-black p-8 rounded-lg border-2 border-gray-300">
+            <div
+              ref={receiptRef}
+              className="bg-white text-black p-8 rounded-lg border-2 border-gray-300"
+            >
               {/* Header */}
               {template?.showCompanyName !== false && (
                 <div className="text-center mb-6">
-                  <h2 className="text-2xl font-bold" style={{ color: template?.primaryColor || '#000000' }}>
+                  <h2
+                    className="text-2xl font-bold"
+                    style={{ color: template?.primaryColor || '#000000' }}
+                  >
                     {companyConfig.name}
                   </h2>
                   {template?.showCompanyDetails !== false && (
                     <>
-                      {companyConfig.legalName && <p className="text-sm">{companyConfig.legalName}</p>}
+                      {companyConfig.legalName && (
+                        <p className="text-sm">{companyConfig.legalName}</p>
+                      )}
                       {companyConfig.cnpj && <p className="text-sm">CNPJ: {companyConfig.cnpj}</p>}
                       {companyConfig.address && <p className="text-sm">{companyConfig.address}</p>}
                       {companyConfig.phone && <p className="text-sm">Tel: {companyConfig.phone}</p>}
@@ -250,26 +274,39 @@ export const ReceiptDialog = ({ open, onOpenChange }: ReceiptDialogProps) => {
               {/* Receipt Body */}
               <div className="space-y-3 mb-6">
                 {template?.showDate !== false && (
-                  <p><strong>Data:</strong> {format(new Date(), "dd/MM/yyyy", { locale: ptBR })}</p>
+                  <p>
+                    <strong>Data:</strong> {format(new Date(), 'dd/MM/yyyy', { locale: ptBR })}
+                  </p>
                 )}
                 {template?.showTime !== false && (
-                  <p><strong>Horário:</strong> {format(new Date(), "HH:mm", { locale: ptBR })}</p>
+                  <p>
+                    <strong>Horário:</strong> {format(new Date(), 'HH:mm', { locale: ptBR })}
+                  </p>
                 )}
                 {template?.showPlate !== false && formData.plate && (
-                  <p><strong>Placa:</strong> {formData.plate}</p>
+                  <p>
+                    <strong>Placa:</strong> {formData.plate}
+                  </p>
                 )}
                 {template?.showValue !== false && (
-                  <p><strong>Valor Pago:</strong> R$ {parseFloat(formData.value).toFixed(2)}</p>
+                  <p>
+                    <strong>Valor Pago:</strong> R$ {parseFloat(formData.value).toFixed(2)}
+                  </p>
                 )}
                 {template?.showPaymentMethod !== false && (
-                  <p><strong>Forma de Pagamento:</strong> {formData.paymentMethod}</p>
+                  <p>
+                    <strong>Forma de Pagamento:</strong> {formData.paymentMethod}
+                  </p>
                 )}
-                
+
                 {/* Custom Fields */}
                 {template?.customFields?.map((field) => {
-                  const value = field.name === 'description' ? formData.observation : 
-                                field.name === 'issuedBy' ? formData.issuedBy :
-                                customFieldValues[field.name];
+                  const value =
+                    field.name === 'description'
+                      ? formData.observation
+                      : field.name === 'issuedBy'
+                        ? formData.issuedBy
+                        : customFieldValues[field.name];
                   if (!value) return null;
                   return (
                     <p key={field.name}>
@@ -298,9 +335,7 @@ export const ReceiptDialog = ({ open, onOpenChange }: ReceiptDialogProps) => {
 
               {/* Footer Text */}
               {template?.footerText && (
-                <div className="mt-4 text-center text-sm text-gray-600">
-                  {template.footerText}
-                </div>
+                <div className="mt-4 text-center text-sm text-gray-600">{template.footerText}</div>
               )}
             </div>
 
@@ -312,9 +347,7 @@ export const ReceiptDialog = ({ open, onOpenChange }: ReceiptDialogProps) => {
               <Button variant="outline" onClick={resetForm} className="flex-1">
                 Novo Recibo
               </Button>
-              <Button onClick={() => onOpenChange(false)}>
-                Fechar
-              </Button>
+              <Button onClick={() => onOpenChange(false)}>Fechar</Button>
             </div>
           </div>
         )}

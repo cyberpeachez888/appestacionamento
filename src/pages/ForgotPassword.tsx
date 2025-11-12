@@ -28,7 +28,7 @@ export default function ForgotPassword() {
       }
 
       setSuccess(true);
-      
+
       // Mostrar link no console em desenvolvimento
       if (data._dev?.resetUrl) {
         console.log('🔗 Link de recuperação:', data._dev.resetUrl);
@@ -46,13 +46,24 @@ export default function ForgotPassword() {
         <div className="max-w-md w-full bg-white rounded-lg shadow-xl p-8">
           <div className="text-center">
             <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-100 mb-4">
-              <svg className="h-6 w-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+              <svg
+                className="h-6 w-6 text-green-600"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M5 13l4 4L19 7"
+                />
               </svg>
             </div>
             <h2 className="text-2xl font-bold text-gray-900 mb-2">Email enviado!</h2>
             <p className="text-gray-600 mb-6">
-              Se o email <strong>{email}</strong> estiver cadastrado, você receberá instruções para redefinir sua senha.
+              Se o email <strong>{email}</strong> estiver cadastrado, você receberá instruções para
+              redefinir sua senha.
             </p>
             <p className="text-sm text-gray-500 mb-6">
               Verifique sua caixa de entrada e também a pasta de spam.
@@ -74,9 +85,7 @@ export default function ForgotPassword() {
       <div className="max-w-md w-full bg-white rounded-lg shadow-xl p-8">
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Esqueceu a senha?</h1>
-          <p className="text-gray-600">
-            Digite seu email para receber instruções de recuperação
-          </p>
+          <p className="text-gray-600">Digite seu email para receber instruções de recuperação</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">

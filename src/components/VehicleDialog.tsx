@@ -4,7 +4,13 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { VehicleTypeSelect } from '@/components/VehicleTypeSelect';
@@ -19,7 +25,7 @@ interface VehicleDialogProps {
 export const VehicleDialog = ({ open, onOpenChange, vehicle, onSaved }: VehicleDialogProps) => {
   const { addVehicle, updateVehicle, rates, calculateRate } = useParking();
   const { toast } = useToast();
-  
+
   const [plate, setPlate] = useState('');
   const [vehicleType, setVehicleType] = useState<VehicleType>('Carro');
   const [rateId, setRateId] = useState('');
@@ -52,8 +58,8 @@ export const VehicleDialog = ({ open, onOpenChange, vehicle, onSaved }: VehicleD
     }
   }, [vehicle, open]);
 
-  const availableRates = rates.filter(r => r.vehicleType === vehicleType);
-  const selectedRate = rates.find(r => r.id === rateId);
+  const availableRates = rates.filter((r) => r.vehicleType === vehicleType);
+  const selectedRate = rates.find((r) => r.id === rateId);
 
   const calculateCurrentValue = () => {
     if (!vehicle || !exitDate || !exitTime || !selectedRate) return 0;
@@ -99,7 +105,7 @@ export const VehicleDialog = ({ open, onOpenChange, vehicle, onSaved }: VehicleD
           description: 'O veículo foi registrado com sucesso',
         });
       }
-      
+
       onSaved?.(); // Notify parent to refresh data
       onOpenChange(false);
     } catch (error) {
@@ -111,7 +117,8 @@ export const VehicleDialog = ({ open, onOpenChange, vehicle, onSaved }: VehicleD
     }
   };
 
-  const requiresContractedDays = selectedRate && ['Semanal', 'Quinzenal', 'Mensal'].includes(selectedRate.rateType);
+  const requiresContractedDays =
+    selectedRate && ['Semanal', 'Quinzenal', 'Mensal'].includes(selectedRate.rateType);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -228,9 +235,7 @@ export const VehicleDialog = ({ open, onOpenChange, vehicle, onSaved }: VehicleD
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancelar
             </Button>
-            <Button type="submit">
-              {vehicle ? 'Atualizar' : 'Adicionar'}
-            </Button>
+            <Button type="submit">{vehicle ? 'Atualizar' : 'Adicionar'}</Button>
           </div>
         </form>
       </DialogContent>

@@ -9,7 +9,14 @@ import { Label } from '@/components/ui/label';
 import { ChangePasswordDialog } from '@/components/ChangePasswordDialog';
 
 const Login: React.FC = () => {
-  const { login, loading, isAuthenticated, mustChangePassword, isFirstLogin, clearPasswordChangeFlags } = useAuth();
+  const {
+    login,
+    loading,
+    isAuthenticated,
+    mustChangePassword,
+    isFirstLogin,
+    clearPasswordChangeFlags,
+  } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [userLogin, setUserLogin] = useState('');
@@ -67,22 +74,44 @@ const Login: React.FC = () => {
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="login">Usuário</Label>
-                <Input id="login" value={userLogin} onChange={e => setUserLogin(e.target.value)} autoComplete="username" required />
+                <Input
+                  id="login"
+                  value={userLogin}
+                  onChange={(e) => setUserLogin(e.target.value)}
+                  autoComplete="username"
+                  required
+                />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="password">Senha</Label>
-                <Input id="password" type="password" value={password} onChange={e => setPassword(e.target.value)} autoComplete="current-password" required />
+                <Input
+                  id="password"
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  autoComplete="current-password"
+                  required
+                />
               </div>
               <div className="flex items-center space-x-2">
-                <Checkbox id="remember" checked={remember} onCheckedChange={v => setRemember(Boolean(v))} />
-                <Label htmlFor="remember" className="cursor-pointer select-none">Lembrar</Label>
+                <Checkbox
+                  id="remember"
+                  checked={remember}
+                  onCheckedChange={(v) => setRemember(Boolean(v))}
+                />
+                <Label htmlFor="remember" className="cursor-pointer select-none">
+                  Lembrar
+                </Label>
               </div>
               {error && <p className="text-sm text-red-600">{error}</p>}
               <Button type="submit" className="w-full" disabled={submitting || loading}>
                 {submitting ? 'Entrando...' : 'Entrar'}
               </Button>
               <div className="text-xs text-center text-muted-foreground">
-                <Link to="/forgot-password" className="underline decoration-dotted hover:text-foreground">
+                <Link
+                  to="/forgot-password"
+                  className="underline decoration-dotted hover:text-foreground"
+                >
                   Esqueceu a senha?
                 </Link>
               </div>

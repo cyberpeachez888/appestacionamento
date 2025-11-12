@@ -1,16 +1,19 @@
 # Monthly Customer Registration Updates
 
 ## Overview
+
 Enhanced the monthly customer registration system with improved UX, additional fields, and automatic receipt generation.
 
 ## Database Changes
 
 Run the migration script in your Supabase SQL Editor:
+
 ```bash
 backend/update-monthly-customers-schema.sql
 ```
 
 This adds:
+
 - `cpf` TEXT field for customer CPF
 - `phone` TEXT field for customer phone number
 - `plates` JSONB field (array of vehicle plates)
@@ -19,9 +22,11 @@ This adds:
 ## Backend Changes
 
 ### New Endpoint
+
 - `GET /monthlyCustomers/:id/receipt` - Generates receipt data with customer, payment, and company info
 
 ### Updated Controller
+
 - `monthlyController.create` now accepts: cpf, phone, plates (array), operatorName
 - `monthlyController.list` parses JSONB plates to array for frontend
 - `monthlyController.getReceipt` provides complete receipt data
@@ -78,6 +83,7 @@ This adds:
 ## Testing
 
 Before using in production:
+
 1. Run the database migration in Supabase
 2. Test customer creation with all field types
 3. Verify plate management (add, edit, delete)

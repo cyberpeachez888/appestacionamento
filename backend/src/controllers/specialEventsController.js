@@ -13,14 +13,14 @@ const specialEventsController = {
 
       res.json({
         success: true,
-        data
+        data,
       });
     } catch (error) {
       console.error('Error listing special events:', error);
       res.status(500).json({
         success: false,
         message: 'Failed to list special events',
-        error: error.message
+        error: error.message,
       });
     }
   },
@@ -40,14 +40,14 @@ const specialEventsController = {
 
       res.json({
         success: true,
-        data
+        data,
       });
     } catch (error) {
       console.error('Error getting special event:', error);
       res.status(500).json({
         success: false,
         message: 'Failed to get special event',
-        error: error.message
+        error: error.message,
       });
     }
   },
@@ -68,14 +68,14 @@ const specialEventsController = {
       res.json({
         success: true,
         data,
-        message: 'Special event created successfully'
+        message: 'Special event created successfully',
       });
     } catch (error) {
       console.error('Error creating special event:', error);
       res.status(500).json({
         success: false,
         message: 'Failed to create special event',
-        error: error.message
+        error: error.message,
       });
     }
   },
@@ -99,14 +99,14 @@ const specialEventsController = {
       res.json({
         success: true,
         data,
-        message: 'Special event updated successfully'
+        message: 'Special event updated successfully',
       });
     } catch (error) {
       console.error('Error updating special event:', error);
       res.status(500).json({
         success: false,
         message: 'Failed to update special event',
-        error: error.message
+        error: error.message,
       });
     }
   },
@@ -116,23 +116,20 @@ const specialEventsController = {
     try {
       const { id } = req.params;
 
-      const { error } = await supabase
-        .from('special_events')
-        .delete()
-        .eq('id', id);
+      const { error } = await supabase.from('special_events').delete().eq('id', id);
 
       if (error) throw error;
 
       res.json({
         success: true,
-        message: 'Special event deleted successfully'
+        message: 'Special event deleted successfully',
       });
     } catch (error) {
       console.error('Error deleting special event:', error);
       res.status(500).json({
         success: false,
         message: 'Failed to delete special event',
-        error: error.message
+        error: error.message,
       });
     }
   },
@@ -153,14 +150,14 @@ const specialEventsController = {
 
       res.json({
         success: true,
-        data
+        data,
       });
     } catch (error) {
       console.error('Error getting active events:', error);
       res.status(500).json({
         success: false,
         message: 'Failed to get active events',
-        error: error.message
+        error: error.message,
       });
     }
   },
@@ -182,17 +179,17 @@ const specialEventsController = {
       res.json({
         success: true,
         hasEvents: data && data.length > 0,
-        events: data || []
+        events: data || [],
       });
     } catch (error) {
       console.error('Error checking special event date:', error);
       res.status(500).json({
         success: false,
         message: 'Failed to check special event date',
-        error: error.message
+        error: error.message,
       });
     }
-  }
+  },
 };
 
 export default specialEventsController;

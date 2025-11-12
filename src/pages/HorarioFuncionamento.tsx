@@ -95,9 +95,7 @@ interface OperationalStatus {
   pricingValue?: number;
 }
 
-const DAYS_OF_WEEK = [
-  'Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'
-];
+const DAYS_OF_WEEK = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
 
 export default function HorarioFuncionamento() {
   const { toast } = useToast();
@@ -105,7 +103,7 @@ export default function HorarioFuncionamento() {
   const [holidays, setHolidays] = useState<Holiday[]>([]);
   const [events, setEvents] = useState<SpecialEvent[]>([]);
   const [operationalStatus, setOperationalStatus] = useState<OperationalStatus | null>(null);
-  
+
   const [holidayDialogOpen, setHolidayDialogOpen] = useState(false);
   const [eventDialogOpen, setEventDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -122,7 +120,7 @@ export default function HorarioFuncionamento() {
       fetchBusinessHours(),
       fetchHolidays(),
       fetchEvents(),
-      fetchOperationalStatus()
+      fetchOperationalStatus(),
     ]);
   };
 
@@ -164,18 +162,18 @@ export default function HorarioFuncionamento() {
 
   const handleUpdateHours = async (dayOfWeek: number, updates: Partial<BusinessHours>) => {
     try {
-      const current = businessHours.find(h => h.dayOfWeek === dayOfWeek);
+      const current = businessHours.find((h) => h.dayOfWeek === dayOfWeek);
       if (!current) return;
 
       await api.updateBusinessHours(dayOfWeek, { ...current, ...updates });
-      
+
       toast({ title: 'Horário atualizado com sucesso' });
       fetchBusinessHours();
     } catch (err: any) {
       toast({
         title: 'Erro',
         description: err.message || 'Não foi possível atualizar o horário',
-        variant: 'destructive'
+        variant: 'destructive',
       });
     }
   };
@@ -187,9 +185,9 @@ export default function HorarioFuncionamento() {
       } else {
         await api.createHoliday(holiday);
       }
-      
+
       toast({
-        title: editingHoliday ? 'Feriado atualizado' : 'Feriado criado'
+        title: editingHoliday ? 'Feriado atualizado' : 'Feriado criado',
       });
       setHolidayDialogOpen(false);
       setEditingHoliday(null);
@@ -198,7 +196,7 @@ export default function HorarioFuncionamento() {
       toast({
         title: 'Erro',
         description: err.message || 'Não foi possível salvar o feriado',
-        variant: 'destructive'
+        variant: 'destructive',
       });
     }
   };
@@ -210,9 +208,9 @@ export default function HorarioFuncionamento() {
       } else {
         await api.createSpecialEvent(event);
       }
-      
+
       toast({
-        title: editingEvent ? 'Evento atualizado' : 'Evento criado'
+        title: editingEvent ? 'Evento atualizado' : 'Evento criado',
       });
       setEventDialogOpen(false);
       setEditingEvent(null);
@@ -221,7 +219,7 @@ export default function HorarioFuncionamento() {
       toast({
         title: 'Erro',
         description: err.message || 'Não foi possível salvar o evento',
-        variant: 'destructive'
+        variant: 'destructive',
       });
     }
   };
@@ -235,11 +233,11 @@ export default function HorarioFuncionamento() {
       } else {
         await api.deleteSpecialEvent(deletingItem.id);
       }
-      
+
       toast({ title: 'Item excluído com sucesso' });
       setDeleteDialogOpen(false);
       setDeletingItem(null);
-      
+
       if (deletingItem.type === 'holiday') {
         fetchHolidays();
       } else {
@@ -249,19 +247,25 @@ export default function HorarioFuncionamento() {
       toast({
         title: 'Erro',
         description: err.message || 'Não foi possível excluir',
-        variant: 'destructive'
+        variant: 'destructive',
       });
     }
   };
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'open': return 'bg-success/10 text-success border-success';
-      case 'after_hours': return 'bg-warning/10 text-warning border-warning';
-      case 'closed': return 'bg-destructive/10 text-destructive border-destructive';
-      case 'holiday': return 'bg-blue-100 text-blue-800 border-blue-300';
-      case 'special_event': return 'bg-purple-100 text-purple-800 border-purple-300';
-      default: return 'bg-muted text-muted-foreground border-muted';
+      case 'open':
+        return 'bg-success/10 text-success border-success';
+      case 'after_hours':
+        return 'bg-warning/10 text-warning border-warning';
+      case 'closed':
+        return 'bg-destructive/10 text-destructive border-destructive';
+      case 'holiday':
+        return 'bg-blue-100 text-blue-800 border-blue-300';
+      case 'special_event':
+        return 'bg-purple-100 text-purple-800 border-purple-300';
+      default:
+        return 'bg-muted text-muted-foreground border-muted';
     }
   };
 
@@ -271,7 +275,7 @@ export default function HorarioFuncionamento() {
       after_hours: 'Fora do Horário',
       closed: 'Fechado',
       holiday: 'Feriado',
-      special_event: 'Evento Especial'
+      special_event: 'Evento Especial',
     };
     return labels[status] || status;
   };
@@ -281,14 +285,14 @@ export default function HorarioFuncionamento() {
       <div className="max-w-7xl mx-auto">
         <div className="mb-8">
           <h1 className="text-3xl font-bold mb-2">Horário de Funcionamento</h1>
-          <p className="text-muted-foreground">
-            Configure horários, feriados e eventos especiais
-          </p>
+          <p className="text-muted-foreground">Configure horários, feriados e eventos especiais</p>
         </div>
 
         {/* Current Operational Status */}
         {operationalStatus && (
-          <div className={`p-4 rounded-lg border-2 mb-6 ${getStatusColor(operationalStatus.status)}`}>
+          <div
+            className={`p-4 rounded-lg border-2 mb-6 ${getStatusColor(operationalStatus.status)}`}
+          >
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <AlertCircle className="h-6 w-6" />
@@ -349,7 +353,12 @@ export default function HorarioFuncionamento() {
           {/* Holidays Tab */}
           <TabsContent value="holidays" className="space-y-4">
             <div className="flex justify-end mb-4">
-              <Button onClick={() => { setEditingHoliday(null); setHolidayDialogOpen(true); }}>
+              <Button
+                onClick={() => {
+                  setEditingHoliday(null);
+                  setHolidayDialogOpen(true);
+                }}
+              >
                 <Plus className="h-4 w-4 mr-2" />
                 Novo Feriado
               </Button>
@@ -360,8 +369,14 @@ export default function HorarioFuncionamento() {
                 <HolidayCard
                   key={holiday.id}
                   holiday={holiday}
-                  onEdit={() => { setEditingHoliday(holiday); setHolidayDialogOpen(true); }}
-                  onDelete={() => { setDeletingItem({ type: 'holiday', id: holiday.id }); setDeleteDialogOpen(true); }}
+                  onEdit={() => {
+                    setEditingHoliday(holiday);
+                    setHolidayDialogOpen(true);
+                  }}
+                  onDelete={() => {
+                    setDeletingItem({ type: 'holiday', id: holiday.id });
+                    setDeleteDialogOpen(true);
+                  }}
                 />
               ))}
             </div>
@@ -376,7 +391,12 @@ export default function HorarioFuncionamento() {
           {/* Events Tab */}
           <TabsContent value="events" className="space-y-4">
             <div className="flex justify-end mb-4">
-              <Button onClick={() => { setEditingEvent(null); setEventDialogOpen(true); }}>
+              <Button
+                onClick={() => {
+                  setEditingEvent(null);
+                  setEventDialogOpen(true);
+                }}
+              >
                 <Plus className="h-4 w-4 mr-2" />
                 Novo Evento
               </Button>
@@ -387,8 +407,14 @@ export default function HorarioFuncionamento() {
                 <EventCard
                   key={event.id}
                   event={event}
-                  onEdit={() => { setEditingEvent(event); setEventDialogOpen(true); }}
-                  onDelete={() => { setDeletingItem({ type: 'event', id: event.id }); setDeleteDialogOpen(true); }}
+                  onEdit={() => {
+                    setEditingEvent(event);
+                    setEventDialogOpen(true);
+                  }}
+                  onDelete={() => {
+                    setDeletingItem({ type: 'event', id: event.id });
+                    setDeleteDialogOpen(true);
+                  }}
                 />
               ))}
             </div>
@@ -438,7 +464,11 @@ export default function HorarioFuncionamento() {
 }
 
 // Component for each day's business hours
-function BusinessHoursRow({ hours, dayName, onUpdate }: {
+function BusinessHoursRow({
+  hours,
+  dayName,
+  onUpdate,
+}: {
   hours: BusinessHours;
   dayName: string;
   onUpdate: (updates: Partial<BusinessHours>) => void;
@@ -454,7 +484,7 @@ function BusinessHoursRow({ hours, dayName, onUpdate }: {
             onCheckedChange={(checked) => onUpdate({ isOpen: checked })}
           />
           <span className="font-medium w-24">{dayName}</span>
-          
+
           {hours.isOpen ? (
             <div className="flex items-center gap-2">
               <Input
@@ -477,11 +507,7 @@ function BusinessHoursRow({ hours, dayName, onUpdate }: {
         </div>
 
         {hours.isOpen && (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setExpanded(!expanded)}
-          >
+          <Button variant="ghost" size="sm" onClick={() => setExpanded(!expanded)}>
             {expanded ? 'Menos' : 'Mais'} Opções
           </Button>
         )}
@@ -521,7 +547,9 @@ function BusinessHoursRow({ hours, dayName, onUpdate }: {
                   type="number"
                   step="0.01"
                   value={hours.afterHoursSurchargeValue}
-                  onChange={(e) => onUpdate({ afterHoursSurchargeValue: parseFloat(e.target.value) })}
+                  onChange={(e) =>
+                    onUpdate({ afterHoursSurchargeValue: parseFloat(e.target.value) })
+                  }
                   placeholder={hours.afterHoursSurchargeType === 'percentage' ? '%' : 'R$'}
                 />
               </div>
@@ -564,7 +592,11 @@ function BusinessHoursRow({ hours, dayName, onUpdate }: {
 }
 
 // Holiday Card Component
-function HolidayCard({ holiday, onEdit, onDelete }: {
+function HolidayCard({
+  holiday,
+  onEdit,
+  onDelete,
+}: {
   holiday: Holiday;
   onEdit: () => void;
   onDelete: () => void;
@@ -578,13 +610,15 @@ function HolidayCard({ holiday, onEdit, onDelete }: {
             {format(new Date(holiday.holidayDate), 'dd/MM/yyyy', { locale: ptBR })}
             {holiday.isRecurring && ' (Recorrente)'}
           </p>
-          {holiday.description && (
-            <p className="text-sm mt-2">{holiday.description}</p>
-          )}
+          {holiday.description && <p className="text-sm mt-2">{holiday.description}</p>}
           <div className="flex gap-2 mt-2">
-            <span className={`text-xs px-2 py-1 rounded ${
-              holiday.isClosed ? 'bg-destructive/10 text-destructive' : 'bg-success/10 text-success'
-            }`}>
+            <span
+              className={`text-xs px-2 py-1 rounded ${
+                holiday.isClosed
+                  ? 'bg-destructive/10 text-destructive'
+                  : 'bg-success/10 text-success'
+              }`}
+            >
               {holiday.isClosed ? 'Fechado' : 'Aberto'}
             </span>
             {holiday.hasSpecialPricing && (
@@ -595,8 +629,12 @@ function HolidayCard({ holiday, onEdit, onDelete }: {
           </div>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={onEdit}>Editar</Button>
-          <Button variant="outline" size="sm" onClick={onDelete}>Excluir</Button>
+          <Button variant="outline" size="sm" onClick={onEdit}>
+            Editar
+          </Button>
+          <Button variant="outline" size="sm" onClick={onDelete}>
+            Excluir
+          </Button>
         </div>
       </div>
     </div>
@@ -604,7 +642,11 @@ function HolidayCard({ holiday, onEdit, onDelete }: {
 }
 
 // Event Card Component
-function EventCard({ event, onEdit, onDelete }: {
+function EventCard({
+  event,
+  onEdit,
+  onDelete,
+}: {
   event: SpecialEvent;
   onEdit: () => void;
   onDelete: () => void;
@@ -618,13 +660,13 @@ function EventCard({ event, onEdit, onDelete }: {
             {format(new Date(event.startDate), 'dd/MM/yyyy', { locale: ptBR })} -{' '}
             {format(new Date(event.endDate), 'dd/MM/yyyy', { locale: ptBR })}
           </p>
-          {event.description && (
-            <p className="text-sm mt-2">{event.description}</p>
-          )}
+          {event.description && <p className="text-sm mt-2">{event.description}</p>}
           <div className="flex gap-2 mt-2">
-            <span className={`text-xs px-2 py-1 rounded ${
-              event.isClosed ? 'bg-destructive/10 text-destructive' : 'bg-success/10 text-success'
-            }`}>
+            <span
+              className={`text-xs px-2 py-1 rounded ${
+                event.isClosed ? 'bg-destructive/10 text-destructive' : 'bg-success/10 text-success'
+              }`}
+            >
               {event.isClosed ? 'Fechado' : 'Aberto'}
             </span>
             {event.hasSpecialPricing && (
@@ -640,8 +682,12 @@ function EventCard({ event, onEdit, onDelete }: {
           </div>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={onEdit}>Editar</Button>
-          <Button variant="outline" size="sm" onClick={onDelete}>Excluir</Button>
+          <Button variant="outline" size="sm" onClick={onEdit}>
+            Editar
+          </Button>
+          <Button variant="outline" size="sm" onClick={onDelete}>
+            Excluir
+          </Button>
         </div>
       </div>
     </div>
@@ -649,7 +695,12 @@ function EventCard({ event, onEdit, onDelete }: {
 }
 
 // Holiday Dialog Component
-function HolidayDialog({ open, onOpenChange, holiday, onSave }: {
+function HolidayDialog({
+  open,
+  onOpenChange,
+  holiday,
+  onSave,
+}: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   holiday: Holiday | null;
@@ -729,7 +780,9 @@ function HolidayDialog({ open, onOpenChange, holiday, onSave }: {
             <Label>Preço especial</Label>
             <Switch
               checked={formData.hasSpecialPricing}
-              onCheckedChange={(checked) => setFormData({ ...formData, hasSpecialPricing: checked })}
+              onCheckedChange={(checked) =>
+                setFormData({ ...formData, hasSpecialPricing: checked })
+              }
             />
           </div>
 
@@ -757,7 +810,9 @@ function HolidayDialog({ open, onOpenChange, holiday, onSave }: {
                   type="number"
                   step="0.01"
                   value={formData.specialPricingValue}
-                  onChange={(e) => setFormData({ ...formData, specialPricingValue: parseFloat(e.target.value) })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, specialPricingValue: parseFloat(e.target.value) })
+                  }
                 />
               </div>
             </div>
@@ -773,7 +828,9 @@ function HolidayDialog({ open, onOpenChange, holiday, onSave }: {
           </div>
 
           <div className="flex justify-end gap-2">
-            <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
+            <Button variant="outline" onClick={() => onOpenChange(false)}>
+              Cancelar
+            </Button>
             <Button onClick={() => onSave(formData)}>Salvar</Button>
           </div>
         </div>
@@ -783,7 +840,12 @@ function HolidayDialog({ open, onOpenChange, holiday, onSave }: {
 }
 
 // Event Dialog Component
-function EventDialog({ open, onOpenChange, event, onSave }: {
+function EventDialog({
+  open,
+  onOpenChange,
+  event,
+  onSave,
+}: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   event: SpecialEvent | null;
@@ -867,7 +929,9 @@ function EventDialog({ open, onOpenChange, event, onSave }: {
             <Label>Preço especial</Label>
             <Switch
               checked={formData.hasSpecialPricing}
-              onCheckedChange={(checked) => setFormData({ ...formData, hasSpecialPricing: checked })}
+              onCheckedChange={(checked) =>
+                setFormData({ ...formData, hasSpecialPricing: checked })
+              }
             />
           </div>
 
@@ -895,7 +959,9 @@ function EventDialog({ open, onOpenChange, event, onSave }: {
                   type="number"
                   step="0.01"
                   value={formData.specialPricingValue}
-                  onChange={(e) => setFormData({ ...formData, specialPricingValue: parseFloat(e.target.value) })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, specialPricingValue: parseFloat(e.target.value) })
+                  }
                 />
               </div>
             </div>
@@ -919,7 +985,9 @@ function EventDialog({ open, onOpenChange, event, onSave }: {
           </div>
 
           <div className="flex justify-end gap-2">
-            <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
+            <Button variant="outline" onClick={() => onOpenChange(false)}>
+              Cancelar
+            </Button>
             <Button onClick={() => onSave(formData)}>Salvar</Button>
           </div>
         </div>

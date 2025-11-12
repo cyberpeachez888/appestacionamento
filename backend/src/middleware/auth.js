@@ -23,7 +23,7 @@ export function requireAdmin(req, res, next) {
 
 // Generic permission middleware. Admin bypasses checks.
 export function requirePermission(permissionKey) {
-  return function(req, res, next) {
+  return function (req, res, next) {
     if (!req.user) return res.status(401).json({ error: 'Unauthorized' });
     if (req.user.role === 'admin') return next();
     const perms = req.user.permissions || {};
@@ -36,12 +36,15 @@ export function requirePermission(permissionKey) {
 
 // Allow passing any of a set of permissions (OR logic)
 export function requireAnyPermission(...permissionKeys) {
-  return function(req, res, next) {
+  return function (req, res, next) {
     if (!req.user) return res.status(401).json({ error: 'Unauthorized' });
     if (req.user.role === 'admin') return next();
     const perms = req.user.permissions || {};
-    const ok = permissionKeys.some(k => perms[k]);
-    if (!ok) return res.status(403).json({ error: 'Forbidden: requires one of [' + permissionKeys.join(',') + ']' });
+    const ok = permissionKeys.some((k) => perms[k]);
+    if (!ok)
+      return res
+        .status(403)
+        .json({ error: 'Forbidden: requires one of [' + permissionKeys.join(',') + ']' });
     next();
   };
 }

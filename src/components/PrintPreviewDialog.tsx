@@ -1,4 +1,10 @@
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Printer, X } from 'lucide-react';
 import { format } from 'date-fns';
@@ -37,13 +43,12 @@ interface PrintPreviewDialogProps {
   companyInfo: CompanyInfo;
 }
 
-export default function PrintPreviewDialog({ 
-  open, 
-  onOpenChange, 
-  printerConfig, 
-  companyInfo 
+export default function PrintPreviewDialog({
+  open,
+  onOpenChange,
+  printerConfig,
+  companyInfo,
 }: PrintPreviewDialogProps) {
-
   const handlePrint = () => {
     window.print();
   };
@@ -57,22 +62,24 @@ export default function PrintPreviewDialog({
     entryTime: new Date(Date.now() - 2 * 60 * 60 * 1000), // 2 hours ago
     exitTime: new Date(),
     duration: '2h 00min',
-    value: 20.00,
+    value: 20.0,
     paymentMethod: 'Dinheiro',
-    operator: 'João Silva'
+    operator: 'João Silva',
   };
 
-  const fontSizeClass = {
-    small: 'text-xs',
-    normal: 'text-sm',
-    large: 'text-base'
-  }[printerConfig.fontSize] || 'text-sm';
+  const fontSizeClass =
+    {
+      small: 'text-xs',
+      normal: 'text-sm',
+      large: 'text-base',
+    }[printerConfig.fontSize] || 'text-sm';
 
-  const lineSpacingClass = {
-    compact: 'leading-tight',
-    normal: 'leading-normal',
-    relaxed: 'leading-relaxed'
-  }[printerConfig.lineSpacing] || 'leading-normal';
+  const lineSpacingClass =
+    {
+      compact: 'leading-tight',
+      normal: 'leading-normal',
+      relaxed: 'leading-relaxed',
+    }[printerConfig.lineSpacing] || 'leading-normal';
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -86,7 +93,7 @@ export default function PrintPreviewDialog({
 
         <div className="my-4">
           {/* Print Preview Container */}
-          <div 
+          <div
             className={`thermal-receipt-preview ${printerConfig.paperWidth === '58mm' ? 'thermal-58mm' : 'thermal-80mm'} ${fontSizeClass} ${lineSpacingClass}`}
             style={{
               paddingTop: `${printerConfig.margins.top}px`,
@@ -108,15 +115,9 @@ export default function PrintPreviewDialog({
               {companyInfo.legalName && (
                 <div className="company-legal">{companyInfo.legalName}</div>
               )}
-              {companyInfo.cnpj && (
-                <div className="company-info">CNPJ: {companyInfo.cnpj}</div>
-              )}
-              {companyInfo.address && (
-                <div className="company-info">{companyInfo.address}</div>
-              )}
-              {companyInfo.phone && (
-                <div className="company-info">Tel: {companyInfo.phone}</div>
-              )}
+              {companyInfo.cnpj && <div className="company-info">CNPJ: {companyInfo.cnpj}</div>}
+              {companyInfo.address && <div className="company-info">{companyInfo.address}</div>}
+              {companyInfo.phone && <div className="company-info">Tel: {companyInfo.phone}</div>}
               {printerConfig.headerText && (
                 <div className="header-text">{printerConfig.headerText}</div>
               )}
@@ -127,12 +128,12 @@ export default function PrintPreviewDialog({
             {/* Receipt Details */}
             <div className="receipt-body">
               <div className="receipt-title">RECIBO DE ESTACIONAMENTO</div>
-              
+
               <div className="receipt-row">
                 <span>Nº:</span>
                 <span className="receipt-value">{sampleReceipt.number}</span>
               </div>
-              
+
               <div className="receipt-row">
                 <span>Data:</span>
                 <span className="receipt-value">
@@ -146,7 +147,7 @@ export default function PrintPreviewDialog({
                 <span>Placa:</span>
                 <span className="receipt-value font-bold">{sampleReceipt.plate}</span>
               </div>
-              
+
               <div className="receipt-row">
                 <span>Veículo:</span>
                 <span className="receipt-value">{sampleReceipt.vehicleType}</span>
@@ -157,17 +158,17 @@ export default function PrintPreviewDialog({
               <div className="receipt-row">
                 <span>Entrada:</span>
                 <span className="receipt-value">
-                  {format(sampleReceipt.entryTime, "dd/MM/yyyy HH:mm", { locale: ptBR })}
+                  {format(sampleReceipt.entryTime, 'dd/MM/yyyy HH:mm', { locale: ptBR })}
                 </span>
               </div>
-              
+
               <div className="receipt-row">
                 <span>Saída:</span>
                 <span className="receipt-value">
-                  {format(sampleReceipt.exitTime, "dd/MM/yyyy HH:mm", { locale: ptBR })}
+                  {format(sampleReceipt.exitTime, 'dd/MM/yyyy HH:mm', { locale: ptBR })}
                 </span>
               </div>
-              
+
               <div className="receipt-row">
                 <span>Permanência:</span>
                 <span className="receipt-value">{sampleReceipt.duration}</span>
@@ -181,7 +182,7 @@ export default function PrintPreviewDialog({
                   R$ {sampleReceipt.value.toFixed(2)}
                 </span>
               </div>
-              
+
               <div className="receipt-row">
                 <span>Forma Pgto:</span>
                 <span className="receipt-value">{sampleReceipt.paymentMethod}</span>

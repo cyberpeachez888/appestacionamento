@@ -9,6 +9,7 @@ O TheProParkingApp agora possui uma experiência profissional de primeira execu�
 ## 📋 O Que Foi Implementado?
 
 ### 🎨 Frontend - Wizard Interativo
+
 - ✅ Tela de boas-vindas com preview das etapas
 - ✅ Formulário de dados da empresa (nome, CNPJ, endereço, etc)
 - ✅ Criação de usuário administrador com validação de senha
@@ -19,18 +20,21 @@ O TheProParkingApp agora possui uma experiência profissional de primeira execu�
 - ✅ Design moderno e responsivo
 
 ### 🔧 Backend - API de Setup
+
 - ✅ Endpoint `/setup/check-first-run` - Verifica se precisa configurar
 - ✅ Endpoint `/setup/initialize` - Executa configuração completa
 - ✅ Endpoint `/setup/cleanup-test-data` - Remove dados de teste
 - ✅ Endpoint `/setup/company-settings` - Consulta configurações
 
 ### 🗄️ Database - Tabela de Configurações
+
 - ✅ Tabela `company_settings` com RLS habilitado
 - ✅ Políticas de segurança configuradas
 - ✅ Trigger de auto-atualização de timestamps
 - ✅ Registro inicial criado (setup_completed = false)
 
 ### 🛡️ Segurança - Route Guard
+
 - ✅ Verificação automática ao abrir o app
 - ✅ Redirecionamento para `/setup` se não configurado
 - ✅ Bloqueia acesso até completar setup
@@ -64,12 +68,14 @@ cd ..
 ### 3️⃣ Reiniciar Servidores
 
 **Terminal 1 - Backend:**
+
 ```bash
 cd ~/appestacionamento/backend
 npm start
 ```
 
 **Terminal 2 - Frontend:**
+
 ```bash
 cd ~/appestacionamento
 npm run dev
@@ -85,6 +91,7 @@ npm run dev
 ## 📸 Como Vai Funcionar?
 
 ### Passo 1: Bem-vindo
+
 ```
 ╔════════════════════════════════════════╗
 ║  🏢 Bem-vindo ao TheProParkingApp      ║
@@ -97,6 +104,7 @@ npm run dev
 ```
 
 ### Passo 2: Dados da Empresa
+
 ```
 ╔════════════════════════════════════════╗
 ║  Informações da Empresa                ║
@@ -114,6 +122,7 @@ npm run dev
 ```
 
 ### Passo 3: Criar Admin
+
 ```
 ╔════════════════════════════════════════╗
 ║  Criar Usuário Administrador           ║
@@ -131,6 +140,7 @@ npm run dev
 ```
 
 ### Passo 4: Tarifas
+
 ```
 ╔════════════════════════════════════════╗
 ║  Tarifas Iniciais                      ║
@@ -151,6 +161,7 @@ npm run dev
 ```
 
 ### Passo 5: Sucesso!
+
 ```
 ╔════════════════════════════════════════╗
 ║          ✅                             ║

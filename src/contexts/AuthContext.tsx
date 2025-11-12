@@ -54,7 +54,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const validateToken = async () => {
       setLoading(true);
       api.setAuthToken(token);
-      
+
       try {
         const me = await api.getCurrentUser();
         setUser(me.user);
@@ -68,7 +68,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setLoading(false);
       }
     };
-    
+
     validateToken();
   }, [token]);
 
@@ -101,7 +101,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setToken(res.token);
     storeToken(res.token, remember);
     api.setAuthToken(res.token);
-    
+
     // Check if password change is required
     if (res.mustChangePassword !== undefined) {
       setMustChangePassword(res.mustChangePassword);
@@ -132,25 +132,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return Boolean(perms[perm]);
   };
 
-  const value = useMemo<AuthContextType>(() => ({
-    user,
-    token,
-    isAuthenticated: !!user,
-    isAdmin: user?.role === 'admin',
-    hasPermission,
-    loading,
-    mustChangePassword,
-    isFirstLogin,
-    login,
-    logout,
-    clearPasswordChangeFlags,
-  }), [user, token, loading, mustChangePassword, isFirstLogin]);
-
-  return (
-    <AuthContext.Provider value={value}>
-      {children}
-    </AuthContext.Provider>
+  const value = useMemo<AuthContextType>(
+    () => ({
+      user,
+      token,
+      isAuthenticated: !!user,
+      isAdmin: user?.role === 'admin',
+      hasPermission,
+      loading,
+      mustChangePassword,
+      isFirstLogin,
+      login,
+      logout,
+      clearPasswordChangeFlags,
+    }),
+    [user, token, loading, mustChangePassword, isFirstLogin]
   );
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 
 export const useAuth = () => {

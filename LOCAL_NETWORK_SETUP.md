@@ -28,6 +28,7 @@ JWT_SECRET=6d36d4da3c46bad35618586898338ca922fa9a5fab73727223a86da636cfc9c406685
 ```
 
 **Your complete .env should look like:**
+
 ```env
 # Node Environment
 NODE_ENV=production
@@ -59,33 +60,38 @@ This is the computer that will stay on at your parking location.
 2. **Clone or copy this project** to the computer
 
 3. **Install dependencies:**
+
    ```cmd
    cd path\to\appestacionamento
    npm install
-   
+
    cd backend
    npm install
    ```
 
 4. **Start the backend:**
+
    ```cmd
    cd backend
    npm start
    ```
-   
+
    You should see:
+
    ```
    ✅ Connecting to Supabase: https://nnpvazzeomwklugawceg.supabase.co
    Backend running on http://localhost:3000
    ```
 
 5. **Start the frontend** (new terminal window):
+
    ```cmd
    cd path\to\appestacionamento
    npm run dev
    ```
-   
+
    You should see:
+
    ```
    ➜ Local: http://localhost:8080/
    ```
@@ -117,16 +123,21 @@ npm run dev
 ### Find Your Server Computer's IP Address:
 
 **Windows:**
+
 ```cmd
 ipconfig
 ```
+
 Look for "IPv4 Address" under your WiFi adapter (e.g., `192.168.1.100`)
 
 **Mac/Linux:**
+
 ```bash
 ifconfig | grep "inet " | grep -v 127.0.0.1
 ```
+
 or
+
 ```bash
 hostname -I
 ```
@@ -144,6 +155,7 @@ http://192.168.1.100:8080
 **Replace `192.168.1.100` with your actual server computer's IP**
 
 ### Devices You Can Use:
+
 - 📱 Smartphones
 - 📱 Tablets (perfect for parking booth!)
 - 💻 Other computers
@@ -152,6 +164,7 @@ http://192.168.1.100:8080
 ### Save as Home Screen App (Mobile):
 
 **iPhone:**
+
 1. Open Safari
 2. Go to `http://YOUR-IP:8080`
 3. Tap Share button
@@ -159,6 +172,7 @@ http://192.168.1.100:8080
 5. Now works like a native app!
 
 **Android:**
+
 1. Open Chrome
 2. Go to `http://YOUR-IP:8080`
 3. Tap menu (⋮)
@@ -172,6 +186,7 @@ http://192.168.1.100:8080
 ### Option 1: Manual Start (Simple)
 
 Just start the servers when you arrive:
+
 ```cmd
 cd backend && npm start
 cd .. && npm run dev
@@ -182,6 +197,7 @@ cd .. && npm run dev
 **Windows - Create Startup Scripts:**
 
 1. Create `start-backend.bat`:
+
 ```batch
 @echo off
 cd C:\path\to\appestacionamento\backend
@@ -189,6 +205,7 @@ start "TheProParking Backend" cmd /k npm start
 ```
 
 2. Create `start-frontend.bat`:
+
 ```batch
 @echo off
 cd C:\path\to\appestacionamento
@@ -202,6 +219,7 @@ start "TheProParking Frontend" cmd /k npm run dev
 **Mac/Linux - Create Launch Services:**
 
 Create `~/Library/LaunchAgents/com.theproparking.backend.plist`:
+
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -223,6 +241,7 @@ Create `~/Library/LaunchAgents/com.theproparking.backend.plist`:
 ```
 
 Load it:
+
 ```bash
 launchctl load ~/Library/LaunchAgents/com.theproparking.backend.plist
 ```
@@ -256,6 +275,7 @@ sudo /usr/libexec/ApplicationFirewall/socketfilterfw --unblockapp /usr/local/bin
 ### Morning (Opening):
 
 1. **Server computer:** Should auto-start or manually run:
+
    ```
    cd backend && npm start
    cd .. && npm run dev
@@ -304,12 +324,14 @@ sudo /usr/libexec/ApplicationFirewall/socketfilterfw --unblockapp /usr/local/bin
 ### Problem: Can't access from other devices
 
 **Check:**
+
 1. All devices on same WiFi?
 2. Server computer IP address correct?
 3. Firewall allowing Node.js?
 4. Backend and frontend both running?
 
 **Test:**
+
 ```bash
 # On server computer
 ping 192.168.1.100  # Your IP
@@ -321,11 +343,13 @@ ping 192.168.1.100  # Server IP
 ### Problem: Backend not starting
 
 **Check:**
+
 1. Port 3000 already in use?
+
    ```bash
    # Windows
    netstat -ano | findstr :3000
-   
+
    # Mac/Linux
    lsof -i :3000
    ```
@@ -338,6 +362,7 @@ ping 192.168.1.100  # Server IP
 ### Problem: Frontend not starting
 
 **Check:**
+
 1. Port 8080 already in use?
 2. Dependencies installed?
    ```bash
@@ -397,7 +422,7 @@ ping 192.168.1.100  # Server IP
 
 ❌ Internet (external hackers)  
 ❌ Other networks  
-❌ Public WiFi  
+❌ Public WiFi
 
 **Only** devices on your parking location's WiFi can access!
 
@@ -406,17 +431,20 @@ ping 192.168.1.100  # Server IP
 ## 📱 Recommended Setup
 
 **Server Computer:**
+
 - Desktop PC or laptop
 - Windows 10/11 or Mac
 - Always on during work hours
 - Connected via Ethernet (more stable than WiFi)
 
 **Staff Devices:**
+
 - iPad/Android tablet at parking booth (best!)
 - Smartphones for mobile checking
 - Additional computer at office
 
 **Network:**
+
 - Regular WiFi router
 - No special configuration needed
 - Same network all devices use now

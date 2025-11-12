@@ -2,7 +2,13 @@ import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -60,7 +66,12 @@ const CONNECTION_TYPES = [
   { value: 'serial', label: 'Serial (COM)' },
 ];
 
-export default function PrinterConfigSection({ config, onChange, onSave, onPreview }: PrinterConfigSectionProps) {
+export default function PrinterConfigSection({
+  config,
+  onChange,
+  onSave,
+  onPreview,
+}: PrinterConfigSectionProps) {
   const { toast } = useToast();
   const [availablePrinters, setAvailablePrinters] = useState<string[]>([]);
   const [detecting, setDetecting] = useState(false);
@@ -74,7 +85,8 @@ export default function PrinterConfigSection({ config, onChange, onSave, onPrevi
         // Limited support - fallback to manual selection
         toast({
           title: 'Detecção de impressoras',
-          description: 'Selecione manualmente a impressora nas configurações do navegador ao imprimir.',
+          description:
+            'Selecione manualmente a impressora nas configurações do navegador ao imprimir.',
         });
       }
 
@@ -132,9 +144,7 @@ export default function PrinterConfigSection({ config, onChange, onSave, onPrevi
             <Printer className="h-5 w-5" />
             Configuração da Impressora
           </CardTitle>
-          <CardDescription>
-            Configure a impressora térmica para emissão de recibos
-          </CardDescription>
+          <CardDescription>Configure a impressora térmica para emissão de recibos</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
@@ -212,9 +222,7 @@ export default function PrinterConfigSection({ config, onChange, onSave, onPrevi
       <Card>
         <CardHeader>
           <CardTitle>Recursos ESC/POS</CardTitle>
-          <CardDescription>
-            Ative recursos especiais da impressora térmica
-          </CardDescription>
+          <CardDescription>Ative recursos especiais da impressora térmica</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex items-center justify-between">
@@ -234,9 +242,7 @@ export default function PrinterConfigSection({ config, onChange, onSave, onPrevi
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
               <Label htmlFor="enableCut">Corte Automático</Label>
-              <p className="text-xs text-muted-foreground">
-                Corta o papel após imprimir o recibo
-              </p>
+              <p className="text-xs text-muted-foreground">Corta o papel após imprimir o recibo</p>
             </div>
             <Switch
               id="enableCut"
@@ -248,9 +254,7 @@ export default function PrinterConfigSection({ config, onChange, onSave, onPrevi
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
               <Label htmlFor="enableBeep">Sinal Sonoro</Label>
-              <p className="text-xs text-muted-foreground">
-                Emite um beep ao finalizar impressão
-              </p>
+              <p className="text-xs text-muted-foreground">Emite um beep ao finalizar impressão</p>
             </div>
             <Switch
               id="enableBeep"
@@ -279,9 +283,7 @@ export default function PrinterConfigSection({ config, onChange, onSave, onPrevi
       <Card>
         <CardHeader>
           <CardTitle>Personalização do Layout</CardTitle>
-          <CardDescription>
-            Configure cabeçalho, rodapé e logo do recibo
-          </CardDescription>
+          <CardDescription>Configure cabeçalho, rodapé e logo do recibo</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           {/* Logo Upload */}
@@ -303,7 +305,11 @@ export default function PrinterConfigSection({ config, onChange, onSave, onPrevi
                     onChange={handleLogoUpload}
                     className="flex-1"
                   />
-                  <Button variant="outline" size="icon" onClick={() => document.getElementById('logoUpload')?.click()}>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => document.getElementById('logoUpload')?.click()}
+                  >
                     <Upload className="h-4 w-4" />
                   </Button>
                 </div>

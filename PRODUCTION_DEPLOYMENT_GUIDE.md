@@ -11,6 +11,7 @@ Your parking management system is feature-complete and ready for production depl
 ### 1. Security & Environment (CRITICAL)
 
 #### Backend Environment Variables
+
 - [ ] **Move .env to secure location** - Never commit `.env` to Git
 - [ ] **Generate strong JWT secret** - Replace current secret with secure random string
 - [ ] **Configure CORS properly** - Change from `*` to your actual domain
@@ -21,7 +22,6 @@ Your parking management system is feature-complete and ready for production depl
 # Generate secure JWT secret
 node -e "console.log(require('crypto').randomBytes(64).toString('hex'))"
 ```
-
 
 ### 1.1 Verificação automática das variáveis
 
@@ -35,6 +35,7 @@ npm run verify-env
 Se alguma estiver ausente, o script lista o nome; configure na Render antes de continuar.
 
 #### Update backend/.env for production:
+
 ```env
 NODE_ENV=production
 PORT=3000
@@ -63,6 +64,7 @@ EMAIL_FROM=Sistema Estacionamento <noreply@yourparking.com>
 - [ ] **Review indexes** - Ensure all queries are optimized
 
 #### Supabase Production Settings:
+
 1. Go to Supabase Dashboard → Database → Backups
 2. Enable Point-in-Time Recovery (PITR)
 3. Set retention period (7-30 days recommended)
@@ -79,12 +81,14 @@ EMAIL_FROM=Sistema Estacionamento <noreply@yourparking.com>
 ### 4. Frontend Optimization
 
 #### Build for Production:
+
 ```bash
 cd /workspaces/appestacionamento
 npm run build
 ```
 
 #### Performance Optimization:
+
 - [ ] **Minify assets** - Vite does this automatically
 - [ ] **Optimize images** - Compress any images/logos
 - [ ] **Enable caching** - Configure browser caching
@@ -93,6 +97,7 @@ npm run build
 ### 5. Backend Production Setup
 
 #### PM2 Process Manager (Recommended):
+
 ```bash
 # Install PM2 globally
 npm install -g pm2
@@ -119,6 +124,7 @@ pm2 monit
 **Best for:** Full control, custom domains, multiple locations
 
 #### Services to Consider:
+
 - **DigitalOcean** - $6-12/month (Droplet)
 - **Linode** - $5-10/month
 - **AWS Lightsail** - $5-10/month
@@ -130,6 +136,7 @@ pm2 monit
 1. **Create Ubuntu Server** (20.04 or 22.04 LTS)
 
 2. **Install Dependencies:**
+
 ```bash
 # Update system
 sudo apt update && sudo apt upgrade -y
@@ -149,6 +156,7 @@ sudo apt install -y git
 ```
 
 3. **Clone Repository:**
+
 ```bash
 cd /var/www
 sudo git clone https://github.com/cyberpeachez888/appestacionamento.git
@@ -157,6 +165,7 @@ cd appestacionamento
 ```
 
 4. **Setup Backend:**
+
 ```bash
 cd backend
 npm install --production
@@ -168,6 +177,7 @@ pm2 startup
 ```
 
 5. **Setup Frontend:**
+
 ```bash
 cd /var/www/appestacionamento
 npm install
@@ -178,17 +188,18 @@ sudo nano /etc/nginx/sites-available/parking
 ```
 
 **Nginx Configuration:**
+
 ```nginx
 server {
     listen 80;
     server_name your-domain.com;
-    
+
     # Frontend
     location / {
         root /var/www/appestacionamento/dist;
         try_files $uri $uri/ /index.html;
     }
-    
+
     # Backend API
     location /api {
         proxy_pass http://localhost:3000;
@@ -209,6 +220,7 @@ sudo systemctl restart nginx
 ```
 
 6. **Setup SSL (HTTPS):**
+
 ```bash
 # Install Certbot
 sudo apt install certbot python3-certbot-nginx
@@ -224,6 +236,7 @@ sudo certbot --nginx -d your-domain.com
 **Best for:** Easy deployment, automatic scaling
 
 #### Frontend on Vercel (FREE):
+
 ```bash
 # Install Vercel CLI
 npm i -g vercel
@@ -236,6 +249,7 @@ vercel
 ```
 
 #### Backend on Railway:
+
 1. Go to https://railway.app
 2. Click "New Project" → "Deploy from GitHub"
 3. Select your repository
@@ -263,6 +277,7 @@ vercel
 ## 🔒 Security Hardening
 
 ### Backend Security:
+
 ```bash
 # Install security packages
 cd backend
@@ -270,6 +285,7 @@ npm install helmet express-rate-limit cors
 ```
 
 **Update backend/src/server.js:**
+
 ```javascript
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
@@ -280,18 +296,21 @@ app.use(helmet());
 // Rate limiting
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100 // limit each IP to 100 requests per windowMs
+  max: 100, // limit each IP to 100 requests per windowMs
 });
 app.use('/api', limiter);
 
 // CORS - production domain only
-app.use(cors({
-  origin: 'https://your-domain.com',
-  credentials: true
-}));
+app.use(
+  cors({
+    origin: 'https://your-domain.com',
+    credentials: true,
+  })
+);
 ```
 
 ### Supabase RLS Policies:
+
 ```sql
 -- Enable Row Level Security on all tables
 ALTER TABLE users ENABLE ROW LEVEL SECURITY;
@@ -311,12 +330,15 @@ CREATE POLICY "Users can view own data"
 ## 📱 Domain & DNS Setup
 
 ### 1. Purchase Domain
+
 - **Registro.br** (for .br domains) - R$40/year
 - **Namecheap** - $8-12/year
 - **Google Domains** - $12-15/year
 
 ### 2. Configure DNS
+
 Point your domain to your server:
+
 ```
 A Record:    @ → Your-Server-IP
 A Record:    www → Your-Server-IP
@@ -329,6 +351,7 @@ A Record:    www → Your-Server-IP
 ### Set Up Monitoring:
 
 1. **PM2 Monitoring:**
+
 ```bash
 pm2 install pm2-logrotate
 pm2 set pm2-logrotate:max_size 10M
@@ -336,16 +359,19 @@ pm2 set pm2-logrotate:retain 30
 ```
 
 2. **Uptime Monitoring (FREE):**
+
 - https://uptimerobot.com
 - https://betterstack.com
 - Set up email/SMS alerts
 
 3. **Error Tracking:**
+
 - Sentry.io (FREE tier)
 - LogRocket
 - Track bugs and crashes
 
 ### Regular Maintenance:
+
 ```bash
 # Weekly updates
 sudo apt update && sudo apt upgrade -y
@@ -364,6 +390,7 @@ tail -f /var/log/nginx/error.log
 ## 💰 Estimated Costs
 
 ### Minimal Setup (Small parking lot):
+
 - **Domain:** R$40/year (~$8/year)
 - **Server:** DigitalOcean $6/month
 - **Supabase:** FREE tier (up to 500MB database)
@@ -371,6 +398,7 @@ tail -f /var/log/nginx/error.log
 - **Total:** ~R$30-40/month (~$6-8/month)
 
 ### Recommended Setup (Medium parking):
+
 - **Domain:** R$40/year
 - **Server:** DigitalOcean $12/month (2GB RAM)
 - **Supabase:** FREE tier
@@ -379,6 +407,7 @@ tail -f /var/log/nginx/error.log
 - **Total:** ~R$60-80/month (~$12-16/month)
 
 ### Enterprise Setup (Large parking chain):
+
 - **Domain:** R$100/year
 - **Server:** DigitalOcean $24+/month (4GB RAM)
 - **Supabase:** Pro $25/month
@@ -391,6 +420,7 @@ tail -f /var/log/nginx/error.log
 ## 📋 Go-Live Checklist
 
 ### Week Before Launch:
+
 - [ ] Complete all security steps above
 - [ ] Full testing with real scenarios
 - [ ] Train staff on system usage
@@ -400,6 +430,7 @@ tail -f /var/log/nginx/error.log
 - [ ] Test receipt printing
 
 ### Launch Day:
+
 - [ ] Deploy to production server
 - [ ] Configure domain and SSL
 - [ ] Test all features in production
@@ -408,6 +439,7 @@ tail -f /var/log/nginx/error.log
 - [ ] Announce to users
 
 ### First Week After Launch:
+
 - [ ] Monitor daily for issues
 - [ ] Collect user feedback
 - [ ] Track performance metrics
@@ -420,12 +452,14 @@ tail -f /var/log/nginx/error.log
 ## 🆘 Support & Help
 
 ### If Issues Arise:
+
 1. Check PM2 logs: `pm2 logs parking-backend`
 2. Check Nginx logs: `sudo tail -f /var/log/nginx/error.log`
 3. Check Supabase logs in dashboard
 4. Review browser console for frontend errors
 
 ### Backup Strategy:
+
 ```bash
 # Daily automated backup script
 #!/bin/bash
@@ -435,6 +469,7 @@ find /backups -name "db_*.sql" -mtime +30 -delete
 ```
 
 Save as `/usr/local/bin/backup-database.sh` and add to crontab:
+
 ```bash
 # Run daily at 2 AM
 0 2 * * * /usr/local/bin/backup-database.sh
@@ -453,6 +488,7 @@ Save as `/usr/local/bin/backup-database.sh` and add to crontab:
 5. **Use Let's Encrypt SSL** (FREE, auto-renewing)
 
 **Timeline:**
+
 - Setup server: 2-3 hours
 - Configure domain: 30 minutes
 - Deploy app: 1-2 hours

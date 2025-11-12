@@ -17,7 +17,7 @@ export default {
         vehicle_type: req.body.vehicle_type,
         entry_time: new Date().toISOString(),
         status: 'open',
-        metadata: req.body.metadata || null
+        metadata: req.body.metadata || null,
       };
       const { data, error } = await supabase.from(table).insert(payload).select().single();
       if (error) return res.status(500).json({ error });
@@ -39,22 +39,37 @@ export default {
       const minutes = minutesBetween(ticket.entry_time, exitTime);
 
       // simplistic rate calculation: find a rate for vehicle_type with unit 'hora' or 'mês' fallback
-      const ratesResp = await supabase.from('rates').select('*').eq('vehicle_type', ticket.vehicle_type);
+      const ratesResp = await supabase
+        .from('rates')
+        .select('*')
+        .eq('vehicle_type', ticket.vehicle_type);
       if (ratesResp.error) return res.status(500).json({ error: ratesResp.error });
       const rates = ratesResp.data || [];
       // choose first hourly rate
-      const hourly = rates.find(r => r.unit && r.unit.includes('hora')) || rates[0];
+      const hourly = rates.find((r) => r.unit && r.unit.includes('hora')) || rates[0];
       let amount = 0;
       if (hourly) {
         const hours = Math.ceil(minutes / 60);
         amount = (hourly.value || 0) * hours;
       }
 
-      const { data, error } = await supabase.from(table).update({ exit_time: exitTime, duration_minutes: minutes, amount, status: 'closed' }).eq('id', id).select().single();
+      const { data, error } = await supabase
+        .from(table)
+        .update({ exit_time: exitTime, duration_minutes: minutes, amount, status: 'closed' })
+        .eq('id', id)
+        .select()
+        .single();
       if (error) return res.status(500).json({ error });
 
       // register payment record
-      await supabase.from('payments').insert({ id: uuid(), target_type: 'ticket', target_id: id, date: exitTime, value: amount, method: req.body.method || 'cash' });
+      await supabase.from('payments').insert({
+        id: uuid(),
+        target_type: 'ticket',
+        target_id: id,
+        date: exitTime,
+        value: amount,
+        method: req.body.method || 'cash',
+      });
 
       res.json(data);
     } catch (err) {
@@ -67,5 +82,5 @@ export default {
     const { data, error } = await supabase.from(table).select('*').eq('id', id).single();
     if (error) return res.status(404).json({ error });
     res.json(data);
-  }
+  },
 };

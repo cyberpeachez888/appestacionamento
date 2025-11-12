@@ -23,12 +23,14 @@ Let's do this step by step:
 ### Files to Update:
 
 **Frontend:**
+
 - `src/App.tsx` - Update page titles
 - `index.html` - Update `<title>` tag
 - `package.json` - Update `name` field
 - `README.md` - Update app name
 
 **Backend:**
+
 - `backend/package.json` - Update `name` field
 - `backend/README.md` - Update app name
 
@@ -43,33 +45,39 @@ I can help update all these files if you want!
 **File: `backend/src/server.js`**
 
 Change this:
+
 ```javascript
-app.use(cors({
-  origin: '*',  // ❌ DANGEROUS - allows anyone
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-  credentials: true
-}));
+app.use(
+  cors({
+    origin: '*', // ❌ DANGEROUS - allows anyone
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    credentials: true,
+  })
+);
 ```
 
 To this:
+
 ```javascript
 const allowedOrigins = [
-  'http://localhost:8080',           // Local development
-  'http://localhost:5173',           // Vite dev server
-  'https://your-deployment-url.com'  // Production (add later)
+  'http://localhost:8080', // Local development
+  'http://localhost:5173', // Vite dev server
+  'https://your-deployment-url.com', // Production (add later)
 ];
 
-app.use(cors({
-  origin: function(origin, callback) {
-    if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS'));
-    }
-  },
-  credentials: true
-}));
+app.use(
+  cors({
+    origin: function (origin, callback) {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error('Not allowed by CORS'));
+      }
+    },
+    credentials: true,
+  })
+);
 ```
 
 ### Generate Secure JWT Secret:
@@ -77,11 +85,13 @@ app.use(cors({
 **Currently:** Your JWT secret might be weak/default
 
 **Run this command:**
+
 ```bash
 node -e "console.log(require('crypto').randomBytes(64).toString('hex'))"
 ```
 
 **Copy the output** and update `backend/.env`:
+
 ```env
 JWT_SECRET=<paste-the-long-random-string-here>
 ```
@@ -89,11 +99,13 @@ JWT_SECRET=<paste-the-long-random-string-here>
 **⚠️ NEVER commit .env to Git!**
 
 Check if it's ignored:
+
 ```bash
 cat .gitignore | grep ".env"
 ```
 
 If not there, add it:
+
 ```bash
 echo ".env" >> .gitignore
 ```
@@ -116,6 +128,7 @@ Since you only need 1-2 users at one location, here's the best option:
 #### Steps:
 
 1. **Deploy Backend to Railway:**
+
 ```bash
 # Install Railway CLI
 npm i -g @railway/cli
@@ -141,6 +154,7 @@ railway up
 Railway will give you a URL like: `https://backend-production-xxxx.up.railway.app`
 
 2. **Deploy Frontend to Vercel:**
+
 ```bash
 # Install Vercel CLI
 npm i -g vercel
@@ -224,17 +238,20 @@ If you only use this at your parking location on local WiFi:
 ## 💡 My Recommendation for You:
 
 **Phase 1 (This Week):**
+
 1. Update app name
 2. Fix security (JWT secret, CORS)
 3. Deploy to **Vercel + Railway** (FREE)
 4. Use for 1-2 weeks to test
 
 **Phase 2 (After Testing):**
+
 - If you like it, buy a domain ($10/year)
 - Keep using free Railway tier
 - Total cost: ~$1/month
 
 **Phase 3 (If You Grow):**
+
 - Only upgrade if you add more locations
 - Railway scales automatically
 
@@ -245,12 +262,14 @@ If you only use this at your parking location on local WiFi:
 Since it's just you and 1-2 colleagues:
 
 **What you MUST do:**
+
 - ✅ Secure JWT secret
 - ✅ Fix CORS
 - ✅ Don't commit .env to Git
 - ✅ Use HTTPS (Vercel/Railway provide this free)
 
 **What you DON'T need:**
+
 - ❌ Complex rate limiting (only 2 users)
 - ❌ DDoS protection (not a public service)
 - ❌ Advanced monitoring (Railway provides basic monitoring)
@@ -261,6 +280,7 @@ Since it's just you and 1-2 colleagues:
 ## 📱 Access Methods:
 
 Once deployed, you can access from:
+
 - 💻 Desktop computers
 - 📱 Phones (add to home screen, works like an app!)
 - 📱 Tablets (perfect for parking booth)
@@ -287,11 +307,13 @@ Once deployed, you can access from:
 ## 🎯 What I'll Do Next:
 
 **Tell me:**
+
 1. Should I update all files to "TheProParkingApp"? (YES/NO)
 2. Which deployment option? (A, B, or C)
 3. Do you need access from outside the parking location? (YES/NO)
 
 Then I'll:
+
 - Update the app name everywhere
 - Create the exact deployment commands for your choice
 - Help you get it live today!
@@ -299,6 +321,7 @@ Then I'll:
 ---
 
 **Bottom Line:**
+
 - **Free option exists** (Vercel + Railway free tier)
 - **10-15 minutes to deploy** after we update names
 - **Access from anywhere** with internet

@@ -9,11 +9,13 @@ A comprehensive receipt template management system that allows customization of 
 ## 🎯 Features Implemented
 
 ### 1. **Multiple Receipt Types** 🧾
+
 - **Parking Ticket** - For hourly/daily parking with entry/exit times
 - **Monthly Payment** - For monthly customer payments with reference period
 - **General Receipt** - For miscellaneous transactions (reimbursements, extras)
 
 ### 2. **Template Customization**
+
 - Toggle visibility for 15+ fields (receipt number, date, time, plate, vehicle type, etc.)
 - Custom header/footer text
 - Signature line option
@@ -21,6 +23,7 @@ A comprehensive receipt template management system that allows customization of 
 - Font family selection (Arial, Helvetica, Times, Courier)
 
 ### 3. **Advanced Features**
+
 - **QR Code** - Customizable data with variable substitution
 - **Barcode** - CODE128, EAN13, CODE39 support
 - **Custom Fields** - Add extra fields (text, number, date, textarea)
@@ -29,6 +32,7 @@ A comprehensive receipt template management system that allows customization of 
 - **WhatsApp Messages** - Template for instant messaging
 
 ### 4. **Template Management**
+
 - Create/Edit/Delete templates
 - Set default template per type
 - Clone/duplicate templates
@@ -45,19 +49,19 @@ A comprehensive receipt template management system that allows customization of 
 CREATE TABLE receipt_templates (
   id UUID PRIMARY KEY,
   template_name TEXT UNIQUE NOT NULL,
-  template_type VARCHAR(50) CHECK (template_type IN 
+  template_type VARCHAR(50) CHECK (template_type IN
     ('parking_ticket', 'monthly_payment', 'general_receipt')),
   description TEXT,
-  
+
   -- Layout config
   layout JSONB DEFAULT '{}',
-  
+
   -- Header
   show_logo BOOLEAN DEFAULT TRUE,
   show_company_name BOOLEAN DEFAULT TRUE,
   show_company_details BOOLEAN DEFAULT TRUE,
   header_text TEXT,
-  
+
   -- Body fields (15 toggleable fields)
   show_receipt_number BOOLEAN DEFAULT TRUE,
   show_date BOOLEAN DEFAULT TRUE,
@@ -71,10 +75,10 @@ CREATE TABLE receipt_templates (
   show_value BOOLEAN DEFAULT TRUE,
   show_payment_method BOOLEAN DEFAULT TRUE,
   show_operator BOOLEAN DEFAULT FALSE,
-  
+
   -- Custom fields
   custom_fields JSONB DEFAULT '[]',
-  
+
   -- Footer
   show_qr_code BOOLEAN DEFAULT FALSE,
   qr_code_data TEXT,
@@ -84,29 +88,30 @@ CREATE TABLE receipt_templates (
   terms_and_conditions TEXT,
   footer_text TEXT,
   show_signature_line BOOLEAN DEFAULT TRUE,
-  
+
   -- Styling
   primary_color VARCHAR(7) DEFAULT '#000000',
   secondary_color VARCHAR(7) DEFAULT '#666666',
   font_family VARCHAR(50) DEFAULT 'Arial',
-  
+
   -- Email/WhatsApp
   email_subject TEXT,
   email_body_html TEXT,
   email_body_text TEXT,
   whatsapp_message TEXT,
-  
+
   -- Settings
   available_variables TEXT[],
   is_default BOOLEAN DEFAULT FALSE,
   is_active BOOLEAN DEFAULT TRUE,
-  
+
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 ```
 
 **Indexes:**
+
 - `idx_receipt_templates_type` - Fast filtering by type
 - `idx_receipt_templates_active` - Get only active templates
 - `idx_receipt_templates_default` - Quick default lookup
@@ -130,6 +135,7 @@ POST   /receipt-templates/:id/clone    # Duplicate template (requires manageComp
 ```
 
 **Permissions:**
+
 - View templates: Any authenticated user
 - Manage templates: `manageCompanyConfig` permission
 
@@ -138,12 +144,14 @@ POST   /receipt-templates/:id/clone    # Duplicate template (requires manageComp
 ## 📄 Default Templates
 
 ### 1. Parking Ticket Template
+
 - **Type:** `parking_ticket`
 - **Fields:** Entry/exit times, duration, rate, vehicle type, operator
 - **Features:** QR code enabled with receipt data
 - **Use Case:** Hourly/daily parking receipts
 
 ### 2. Monthly Payment Template
+
 - **Type:** `monthly_payment`
 - **Fields:** Customer name, plates, reference month, due date
 - **Features:** Barcode (CODE128) for payment tracking
@@ -151,6 +159,7 @@ POST   /receipt-templates/:id/clone    # Duplicate template (requires manageComp
 - **Use Case:** Monthly customer payment receipts
 
 ### 3. General Receipt Template
+
 - **Type:** `general_receipt`
 - **Fields:** Plate, value, payment method, operator
 - **Custom Fields:** Recipient name, CPF, description, issued by
@@ -163,6 +172,7 @@ POST   /receipt-templates/:id/clone    # Duplicate template (requires manageComp
 Templates support variable substitution using `{{variableName}}` syntax:
 
 ### Common Variables
+
 - `{{receiptNumber}}` - Receipt counter (6 digits)
 - `{{date}}` - Current date (dd/MM/yyyy)
 - `{{time}}` - Current time (HH:mm)
@@ -171,6 +181,7 @@ Templates support variable substitution using `{{variableName}}` syntax:
 - `{{paymentMethod}}` - Payment method (Dinheiro, Pix, Cartão)
 
 ### Company Variables
+
 - `{{companyName}}` - Company name
 - `{{companyLegalName}}` - Company legal name
 - `{{companyCnpj}}` - Company CNPJ
@@ -178,6 +189,7 @@ Templates support variable substitution using `{{variableName}}` syntax:
 - `{{companyPhone}}` - Company phone
 
 ### Parking Ticket Variables
+
 - `{{vehicleType}}` - Vehicle type (Carro, Moto, etc.)
 - `{{entryDate}}` - Entry date
 - `{{entryTime}}` - Entry time
@@ -188,12 +200,14 @@ Templates support variable substitution using `{{variableName}}` syntax:
 - `{{operator}}` - User who processed transaction
 
 ### Monthly Customer Variables
+
 - `{{customerName}}` - Customer name
 - `{{plates}}` - Comma-separated list of plates
 - `{{referenceMonth}}` - Month being paid (custom field)
 - `{{dueDate}}` - Next payment due date (custom field)
 
 ### General Receipt Variables
+
 - `{{recipientName}}` - Person receiving payment (custom field)
 - `{{recipientCpf}}` - CPF (custom field)
 - `{{description}}` - Payment description (custom field)
@@ -208,6 +222,7 @@ Templates support variable substitution using `{{variableName}}` syntax:
 **Location:** `src/pages/ModelosRecibos.tsx`
 
 **Features:**
+
 1. **Filter by Type** - Dropdown to filter templates
 2. **Template Cards** - Grid view with:
    - Template name and type
@@ -233,6 +248,7 @@ Templates support variable substitution using `{{variableName}}` syntax:
 ### Controller: `receiptTemplatesController.js`
 
 **Key Functions:**
+
 - `list()` - Get all templates with optional type filter
 - `getById()` - Get single template
 - `getDefault()` - Get default template for type (with fallback)
@@ -244,12 +260,14 @@ Templates support variable substitution using `{{variableName}}` syntax:
 - `clone()` - Duplicate template with "(Cópia)" suffix
 
 **Data Transformation:**
+
 - `toFrontendFormat()` - Convert snake_case to camelCase
 - `toDbFormat()` - Convert camelCase to snake_case
 - `renderTemplate()` - Replace {{variables}} with actual values
 
 **Audit Logging:**
 All CRUD operations logged with:
+
 - `receipt_template.create`
 - `receipt_template.update`
 - `receipt_template.delete`
@@ -392,6 +410,7 @@ Response:
 ## 🎨 UI Screenshots Guide
 
 ### Template Management Page
+
 - Grid of template cards showing:
   - Template name
   - Type badge (Parking Ticket / Mensalista / Recibo Geral)
@@ -403,6 +422,7 @@ Response:
 ### Create/Edit Dialog Tabs
 
 **Tab 1: Básico**
+
 - Template name input
 - Type dropdown
 - Description textarea
@@ -410,10 +430,12 @@ Response:
 - Header section with logo/company toggles
 
 **Tab 2: Campos**
+
 - Grid of 15+ field toggles
 - Style section (primary color, secondary color, font family)
 
 **Tab 3: Rodapé**
+
 - QR code toggle + data input
 - Barcode toggle + data input + type selector
 - Terms & conditions textarea
@@ -421,6 +443,7 @@ Response:
 - Signature line toggle
 
 **Tab 4: Email/WhatsApp**
+
 - Email subject input
 - Email HTML body textarea (monospace font)
 - WhatsApp message textarea
@@ -441,6 +464,7 @@ cat backend/create-receipt-templates-table.sql
 ```
 
 **Verify:**
+
 ```sql
 SELECT * FROM receipt_templates;
 -- Should return 3 default templates
@@ -454,6 +478,7 @@ npm start
 ```
 
 **Verify:**
+
 ```bash
 curl http://localhost:3000/receipt-templates \
   -H "Authorization: Bearer YOUR_TOKEN"
@@ -467,6 +492,7 @@ http://localhost:5173/modelos-recibos
 ```
 
 **Verify:**
+
 - Page loads without errors
 - Can create new template
 - Can edit existing template
@@ -490,10 +516,11 @@ http://localhost:5173/modelos-recibos
 ### Variable Substitution
 
 Templates use simple string replacement:
+
 ```javascript
 function renderTemplate(templateString, variables) {
   let result = templateString;
-  Object.keys(variables).forEach(key => {
+  Object.keys(variables).forEach((key) => {
     const regex = new RegExp(`{{${key}}}`, 'g');
     result = result.replace(regex, variables[key] || '');
   });
@@ -504,6 +531,7 @@ function renderTemplate(templateString, variables) {
 ### QR Code Generation (Future)
 
 Recommended library: `qrcode.react`
+
 ```bash
 npm install qrcode.react
 ```
@@ -511,12 +539,13 @@ npm install qrcode.react
 ```tsx
 import QRCode from 'qrcode.react';
 
-<QRCode value={qrCodeData} size={128} />
+<QRCode value={qrCodeData} size={128} />;
 ```
 
 ### Barcode Generation (Future)
 
 Recommended library: `react-barcode`
+
 ```bash
 npm install react-barcode
 ```
@@ -524,23 +553,25 @@ npm install react-barcode
 ```tsx
 import Barcode from 'react-barcode';
 
-<Barcode value={barcodeData} format={barcodeType} />
+<Barcode value={barcodeData} format={barcodeType} />;
 ```
 
 ### Email HTML Rendering
 
 Use `dangerouslySetInnerHTML` for preview:
+
 ```tsx
 <div dangerouslySetInnerHTML={{ __html: emailBodyHtml }} />
 ```
 
 For sending, use notificationService.js:
+
 ```javascript
 await sendEmail({
   to: customer.email,
   subject: renderTemplate(template.emailSubject, variables),
   html: renderTemplate(template.emailBodyHtml, variables),
-  text: renderTemplate(template.emailBodyText, variables)
+  text: renderTemplate(template.emailBodyText, variables),
 });
 ```
 
@@ -549,17 +580,20 @@ await sendEmail({
 ## 🎯 Benefits
 
 ### For Business Owners
+
 ✅ **Professional Branding** - Custom colors, logos, fonts
 ✅ **Legal Compliance** - Custom terms & conditions per receipt type
 ✅ **Modern Features** - QR codes, barcodes for validation
 ✅ **Flexibility** - Different templates for different situations
 
 ### For Operators
+
 ✅ **Easy to Use** - Templates automatically applied
 ✅ **Consistent** - Same format every time
 ✅ **Fast** - No manual formatting needed
 
 ### For Customers
+
 ✅ **Clear Receipts** - All relevant information visible
 ✅ **Digital Options** - Email and WhatsApp delivery
 ✅ **Verifiable** - QR codes for authenticity
@@ -610,6 +644,7 @@ await sendEmail({
 ## 📞 Support
 
 For issues or questions:
+
 1. Check audit logs: `SELECT * FROM audit_events WHERE target_type = 'receipt_template'`
 2. Verify template data: `SELECT * FROM receipt_templates WHERE id = 'uuid'`
 3. Check backend logs: `tail -f /tmp/backend.log`

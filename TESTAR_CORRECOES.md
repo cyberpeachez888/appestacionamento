@@ -15,17 +15,20 @@
 Escolha uma opção:
 
 **Opção A - Ferramenta Automática (Recomendado):**
+
 1. Abra: http://localhost:8080/clear-cache.html
 2. Clique em "Limpar Cache Agora"
 3. Aguarde redirecionamento
 
 **Opção B - Manual:**
+
 1. Pressione F12 (DevTools)
 2. Vá em Application > Storage
 3. Clique em "Clear site data"
 4. Recarregue a página (F5)
 
 **Opção C - Console:**
+
 ```javascript
 localStorage.clear();
 sessionStorage.clear();
@@ -37,16 +40,20 @@ location.reload();
 ### Passo 2: Reiniciar Servidores
 
 **Terminal 1 - Backend:**
+
 ```bash
 cd backend
 npm start
 ```
+
 Aguarde ver: ✅ `Scheduled backup service initialized`
 
 **Terminal 2 - Frontend:**
+
 ```bash
 npm run dev
 ```
+
 Aguarde ver: ✅ `ready in ... ms`
 
 ---
@@ -54,6 +61,7 @@ Aguarde ver: ✅ `ready in ... ms`
 ### Passo 3: Testar as Correções
 
 #### Teste 1: Login ✅
+
 1. Acesse: http://localhost:8080
 2. **DEVE** mostrar tela de login (não deve abrir direto na aplicação)
 3. Faça login com suas credenciais
@@ -64,12 +72,13 @@ Aguarde ver: ✅ `ready in ... ms`
 ---
 
 #### Teste 2: Aba de Backup ✅
+
 1. Após login, vá em "Configurações" (menu lateral)
 2. Clique na terceira aba: "Backups Automáticos"
 3. **NÃO DEVE** mostrar erro
 4. **DEVE** abrir normalmente mostrando:
    - Toggle "Backup Automático" (desabilitado)
-   - Campo "Agendamento": 0 2 * * *
+   - Campo "Agendamento": 0 2 \* \* \*
    - Campo "Dias de Retenção": 30
 
 **Se ainda der erro:** Verifique logs do backend para ver mensagem de erro real
@@ -77,6 +86,7 @@ Aguarde ver: ✅ `ready in ... ms`
 ---
 
 #### Teste 3: Select de Veículos ✅
+
 1. Vá para página "Tarifas"
 2. Olhe o campo "Tipo de Veículo"
 3. Clique no select (dropdown)
@@ -84,7 +94,8 @@ Aguarde ver: ✅ `ready in ... ms`
 5. Selecione um tipo
 6. **DEVE** permitir preencher valor e criar tarifa
 
-**Se ainda estiver vazio:** 
+**Se ainda estiver vazio:**
+
 - Pressione F12 > Console
 - Veja se há erro em vermelho
 - Copie a mensagem de erro
@@ -103,22 +114,24 @@ console.log('Token:', localStorage.getItem('auth:token'));
 // 2. Testar API de tipos de veículos
 fetch('/api/vehicleTypes', {
   headers: {
-    'Authorization': 'Bearer ' + (localStorage.getItem('auth:token') || sessionStorage.getItem('auth:token'))
-  }
+    Authorization:
+      'Bearer ' + (localStorage.getItem('auth:token') || sessionStorage.getItem('auth:token')),
+  },
 })
-.then(r => r.json())
-.then(data => console.log('Vehicle types OK:', data))
-.catch(err => console.error('Vehicle types ERROR:', err));
+  .then((r) => r.json())
+  .then((data) => console.log('Vehicle types OK:', data))
+  .catch((err) => console.error('Vehicle types ERROR:', err));
 
 // 3. Testar API de backup config
 fetch('/api/backup-config', {
   headers: {
-    'Authorization': 'Bearer ' + (localStorage.getItem('auth:token') || sessionStorage.getItem('auth:token'))
-  }
+    Authorization:
+      'Bearer ' + (localStorage.getItem('auth:token') || sessionStorage.getItem('auth:token')),
+  },
 })
-.then(r => r.json())
-.then(data => console.log('Backup config OK:', data))
-.catch(err => console.error('Backup config ERROR:', err));
+  .then((r) => r.json())
+  .then((data) => console.log('Backup config OK:', data))
+  .catch((err) => console.error('Backup config ERROR:', err));
 ```
 
 ### Verificar Logs do Backend
@@ -156,6 +169,7 @@ Marque conforme testar:
 ### Problema: "Ainda abre direto sem login"
 
 **Solução:**
+
 1. Feche TODAS as abas do navegador com a aplicação
 2. Limpe cache NOVAMENTE (Ctrl+Shift+Delete)
 3. Abra aba privada/anônima
@@ -165,27 +179,31 @@ Marque conforme testar:
 ### Problema: "Aba Backup ainda dá erro"
 
 **Diagnóstico:**
+
 - Veja mensagem de erro exata
 - Pode ser que migração SQL não foi executada (é OK, deve funcionar mesmo assim)
 - Verifique se backend está rodando (porta 3000)
 
 **Solução:**
+
 - Se erro contiver "404" ou "Not Found" → Ignorar, é esperado
 - Se erro diferente → Copiar mensagem completa
 
 ### Problema: "Select de veículos ainda vazio"
 
 **Diagnóstico:**
+
 ```javascript
 // No console do navegador
 fetch('/api/vehicleTypes', {
-  headers: { 'Authorization': 'Bearer ' + (localStorage.getItem('auth:token') || '') }
+  headers: { Authorization: 'Bearer ' + (localStorage.getItem('auth:token') || '') },
 })
-.then(r => r.text())
-.then(text => console.log('Response:', text));
+  .then((r) => r.text())
+  .then((text) => console.log('Response:', text));
 ```
 
 **Solução:**
+
 - Se retornar erro 401 → Não está autenticado, faça login
 - Se retornar erro 404 → Rota não existe, verificar backend
 - Se retornar [] → Banco vazio, criar tipos manualmente
@@ -208,11 +226,13 @@ Se precisar reportar problema, forneça:
 ## ✅ Correções Aplicadas
 
 ### Arquivos Modificados:
+
 1. `/src/contexts/AuthContext.tsx` - Corrigido race condition
 2. `/src/components/BackupSettingsSection.tsx` - Tratamento de erro 404
 3. `/src/components/VehicleTypeSelect.tsx` - Fallback para tipos padrão
 
 ### Impacto:
+
 - ✅ Sistema mais robusto
 - ✅ Não quebra nenhuma funcionalidade existente
 - ✅ Degradação graciosa em caso de erros

@@ -20,7 +20,14 @@ type ReportPayment = { date: string; value: number; method?: string; target_type
 
 export default function Financeiro() {
   const { toast } = useToast();
-  const { cashIsOpen, cashSession, openCashRegister, getAvulsoRevenue, getMonthlyRevenue, getTotalRevenue } = useParking();
+  const {
+    cashIsOpen,
+    cashSession,
+    openCashRegister,
+    getAvulsoRevenue,
+    getMonthlyRevenue,
+    getTotalRevenue,
+  } = useParking();
   const { hasPermission } = useAuth();
   const [records, setRecords] = useState<FinancialRecord[]>([]);
   const [startDate, setStartDate] = useState('');
@@ -35,8 +42,13 @@ export default function Financeiro() {
         const filters = startDate && endDate ? { start: startDate, end: endDate } : undefined;
         const report = await api.getFinancialReport(filters);
         const payments: ReportPayment[] = report?.payments || [];
-        const mapType = (t?: string): 'Avulso' | 'Mensalista' => (t === 'monthly_customer' ? 'Mensalista' : 'Avulso');
-        const mapped: FinancialRecord[] = payments.map(p => ({ type: mapType(p.target_type), date: p.date, value: Number(p.value) || 0 }));
+        const mapType = (t?: string): 'Avulso' | 'Mensalista' =>
+          t === 'monthly_customer' ? 'Mensalista' : 'Avulso';
+        const mapped: FinancialRecord[] = payments.map((p) => ({
+          type: mapType(p.target_type),
+          date: p.date,
+          value: Number(p.value) || 0,
+        }));
         setRecords(mapped);
       } catch (err: any) {
         toast({ title: 'Erro ao carregar dados', description: err.message || String(err) });
@@ -50,7 +62,11 @@ export default function Financeiro() {
     if (!cashIsOpen) return;
     const beforeUnload = (e: BeforeUnloadEvent) => {
       e.preventDefault();
-      try { localStorage.setItem('cash:pendingClose', '1'); } catch (err) { void err; }
+      try {
+        localStorage.setItem('cash:pendingClose', '1');
+      } catch (err) {
+        void err;
+      }
       e.returnValue = '';
       return '';
     };
@@ -60,30 +76,41 @@ export default function Financeiro() {
 
   // If a pending close was flagged (e.g., due to beforeunload), reopen the close dialog on mount
   useEffect(() => {
-    const pending = typeof window !== 'undefined' ? localStorage.getItem('cash:pendingClose') : null;
+    const pending =
+      typeof window !== 'undefined' ? localStorage.getItem('cash:pendingClose') : null;
     if (pending && cashIsOpen) {
       setCloseDialogOpen(true);
-      try { localStorage.removeItem('cash:pendingClose'); } catch (err) { void err; }
+      try {
+        localStorage.removeItem('cash:pendingClose');
+      } catch (err) {
+        void err;
+      }
     }
   }, [cashIsOpen]);
 
-  const filteredRecords = records.filter(r => {
+  const filteredRecords = records.filter((r) => {
     if (!startDate || !endDate) return true;
     const date = new Date(r.date);
     return date >= new Date(startDate) && date <= new Date(endDate);
   });
 
   // Compute totals from fetched report records to avoid relying on client history
-  const totalAvulsos = filteredRecords.filter(r => r.type === 'Avulso').reduce((s, r) => s + r.value, 0);
-  const totalMensalistas = filteredRecords.filter(r => r.type === 'Mensalista').reduce((s, r) => s + r.value, 0);
+  const totalAvulsos = filteredRecords
+    .filter((r) => r.type === 'Avulso')
+    .reduce((s, r) => s + r.value, 0);
+  const totalMensalistas = filteredRecords
+    .filter((r) => r.type === 'Mensalista')
+    .reduce((s, r) => s + r.value, 0);
   const totalRevenue = totalAvulsos + totalMensalistas;
 
   const handleExportCSV = () => {
     const csvContent = [
       ['Tipo', 'Data', 'Valor'],
-      ...filteredRecords.map(r => [r.type, r.date, r.value.toFixed(2)]),
-      ['Total', '', totalRevenue.toFixed(2)]
-    ].map(row => row.join(',')).join('\n');
+      ...filteredRecords.map((r) => [r.type, r.date, r.value.toFixed(2)]),
+      ['Total', '', totalRevenue.toFixed(2)],
+    ]
+      .map((row) => row.join(','))
+      .join('\n');
 
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
@@ -97,10 +124,14 @@ export default function Financeiro() {
     });
   };
 
-  const handleGenerateMonthlyReport = async (params: { month: number; year: number; clearOperational: boolean }) => {
+  const handleGenerateMonthlyReport = async (params: {
+    month: number;
+    year: number;
+    clearOperational: boolean;
+  }) => {
     try {
       const result = await api.generateMonthlyReport(params);
-      
+
       toast({
         title: 'Relatório mensal gerado!',
         description: result.message || 'O relatório foi gerado e arquivado com sucesso.',
@@ -110,10 +141,14 @@ export default function Financeiro() {
       const filters = startDate && endDate ? { start: startDate, end: endDate } : undefined;
       const report = await api.getFinancialReport(filters);
       const payments: ReportPayment[] = report?.payments || [];
-      const mapType = (t?: string): 'Avulso' | 'Mensalista' => (t === 'monthly_customer' ? 'Mensalista' : 'Avulso');
-      const mapped: FinancialRecord[] = payments.map(p => ({ type: mapType(p.target_type), date: p.date, value: Number(p.value) || 0 }));
+      const mapType = (t?: string): 'Avulso' | 'Mensalista' =>
+        t === 'monthly_customer' ? 'Mensalista' : 'Avulso';
+      const mapped: FinancialRecord[] = payments.map((p) => ({
+        type: mapType(p.target_type),
+        date: p.date,
+        value: Number(p.value) || 0,
+      }));
       setRecords(mapped);
-
     } catch (err: any) {
       console.error('Error generating monthly report:', err);
       toast({
@@ -130,7 +165,9 @@ export default function Financeiro() {
       <div className="flex-1 p-8">
         <div className="max-w-3xl mx-auto">
           <h2 className="text-xl font-semibold">Acesso negado</h2>
-          <p className="text-sm text-muted-foreground">Você não tem permissão para visualizar relatórios financeiros.</p>
+          <p className="text-sm text-muted-foreground">
+            Você não tem permissão para visualizar relatórios financeiros.
+          </p>
         </div>
       </div>
     );
@@ -144,7 +181,8 @@ export default function Financeiro() {
             <h1 className="text-3xl font-bold text-foreground">Financeiro</h1>
             {cashIsOpen && cashSession?.openedAt && (
               <p className="text-sm text-muted-foreground mt-1">
-                Caixa aberto em {format(new Date(cashSession.openedAt), "dd/MM/yyyy HH:mm", { locale: ptBR })}
+                Caixa aberto em{' '}
+                {format(new Date(cashSession.openedAt), 'dd/MM/yyyy HH:mm', { locale: ptBR })}
               </p>
             )}
           </div>
@@ -153,8 +191,8 @@ export default function Financeiro() {
               <Download className="h-4 w-4 mr-2" />
               Exportar CSV
             </Button>
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               onClick={() => setMonthlyReportDialogOpen(true)}
               className="border-primary text-primary hover:bg-primary hover:text-primary-foreground"
             >
@@ -162,7 +200,10 @@ export default function Financeiro() {
               Gerar Relatório Mensal
             </Button>
             {!cashIsOpen && hasPermission('openCloseCash') && (
-              <Button onClick={() => setOpenDialogOpen(true)} className="bg-green-600 hover:bg-green-700">
+              <Button
+                onClick={() => setOpenDialogOpen(true)}
+                className="bg-green-600 hover:bg-green-700"
+              >
                 Abrir Caixa
               </Button>
             )}
@@ -183,7 +224,7 @@ export default function Financeiro() {
                 id="startDate"
                 type="date"
                 value={startDate}
-                onChange={e => setStartDate(e.target.value)}
+                onChange={(e) => setStartDate(e.target.value)}
                 className="input"
               />
             </div>
@@ -193,13 +234,21 @@ export default function Financeiro() {
                 id="endDate"
                 type="date"
                 value={endDate}
-                onChange={e => setEndDate(e.target.value)}
+                onChange={(e) => setEndDate(e.target.value)}
                 className="input"
               />
             </div>
           </div>
           {startDate && endDate && (
-            <Button variant="outline" size="sm" className="mt-4" onClick={() => { setStartDate(''); setEndDate(''); }}>
+            <Button
+              variant="outline"
+              size="sm"
+              className="mt-4"
+              onClick={() => {
+                setStartDate('');
+                setEndDate('');
+              }}
+            >
               Limpar Filtro
             </Button>
           )}
@@ -224,8 +273,8 @@ export default function Financeiro() {
       </div>
       <OpenCashRegisterDialog open={openDialogOpen} onOpenChange={setOpenDialogOpen} />
       <CloseCashRegisterDialog open={closeDialogOpen} onOpenChange={setCloseDialogOpen} />
-      <MonthlyReportDialog 
-        open={monthlyReportDialogOpen} 
+      <MonthlyReportDialog
+        open={monthlyReportDialogOpen}
         onOpenChange={setMonthlyReportDialogOpen}
         onConfirm={handleGenerateMonthlyReport}
       />

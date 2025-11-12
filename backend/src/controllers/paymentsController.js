@@ -18,7 +18,7 @@ function toConfigFrontendFormat(config) {
     receiptCounter: config.receipt_counter,
     printerConfig: config.printer_config || {}, // JSONB field
     createdAt: config.created_at,
-    updatedAt: config.updated_at
+    updatedAt: config.updated_at,
   };
 }
 
@@ -33,7 +33,7 @@ function toConfigDbFormat(config) {
     phone: config.phone,
     primary_color: config.primaryColor,
     receipt_counter: config.receiptCounter,
-    printer_config: config.printerConfig || {} // JSONB field
+    printer_config: config.printerConfig || {}, // JSONB field
   };
 }
 
@@ -44,7 +44,13 @@ export default {
       const payload = { id, date: new Date().toISOString(), ...req.body };
       const { data, error } = await supabase.from(table).insert(payload).select().single();
       if (error) return res.status(500).json({ error });
-      await logEvent({ actor: req.user, action: 'payment.create', targetType: payload.target_type, targetId: payload.target_id, details: { value: payload.value, method: payload.method } });
+      await logEvent({
+        actor: req.user,
+        action: 'payment.create',
+        targetType: payload.target_type,
+        targetId: payload.target_id,
+        details: { value: payload.value, method: payload.method },
+      });
       res.status(201).json(data);
     } catch (err) {
       res.status(500).json({ error: err.message || err });
@@ -73,7 +79,12 @@ export default {
     const payload = toConfigDbFormat(req.body);
     const { data, error } = await supabase.from('company_config').upsert(payload).select().single();
     if (error) return res.status(500).json({ error });
-    await logEvent({ actor: req.user, action: 'companyConfig.update', targetType: 'company_config', targetId: data?.id || 'default' });
+    await logEvent({
+      actor: req.user,
+      action: 'companyConfig.update',
+      targetType: 'company_config',
+      targetId: data?.id || 'default',
+    });
     res.json(toConfigFrontendFormat(data));
-  }
+  },
 };

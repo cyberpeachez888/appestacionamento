@@ -4,11 +4,11 @@
 
 ### ✅ Passos 1-3: CONCLUÍDOS
 
-| Passo | Descrição | Status |
-|-------|-----------|--------|
-| 1️⃣ | Instalar dependências (`node-cron`) | ✅ COMPLETO |
-| 2️⃣ | Executar migração SQL (`add-backup-config-columns.sql`) | ✅ COMPLETO |
-| 3️⃣ | Criar diretórios de backup | ✅ COMPLETO |
+| Passo | Descrição                                               | Status      |
+| ----- | ------------------------------------------------------- | ----------- |
+| 1️⃣    | Instalar dependências (`node-cron`)                     | ✅ COMPLETO |
+| 2️⃣    | Executar migração SQL (`add-backup-config-columns.sql`) | ✅ COMPLETO |
+| 3️⃣    | Criar diretórios de backup                              | ✅ COMPLETO |
 
 ### 🔄 Passo 4: PENDENTE - Configurar Permissões
 
@@ -27,6 +27,7 @@ WHERE role = 'admin';
 ```
 
 **Como executar:**
+
 1. Acesse o Supabase Dashboard
 2. Vá em "SQL Editor"
 3. Cole o SQL acima
@@ -40,13 +41,16 @@ Após executar o SQL do Passo 4, siga estas instruções:
 #### 5.1 Iniciar os Servidores
 
 **Terminal 1 - Backend:**
+
 ```bash
 cd backend
 npm start
 ```
+
 **Aguarde ver:** ✅ `Scheduled backup service initialized`
 
 **Terminal 2 - Frontend:**
+
 ```bash
 npm run dev
 ```
@@ -62,6 +66,7 @@ npm run dev
 #### 5.3 Configurar Backup Automático
 
 Na mesma tela:
+
 1. Habilitar toggle **"Backup Automático"**
 2. Schedule: `0 2 * * *` (todo dia às 2h)
 3. Retenção: `30 dias`
@@ -72,11 +77,13 @@ Na mesma tela:
 ## 🎯 Teste Rápido (2 minutos)
 
 Para testar agora mesmo, configure:
+
 - Schedule: `*/2 * * * *` (a cada 2 minutos)
 - Aguarde 2 minutos
 - Verifique em `backend/backups/automatic/` que um arquivo foi criado
 
 **Depois volte e configure:**
+
 - Schedule: `0 2 * * *` (de volta para 2h da manhã)
 
 ---
@@ -110,17 +117,20 @@ src/
 ## 🚀 Comandos Úteis
 
 ### Verificar backups criados
+
 ```bash
 ls -lh backend/backups/manual/
 ls -lh backend/backups/automatic/
 ```
 
 ### Ver logs do servidor
+
 ```bash
 tail -f backend/server.log
 ```
 
 ### Verificar migração foi aplicada
+
 ```sql
 -- No Supabase SQL Editor
 SELECT backup_enabled, backup_schedule, backup_retention_days
@@ -129,6 +139,7 @@ WHERE id = 'default';
 ```
 
 ### Verificar permissões foram atualizadas
+
 ```sql
 -- No Supabase SQL Editor
 SELECT name, email, role, permissions->'manageBackups' as manage_backups
@@ -166,6 +177,7 @@ WHERE role = 'admin';
 ## 🆘 Suporte
 
 Se algo não funcionar:
+
 1. Verifique os logs do servidor
 2. Consulte seção "Troubleshooting" em `PASSOS_3-5_DEPLOY.md`
 3. Confirme que a migração SQL foi executada com sucesso

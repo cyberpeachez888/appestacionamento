@@ -9,7 +9,13 @@ export default {
     try {
       const actor = req.user;
       const result = await backupService.createFullBackup({ createdBy: actor?.login || 'unknown' });
-      await logEvent({ actor, action: 'backup.create', targetType: 'backup', targetId: result.id, details: { size: result.size } });
+      await logEvent({
+        actor,
+        action: 'backup.create',
+        targetType: 'backup',
+        targetId: result.id,
+        details: { size: result.size },
+      });
       res.status(201).json(result);
     } catch (err) {
       console.error('Backup create error', err);
@@ -67,7 +73,13 @@ export default {
       if (!p) return res.status(404).json({ error: 'Not found' });
       // NOTE: This operation is destructive; caller must have proper permissions (middleware)
       const result = await backupService.restoreFromFile(p, { tables });
-      await logEvent({ actor: req.user, action: 'backup.restore', targetType: 'backup', targetId: id, details: { tables: result.restored } });
+      await logEvent({
+        actor: req.user,
+        action: 'backup.restore',
+        targetType: 'backup',
+        targetId: id,
+        details: { tables: result.restored },
+      });
       res.json(result);
     } catch (err) {
       res.status(500).json({ error: err.message || err });
@@ -91,7 +103,12 @@ export default {
         ...(schedule && { schedule }),
         ...(retentionDays !== undefined && { retentionDays }),
       });
-      await logEvent({ actor: req.user, action: 'backup.config.update', targetType: 'config', details: config });
+      await logEvent({
+        actor: req.user,
+        action: 'backup.config.update',
+        targetType: 'config',
+        details: config,
+      });
       res.json(config);
     } catch (err) {
       res.status(500).json({ error: err.message || err });
@@ -109,5 +126,5 @@ export default {
     } catch (err) {
       res.status(500).json({ error: err.message || err });
     }
-  }
+  },
 };

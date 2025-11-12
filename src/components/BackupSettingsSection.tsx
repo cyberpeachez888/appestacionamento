@@ -7,7 +7,6 @@ import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import { Clock, Database, Calendar } from 'lucide-react';
 
-
 // Professional: Define config type for clarity
 interface BackupConfig {
   enabled: boolean;
@@ -16,7 +15,11 @@ interface BackupConfig {
 }
 
 const BackupSettingsSection: React.FC = () => {
-  const [config, setConfig] = useState<BackupConfig>({ enabled: false, schedule: '0 2 * * *', retentionDays: 30 });
+  const [config, setConfig] = useState<BackupConfig>({
+    enabled: false,
+    schedule: '0 2 * * *',
+    retentionDays: 30,
+  });
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const { toast } = useToast();
@@ -30,7 +33,11 @@ const BackupSettingsSection: React.FC = () => {
       console.error('Erro ao carregar configuração de backup:', err);
       const message = err instanceof Error ? err.message : String(err);
       if (!message.includes('404') && !message.includes('Not Found')) {
-        toast({ title: 'Erro ao carregar configuração', description: message, variant: 'destructive' });
+        toast({
+          title: 'Erro ao carregar configuração',
+          description: message,
+          variant: 'destructive',
+        });
       }
       // Keep default config state
     } finally {
@@ -48,7 +55,10 @@ const BackupSettingsSection: React.FC = () => {
     setSaving(true);
     try {
       await api.updateBackupConfig(config);
-      toast({ title: 'Configuração salva', description: 'As configurações de backup foram atualizadas' });
+      toast({
+        title: 'Configuração salva',
+        description: 'As configurações de backup foram atualizadas',
+      });
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : String(err);
       toast({ title: 'Erro ao salvar', description: message, variant: 'destructive' });
@@ -138,11 +148,14 @@ const BackupSettingsSection: React.FC = () => {
               min="1"
               max="365"
               value={config.retentionDays}
-              onChange={(e) => setConfig({ ...config, retentionDays: parseInt(e.target.value) || 30 })}
+              onChange={(e) =>
+                setConfig({ ...config, retentionDays: parseInt(e.target.value) || 30 })
+              }
               disabled={!config.enabled}
             />
             <p className="text-xs text-muted-foreground">
-              Backups automáticos mais antigos que {config.retentionDays} dias serão removidos automaticamente
+              Backups automáticos mais antigos que {config.retentionDays} dias serão removidos
+              automaticamente
             </p>
           </div>
 
@@ -179,7 +192,12 @@ const BackupSettingsSection: React.FC = () => {
 function CheckCircle2({ className }: { className?: string }) {
   return (
     <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+      />
     </svg>
   );
 }

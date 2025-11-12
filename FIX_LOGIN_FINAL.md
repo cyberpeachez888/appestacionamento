@@ -5,6 +5,7 @@
 **Sintoma:** Aplicação abre direto sem pedir login, mesmo sem credenciais válidas.
 
 **Causa Raiz:** O `AuthContext` tinha uma lógica falha onde:
+
 1. Token era carregado do localStorage no estado inicial
 2. `useEffect` rodava apenas uma vez no mount
 3. Token nunca era validado com o backend
@@ -15,6 +16,7 @@
 ### 1. AuthContext.tsx - Validação Reativa de Token
 
 **ANTES:**
+
 ```typescript
 const [token, setToken] = useState<string | null>(() => getStoredToken());
 
@@ -30,6 +32,7 @@ useEffect(() => {
 ```
 
 **DEPOIS:**
+
 ```typescript
 const [token, setToken] = useState<string | null>(null); // ✅ Inicia sem token
 
@@ -53,7 +56,7 @@ useEffect(() => {
   const validateToken = async () => {
     setLoading(true);
     api.setAuthToken(token);
-    
+
     try {
       const me = await api.getCurrentUser(); // ✅ SEMPRE valida com backend
       setUser(me.user);
@@ -67,12 +70,13 @@ useEffect(() => {
       setLoading(false);
     }
   };
-  
+
   validateToken();
 }, [token]); // ✅ Executa TODA VEZ que token muda
 ```
 
 **Benefícios:**
+
 - ✅ Token sempre validado com backend
 - ✅ Tokens expirados/inválidos são limpos automaticamente
 - ✅ Estado de autenticação sempre correto
@@ -81,11 +85,13 @@ useEffect(() => {
 ### 2. App.tsx - Melhor UX Durante Loading
 
 **ANTES:**
+
 ```typescript
 if (loading) return null; // ❌ Tela em branco durante validação
 ```
 
 **DEPOIS:**
+
 ```typescript
 if (loading) {
   return (
@@ -106,6 +112,7 @@ if (loading) {
 Ferramenta web para limpar cache do navegador automaticamente.
 
 **Recursos:**
+
 - Limpa localStorage e sessionStorage
 - Remove cookies
 - Remove Service Workers
@@ -116,12 +123,14 @@ Ferramenta web para limpar cache do navegador automaticamente.
 ## 🧪 Como Testar a Correção
 
 ### Teste 1: Sem Token (Novo Usuário)
+
 1. Abra navegador em aba anônima
 2. Acesse: http://localhost:8080
 3. ✅ **DEVE** mostrar tela de login
 4. ✅ **NÃO DEVE** abrir aplicação diretamente
 
 ### Teste 2: Com Token Expirado
+
 1. Faça login normalmente
 2. No console (F12): `localStorage.setItem('auth:token', 'token_invalido')`
 3. Recarregue a página (F5)
@@ -131,6 +140,7 @@ Ferramenta web para limpar cache do navegador automaticamente.
 7. ✅ **DEVE** redirecionar para /login
 
 ### Teste 3: Com Token Válido
+
 1. Faça login normalmente
 2. Recarregue a página (F5)
 3. ✅ **DEVE** validar token com backend
@@ -138,6 +148,7 @@ Ferramenta web para limpar cache do navegador automaticamente.
 5. ✅ **DEVE** permanecer logado
 
 ### Teste 4: Ferramenta de Limpeza
+
 1. Acesse: http://localhost:8080/clear-cache.html
 2. Clique em "Limpar Cache Agora"
 3. ✅ **DEVE** limpar todo o storage
@@ -149,16 +160,19 @@ Ferramenta web para limpar cache do navegador automaticamente.
 ### 1. Limpar Cache Atual
 
 **Opção A - Ferramenta Automática (Recomendado):**
+
 ```
 http://localhost:8080/clear-cache.html
 ```
 
 **Opção B - Manual no DevTools:**
+
 1. F12 > Application > Storage
 2. "Clear site data"
 3. F5 para recarregar
 
 **Opção C - Console:**
+
 ```javascript
 localStorage.clear();
 sessionStorage.clear();
@@ -193,12 +207,12 @@ console.log('Token:', localStorage.getItem('auth:token'));
 // 2. Testar endpoint de autenticação
 fetch('/api/me', {
   headers: {
-    'Authorization': 'Bearer ' + localStorage.getItem('auth:token')
-  }
+    Authorization: 'Bearer ' + localStorage.getItem('auth:token'),
+  },
 })
-.then(r => r.json())
-.then(data => console.log('User:', data))
-.catch(err => console.error('Auth Error:', err));
+  .then((r) => r.json())
+  .then((data) => console.log('User:', data))
+  .catch((err) => console.error('Auth Error:', err));
 
 // 3. Forçar logout
 localStorage.clear();
@@ -229,18 +243,19 @@ location.reload();
 
 ## 📊 Comparação Antes vs Depois
 
-| Cenário | Antes ❌ | Depois ✅ |
-|---------|----------|-----------|
-| Sem token | Tela branca | Tela de login |
-| Token expirado | Abre app | Redireciona para login |
-| Token válido | Abre app | Abre app |
-| Reload da página | Não valida | Valida com backend |
-| Token inválido | Fica preso | Limpa e redireciona |
-| Loading state | Tela branca | Spinner animado |
+| Cenário          | Antes ❌    | Depois ✅              |
+| ---------------- | ----------- | ---------------------- |
+| Sem token        | Tela branca | Tela de login          |
+| Token expirado   | Abre app    | Redireciona para login |
+| Token válido     | Abre app    | Abre app               |
+| Reload da página | Não valida  | Valida com backend     |
+| Token inválido   | Fica preso  | Limpa e redireciona    |
+| Loading state    | Tela branca | Spinner animado        |
 
 ## 🎯 Resultado Final
 
 ✅ **Sistema de autenticação totalmente funcional**
+
 - Token sempre validado com backend
 - Tokens inválidos automaticamente limpos
 - UX melhorada com spinner de loading
@@ -250,6 +265,7 @@ location.reload();
 ---
 
 **Arquivos Modificados:**
+
 1. `/src/contexts/AuthContext.tsx` - Lógica de validação reativa
 2. `/src/App.tsx` - Spinner de loading
 3. `/public/clear-cache.html` - Ferramenta de limpeza (novo)

@@ -2,7 +2,18 @@ import { useEffect, useState } from 'react';
 import { useParking } from '@/contexts/ParkingContext';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { PieChart, Pie, Cell, Legend, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip } from 'recharts';
+import {
+  PieChart,
+  Pie,
+  Cell,
+  Legend,
+  ResponsiveContainer,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip,
+} from 'recharts';
 
 const COLORS = ['#2563EB', '#10B981', '#EF4444', '#FBBF24'];
 
@@ -15,11 +26,11 @@ const Index = () => {
   const [monthlyLate, setMonthlyLate] = useState(0);
 
   useEffect(() => {
-    setActiveVehicles(vehicles.filter(v => v.status === 'Em andamento').length);
-    setCompletedVehicles(vehicles.filter(v => v.status === 'Concluído').length);
+    setActiveVehicles(vehicles.filter((v) => v.status === 'Em andamento').length);
+    setCompletedVehicles(vehicles.filter((v) => v.status === 'Concluído').length);
 
-    setMonthlyOnTime(monthlyCustomers.filter(c => c.status === 'Em dia').length);
-    setMonthlyLate(monthlyCustomers.filter(c => c.status === 'Atrasado').length);
+    setMonthlyOnTime(monthlyCustomers.filter((c) => c.status === 'Em dia').length);
+    setMonthlyLate(monthlyCustomers.filter((c) => c.status === 'Atrasado').length);
   }, [vehicles, monthlyCustomers]);
 
   const vehicleData = [

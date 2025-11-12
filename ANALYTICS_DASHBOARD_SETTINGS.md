@@ -1,11 +1,13 @@
 # Analytics Dashboard Settings - Setup Guide
 
 ## Overview
+
 The Analytics Dashboard Settings feature allows administrators to customize their dashboard experience, configure KPI monitoring, and schedule automated reports.
 
 ## Features
 
 ### 1. General Dashboard Settings
+
 - **Refresh Interval**: How often dashboard data updates (in seconds)
 - **Data Retention**: How long to keep historical data (in days)
 - **Default Date Range**: Initial time period shown on dashboard
@@ -13,6 +15,7 @@ The Analytics Dashboard Settings feature allows administrators to customize thei
 - **Comparisons**: Toggle period-over-period comparisons
 
 ### 2. Dashboard Widgets
+
 - Customize which widgets appear on dashboard
 - Configure widget position and size
 - Toggle widget visibility
@@ -25,6 +28,7 @@ The Analytics Dashboard Settings feature allows administrators to customize thei
   - Charts and graphs
 
 ### 3. KPI Thresholds & Alerts
+
 - Set minimum/maximum values for key metrics
 - Configure alert severity levels (info/warning/critical)
 - Enable/disable alerts
@@ -36,6 +40,7 @@ The Analytics Dashboard Settings feature allows administrators to customize thei
   - Monthly customer retention
 
 ### 4. Report Schedules
+
 - Automate report delivery via email
 - Configure frequencies (daily/weekly/monthly)
 - Set delivery time
@@ -59,6 +64,7 @@ Execute the SQL migration in your Supabase SQL Editor:
 ```
 
 This creates 4 tables:
+
 - `dashboard_settings` - General preferences
 - `dashboard_widgets` - Widget configurations
 - `kpi_thresholds` - KPI monitoring rules
@@ -88,10 +94,12 @@ node src/server.js
 All endpoints require authentication (`requireAuth`). Modification endpoints require `manageCompanyConfig` permission.
 
 ### Dashboard Settings
+
 - `GET /dashboard-settings` - Get current settings
 - `PUT /dashboard-settings` - Update settings
 
 ### Widgets
+
 - `GET /dashboard-widgets` - List all widgets
 - `GET /dashboard-widgets/:id` - Get specific widget
 - `POST /dashboard-widgets` - Create new widget
@@ -100,6 +108,7 @@ All endpoints require authentication (`requireAuth`). Modification endpoints req
 - `POST /dashboard-widgets/reorder` - Reorder widgets
 
 ### KPI Thresholds
+
 - `GET /kpi-thresholds` - List all thresholds
 - `GET /kpi-thresholds/:id` - Get specific threshold
 - `POST /kpi-thresholds` - Create new threshold
@@ -107,6 +116,7 @@ All endpoints require authentication (`requireAuth`). Modification endpoints req
 - `DELETE /kpi-thresholds/:id` - Delete threshold
 
 ### Report Schedules
+
 - `GET /report-schedules` - List all schedules
 - `GET /report-schedules/:id` - Get specific schedule
 - `POST /report-schedules` - Create new schedule
@@ -159,6 +169,7 @@ All endpoints require authentication (`requireAuth`). Modification endpoints req
 ## Database Schema
 
 ### dashboard_settings
+
 ```sql
 - id (UUID, PK)
 - refresh_interval (INTEGER) - Seconds between updates
@@ -171,6 +182,7 @@ All endpoints require authentication (`requireAuth`). Modification endpoints req
 ```
 
 ### dashboard_widgets
+
 ```sql
 - id (UUID, PK)
 - widget_type (VARCHAR) - Type of widget
@@ -185,6 +197,7 @@ All endpoints require authentication (`requireAuth`). Modification endpoints req
 ```
 
 ### kpi_thresholds
+
 ```sql
 - id (UUID, PK)
 - kpi_name (VARCHAR) - KPI identifier
@@ -200,6 +213,7 @@ All endpoints require authentication (`requireAuth`). Modification endpoints req
 ```
 
 ### report_schedules
+
 ```sql
 - id (UUID, PK)
 - report_name (VARCHAR) - Schedule name
@@ -225,11 +239,13 @@ All endpoints require authentication (`requireAuth`). Modification endpoints req
 ## Files Created/Modified
 
 ### Backend
+
 - `/backend/create-analytics-dashboard-settings.sql` - Database migration (361 lines)
 - `/backend/src/controllers/dashboardSettingsController.js` - API controller (722 lines)
 - `/backend/src/routes/index.js` - Added 25 routes
 
 ### Frontend
+
 - `/src/pages/ConfiguracoesDashboard.tsx` - Settings page (694 lines)
 - `/src/App.tsx` - Added route (already existed)
 - `/src/components/Sidebar.tsx` - Added menu item
@@ -237,22 +253,26 @@ All endpoints require authentication (`requireAuth`). Modification endpoints req
 ## Troubleshooting
 
 ### Settings not saving
+
 - Check browser console for errors
 - Verify authentication token is valid
 - Confirm user has `manageCompanyConfig` permission
 
 ### Test email not received
+
 - Check backend logs for email service errors
 - Verify integration settings in Integrations page
 - Ensure recipient email is correct
 - Check spam folder
 
 ### Widgets not appearing
+
 - Verify widget `is_visible` is true
 - Check widget position values
 - Ensure default widgets were created in migration
 
 ### KPI alerts not firing
+
 - Confirm `alert_enabled` is true
 - Verify threshold values are correct
 - Check that metric data is being collected
@@ -277,6 +297,7 @@ All endpoints require authentication (`requireAuth`). Modification endpoints req
 ## Support
 
 For issues or questions:
+
 1. Check browser console for errors
 2. Review backend logs: `/tmp/backend.log`
 3. Verify SQL migration completed successfully

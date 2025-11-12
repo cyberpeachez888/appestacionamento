@@ -7,6 +7,7 @@
 3. Copie e execute o conteúdo do arquivo: `backend/sql/create-company-settings-table.sql`
 
 Este SQL irá:
+
 - Criar a tabela `company_settings`
 - Adicionar políticas RLS (Row Level Security)
 - Inserir registro inicial vazio (setup_completed = false)
@@ -51,6 +52,7 @@ npm start
 ```
 
 Você deve ver:
+
 ```
 ✅ Connecting to Supabase: https://nnpvazzeomwklugawceg.supabase.co
 Backend running on http://localhost:3000
@@ -82,6 +84,7 @@ npm run dev
 ## O que acontece durante o Setup?
 
 O wizard automaticamente:
+
 - ✅ **Limpa todos os dados de teste** do banco de dados
 - ✅ **Deleta o usuário admin antigo** (admin/admin123)
 - ✅ **Cria novo usuário admin** com suas credenciais
@@ -93,12 +96,14 @@ O wizard automaticamente:
 ## Arquivos Criados/Modificados
 
 ### Backend:
+
 - `backend/sql/create-company-settings-table.sql` - Tabela de configurações
 - `backend/sql/cleanup-test-data.sql` - Script de limpeza
 - `backend/src/controllers/setupController.js` - Controller de setup
 - `backend/src/routes/index.js` - Rotas de setup adicionadas
 
 ### Frontend:
+
 - `src/pages/SetupWizard.tsx` - Componente do wizard
 - `src/App.tsx` - Guard de setup e rota `/setup`
 
@@ -108,14 +113,17 @@ Para testar o wizard novamente:
 
 1. Acesse Supabase SQL Editor
 2. Execute:
+
 ```sql
 UPDATE company_settings SET setup_completed = false;
 ```
+
 3. Recarregue a página - wizard aparecerá novamente
 
 ## Próximos Passos
 
 Após configurar com sucesso:
+
 1. ✅ Sistema pronto para uso em produção
 2. ✅ Todos os dados de teste removidos
 3. ✅ Experiência profissional de primeira execução

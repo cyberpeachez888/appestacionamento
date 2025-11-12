@@ -6,10 +6,10 @@ const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
 export default function ResetPassword() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  
+
   const token = searchParams.get('token');
   const email = searchParams.get('email');
-  
+
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -27,8 +27,8 @@ export default function ResetPassword() {
 
     // Validar token
     fetch(`${API_URL}/auth/validate-reset-token/${token}?email=${encodeURIComponent(email)}`)
-      .then(res => res.json())
-      .then(data => {
+      .then((res) => res.json())
+      .then((data) => {
         if (data.valid) {
           setTokenValid(true);
         } else {
@@ -77,7 +77,7 @@ export default function ResetPassword() {
       }
 
       setSuccess(true);
-      
+
       // Redirecionar para login após 3 segundos
       setTimeout(() => {
         navigate('/login');
@@ -105,8 +105,18 @@ export default function ResetPassword() {
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 px-4">
         <div className="max-w-md w-full bg-white rounded-lg shadow-xl p-8 text-center">
           <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-4">
-            <svg className="h-6 w-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+            <svg
+              className="h-6 w-6 text-red-600"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                d="M6 18L18 6M6 6l12 12"
+              />
             </svg>
           </div>
           <h2 className="text-2xl font-bold text-gray-900 mb-2">Link inválido</h2>
@@ -127,8 +137,18 @@ export default function ResetPassword() {
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 px-4">
         <div className="max-w-md w-full bg-white rounded-lg shadow-xl p-8 text-center">
           <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-100 mb-4">
-            <svg className="h-6 w-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+            <svg
+              className="h-6 w-6 text-green-600"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                d="M5 13l4 4L19 7"
+              />
             </svg>
           </div>
           <h2 className="text-2xl font-bold text-gray-900 mb-2">Senha redefinida!</h2>
@@ -177,7 +197,10 @@ export default function ResetPassword() {
           </div>
 
           <div>
-            <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-2">
+            <label
+              htmlFor="confirmPassword"
+              className="block text-sm font-medium text-gray-700 mb-2"
+            >
               Confirmar senha
             </label>
             <input

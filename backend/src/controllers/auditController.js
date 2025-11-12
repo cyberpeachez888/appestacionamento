@@ -18,7 +18,7 @@ export default {
         target_type: targetType || null,
         target_id: targetId || null,
         details: details ? JSON.stringify(details) : null,
-        created_at: new Date().toISOString()
+        created_at: new Date().toISOString(),
       };
       await supabase.from('user_events').insert(payload);
       res.status(201).json({ id: payload.id });
@@ -40,5 +40,5 @@ export default {
     } catch (err) {
       res.status(500).json({ error: err.message || err });
     }
-  }
+  },
 };

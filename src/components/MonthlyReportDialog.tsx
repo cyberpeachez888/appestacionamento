@@ -9,7 +9,13 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { AlertCircle, FileText, Loader2 } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -39,7 +45,7 @@ export function MonthlyReportDialog({ open, onOpenChange, onConfirm }: MonthlyRe
   const now = new Date();
   const currentYear = now.getFullYear();
   const currentMonth = now.getMonth() + 1; // 1-12
-  
+
   // Default to previous month
   const defaultMonth = currentMonth === 1 ? 12 : currentMonth - 1;
   const defaultYear = currentMonth === 1 ? currentYear - 1 : currentYear;
@@ -68,7 +74,7 @@ export function MonthlyReportDialog({ open, onOpenChange, onConfirm }: MonthlyRe
     }
   };
 
-  const monthName = MONTHS.find(m => m.value === selectedMonth)?.label || '';
+  const monthName = MONTHS.find((m) => m.value === selectedMonth)?.label || '';
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -139,8 +145,8 @@ export function MonthlyReportDialog({ open, onOpenChange, onConfirm }: MonthlyRe
                 Limpar registros operacionais
               </Label>
               <p className="text-sm text-muted-foreground">
-                Remove todos os tickets (entrada/saída) do período após arquivamento.
-                Recomendado para iniciar novo ciclo mensal.
+                Remove todos os tickets (entrada/saída) do período após arquivamento. Recomendado
+                para iniciar novo ciclo mensal.
               </p>
             </div>
           </div>
@@ -151,7 +157,12 @@ export function MonthlyReportDialog({ open, onOpenChange, onConfirm }: MonthlyRe
             <AlertDescription>
               <strong>Atenção:</strong> Esta ação irá:
               <ul className="mt-2 ml-4 list-disc space-y-1 text-sm">
-                <li>Arquivar todos os dados financeiros de <strong>{monthName}/{selectedYear}</strong></li>
+                <li>
+                  Arquivar todos os dados financeiros de{' '}
+                  <strong>
+                    {monthName}/{selectedYear}
+                  </strong>
+                </li>
                 <li>Gerar relatório completo com receitas e despesas</li>
                 <li>Salvar snapshot de todos os pagamentos e tickets</li>
                 {clearOperational && (
@@ -169,18 +180,10 @@ export function MonthlyReportDialog({ open, onOpenChange, onConfirm }: MonthlyRe
         </div>
 
         <DialogFooter>
-          <Button
-            variant="outline"
-            onClick={() => onOpenChange(false)}
-            disabled={isGenerating}
-          >
+          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isGenerating}>
             Cancelar
           </Button>
-          <Button
-            onClick={handleConfirm}
-            disabled={isGenerating}
-            className="min-w-[120px]"
-          >
+          <Button onClick={handleConfirm} disabled={isGenerating} className="min-w-[120px]">
             {isGenerating ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />

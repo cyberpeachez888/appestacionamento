@@ -4,7 +4,13 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Edit, Trash2, Plus } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { VehicleTypeSelect } from '@/components/VehicleTypeSelect';
@@ -19,7 +25,7 @@ export const RatesDialog = ({ open, onOpenChange, onSaved }: RatesDialogProps) =
   const { rates, addRate, updateRate, deleteRate } = useParking();
   const { toast } = useToast();
   const [editingId, setEditingId] = useState<string | null>(null);
-  
+
   console.log('RatesDialog rendered, rates:', rates);
   const [formData, setFormData] = useState({
     vehicleType: 'Carro' as VehicleType,
@@ -31,7 +37,7 @@ export const RatesDialog = ({ open, onOpenChange, onSaved }: RatesDialogProps) =
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     const rateData = {
       vehicleType: formData.vehicleType,
       rateType: formData.rateType,
@@ -51,10 +57,10 @@ export const RatesDialog = ({ open, onOpenChange, onSaved }: RatesDialogProps) =
       resetForm();
       onSaved?.(); // Notify parent to refresh data
     } catch (error) {
-      toast({ 
+      toast({
         title: 'Erro ao salvar tarifa',
         description: 'Tente novamente',
-        variant: 'destructive'
+        variant: 'destructive',
       });
     }
   };
@@ -76,9 +82,9 @@ export const RatesDialog = ({ open, onOpenChange, onSaved }: RatesDialogProps) =
       toast({ title: 'Tarifa excluída' });
       onSaved?.(); // Notify parent to refresh data
     } catch (error) {
-      toast({ 
+      toast({
         title: 'Erro ao excluir tarifa',
-        variant: 'destructive'
+        variant: 'destructive',
       });
     }
   };
@@ -95,7 +101,7 @@ export const RatesDialog = ({ open, onOpenChange, onSaved }: RatesDialogProps) =
   };
 
   // Filter rates by selected vehicle type
-  const filteredRates = rates.filter(rate => rate.vehicleType === formData.vehicleType);
+  const filteredRates = rates.filter((rate) => rate.vehicleType === formData.vehicleType);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -185,9 +191,7 @@ export const RatesDialog = ({ open, onOpenChange, onSaved }: RatesDialogProps) =
           </div>
 
           <div>
-            <h3 className="font-semibold mb-4">
-              Tarifas Cadastradas - {formData.vehicleType}
-            </h3>
+            <h3 className="font-semibold mb-4">Tarifas Cadastradas - {formData.vehicleType}</h3>
             <div className="space-y-2 max-h-96 overflow-y-auto">
               {filteredRates.length === 0 ? (
                 <p className="text-muted-foreground text-sm text-center py-8">
@@ -195,26 +199,28 @@ export const RatesDialog = ({ open, onOpenChange, onSaved }: RatesDialogProps) =
                 </p>
               ) : (
                 filteredRates.map((rate) => (
-                <div
-                  key={rate.id}
-                  className="bg-muted/50 p-3 rounded-lg flex items-center justify-between"
-                >
-                  <div className="flex-1">
-                    <p className="font-medium">{rate.vehicleType} - {rate.rateType}</p>
-                    <p className="text-sm text-muted-foreground">
-                      R$ {rate.value.toFixed(2)}/{rate.unit}
-                      {rate.courtesyMinutes > 0 && ` • ${rate.courtesyMinutes}min cortesia`}
-                    </p>
+                  <div
+                    key={rate.id}
+                    className="bg-muted/50 p-3 rounded-lg flex items-center justify-between"
+                  >
+                    <div className="flex-1">
+                      <p className="font-medium">
+                        {rate.vehicleType} - {rate.rateType}
+                      </p>
+                      <p className="text-sm text-muted-foreground">
+                        R$ {rate.value.toFixed(2)}/{rate.unit}
+                        {rate.courtesyMinutes > 0 && ` • ${rate.courtesyMinutes}min cortesia`}
+                      </p>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button size="sm" variant="ghost" onClick={() => handleEdit(rate)}>
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button size="sm" variant="ghost" onClick={() => handleDelete(rate.id)}>
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </div>
-                  <div className="flex gap-2">
-                    <Button size="sm" variant="ghost" onClick={() => handleEdit(rate)}>
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                    <Button size="sm" variant="ghost" onClick={() => handleDelete(rate.id)}>
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
                 ))
               )}
             </div>

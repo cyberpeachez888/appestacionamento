@@ -1,9 +1,21 @@
 import { useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
@@ -136,14 +148,15 @@ export const ExitConfirmationDialog = ({
   };
 
   const handlePrint = async () => {
-    const receiptData: ReceiptData | null = receiptType !== 'none'
-      ? {
-          receiptType: receiptType === 'reimbursement' ? 'individual_reembolso' : 'simple',
-          clientName: receiptType === 'reimbursement' ? clientName : null,
-          clientCpf: receiptType === 'reimbursement' ? clientCpf : null,
-          notes: receiptType === 'reimbursement' ? notes : null,
-        }
-      : null;
+    const receiptData: ReceiptData | null =
+      receiptType !== 'none'
+        ? {
+            receiptType: receiptType === 'reimbursement' ? 'individual_reembolso' : 'simple',
+            clientName: receiptType === 'reimbursement' ? clientName : null,
+            clientCpf: receiptType === 'reimbursement' ? clientCpf : null,
+            notes: receiptType === 'reimbursement' ? notes : null,
+          }
+        : null;
 
     window.print();
     onConfirm(paymentMethod, receiptData);
@@ -152,7 +165,9 @@ export const ExitConfirmationDialog = ({
 
   const exitDate = new Date();
   // Se estiver editando, usa o valor editado
-  const entryDateTime = vehicle ? new Date(`${vehicle.entryDate}T${isEditingEntryTime ? editedEntryTime : vehicle.entryTime}`) : new Date();
+  const entryDateTime = vehicle
+    ? new Date(`${vehicle.entryDate}T${isEditingEntryTime ? editedEntryTime : vehicle.entryTime}`)
+    : new Date();
   const duration = vehicle ? Math.floor((exitDate.getTime() - entryDateTime.getTime()) / 60000) : 0;
   const hours = Math.floor(duration / 60);
   const minutes = duration % 60;
@@ -263,7 +278,9 @@ export const ExitConfirmationDialog = ({
             <div className="text-center text-sm text-muted-foreground border-t pt-3">
               <p>Operador: {operatorName}</p>
               <p className="mt-2">Obrigado pela preferência!</p>
-              <p className="text-xs mt-2">{format(exitDate, "dd/MM/yyyy 'às' HH:mm:ss", { locale: ptBR })}</p>
+              <p className="text-xs mt-2">
+                {format(exitDate, "dd/MM/yyyy 'às' HH:mm:ss", { locale: ptBR })}
+              </p>
             </div>
           </div>
 
@@ -272,7 +289,14 @@ export const ExitConfirmationDialog = ({
               Voltar
             </Button>
             <Button onClick={handlePrint}>
-              {receiptType === 'none' ? 'Confirmar' : (<><Printer className="h-4 w-4 mr-2" />Imprimir e Confirmar</>)}
+              {receiptType === 'none' ? (
+                'Confirmar'
+              ) : (
+                <>
+                  <Printer className="h-4 w-4 mr-2" />
+                  Imprimir e Confirmar
+                </>
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -305,7 +329,7 @@ export const ExitConfirmationDialog = ({
                   type="time"
                   className="border rounded px-2 py-1 text-sm"
                   value={editedEntryTime}
-                  onChange={e => setEditedEntryTime(e.target.value)}
+                  onChange={(e) => setEditedEntryTime(e.target.value)}
                   onBlur={() => setIsEditingEntryTime(false)}
                   autoFocus
                   style={{ width: '90px' }}
@@ -328,14 +352,19 @@ export const ExitConfirmationDialog = ({
             </div>
             <div className="flex justify-between items-center pt-2 border-t">
               <span className="font-semibold">Valor Total:</span>
-              <span className="text-2xl font-bold text-primary">R$ {calculatedValue.toFixed(2)}</span>
+              <span className="text-2xl font-bold text-primary">
+                R$ {calculatedValue.toFixed(2)}
+              </span>
             </div>
           </div>
 
           {/* Payment Method */}
           <div>
             <Label htmlFor="paymentMethod">Forma de Pagamento *</Label>
-            <Select value={paymentMethod} onValueChange={(v) => setPaymentMethod(v as PaymentMethod)}>
+            <Select
+              value={paymentMethod}
+              onValueChange={(v) => setPaymentMethod(v as PaymentMethod)}
+            >
               <SelectTrigger id="paymentMethod">
                 <SelectValue />
               </SelectTrigger>
@@ -379,7 +408,10 @@ export const ExitConfirmationDialog = ({
           {/* Receipt Options */}
           <div className="space-y-3 p-4 border rounded-lg bg-muted/20">
             <Label className="text-base font-semibold">Emitir recibo:</Label>
-            <RadioGroup value={receiptType} onValueChange={(v) => setReceiptType(v as 'none' | 'simple' | 'reimbursement')}>
+            <RadioGroup
+              value={receiptType}
+              onValueChange={(v) => setReceiptType(v as 'none' | 'simple' | 'reimbursement')}
+            >
               <div className="flex items-center space-x-2">
                 <RadioGroupItem value="none" id="none" />
                 <Label htmlFor="none" className="font-normal cursor-pointer">
@@ -448,7 +480,14 @@ export const ExitConfirmationDialog = ({
             Cancelar
           </Button>
           <Button onClick={handleConfirmAndPrint}>
-            {receiptType === 'none' ? 'Confirmar' : (<><Printer className="h-4 w-4 mr-2" />Confirmar & Imprimir</>)}
+            {receiptType === 'none' ? (
+              'Confirmar'
+            ) : (
+              <>
+                <Printer className="h-4 w-4 mr-2" />
+                Confirmar & Imprimir
+              </>
+            )}
           </Button>
         </DialogFooter>
       </DialogContent>

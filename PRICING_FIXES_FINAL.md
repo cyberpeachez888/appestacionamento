@@ -3,14 +3,17 @@
 ## 🔧 PROBLEMAS CORRIGIDOS
 
 ### **Problema 1: Middlewares incorretos**
+
 ❌ Estava usando: `authenticateToken` e `checkPermission` (não existem)  
 ✅ **CORRIGIDO:** Agora usa `requireAuth` e `requirePermission` de `../middleware/auth.js`
 
 ### **Problema 2: Import incorreto de logEvent**
+
 ❌ Estava importando de: `./auditController.js` (não exporta logEvent)  
 ✅ **CORRIGIDO:** Agora importa de `../middleware/auditLogger.js`
 
 ### **Problema 3: Assinatura incorreta de logEvent**
+
 ❌ Estava usando: `logEvent(userId, action, details)`  
 ✅ **CORRIGIDO:** Agora usa `logEvent({ actor, action, targetType, targetId, details })`
 
@@ -26,15 +29,18 @@
 ## 🚀 COMO REINICIAR E TESTAR
 
 ### **1. Parar o Backend Atual**
+
 No terminal do backend, pressione `Ctrl+C`
 
 ### **2. Iniciar Backend Novamente**
+
 ```bash
 cd /workspaces/appestacionamento/backend
 npm start
 ```
 
 **Aguarde ver:**
+
 ```
 Backend running on http://localhost:3000
 Scheduled backup service initialized
@@ -67,6 +73,7 @@ node /workspaces/appestacionamento/backend/test-pricing-rules.js
 ```
 
 **Resultado esperado:**
+
 ```
 ✅ ALL TESTS PASSED! System is ready.
 ```
@@ -90,6 +97,7 @@ Antes de considerar concluído:
 ## 🎯 RESUMO TÉCNICO
 
 **Total de arquivos criados:** 8
+
 - 1 Migration SQL (`create-pricing-rules-table.sql`)
 - 1 Service (`pricingCalculator.js`)
 - 1 Controller (`pricingRulesController.js`)
@@ -98,11 +106,13 @@ Antes de considerar concluído:
 - 3 Documentos (auditoria, deployment, fixes)
 
 **Total de arquivos modificados:** 3
+
 - `backend/src/routes/index.js` - Registrou rotas
 - `src/lib/api.ts` - Adicionou endpoints
 - `src/pages/Tarifas.tsx` - Integrou componente
 
 **Funcionalidades implementadas:**
+
 - ✅ Primeira hora com preço diferente
 - ✅ Valor máximo diário (cap)
 - ✅ Faixa horária com multiplicador

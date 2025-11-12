@@ -42,9 +42,9 @@ export default function Configuracoes() {
         top: 10,
         bottom: 10,
         left: 5,
-        right: 5
-      }
-    }
+        right: 5,
+      },
+    },
   });
 
   const [previewOpen, setPreviewOpen] = useState(false);
@@ -75,9 +75,9 @@ export default function Configuracoes() {
             top: 10,
             bottom: 10,
             left: 5,
-            right: 5
-          }
-        }
+            right: 5,
+          },
+        },
       });
     } catch (err) {
       console.error('Erro ao buscar configurações:', err);
@@ -102,8 +102,8 @@ export default function Configuracoes() {
 
       // Trigger a custom event to notify other components
       window.dispatchEvent(new CustomEvent('companyConfigUpdated'));
-      
-  fetchConfig(); // atualizar com dados retornados do backend
+
+      fetchConfig(); // atualizar com dados retornados do backend
     } catch (err) {
       console.error(err);
       toast({
@@ -119,7 +119,9 @@ export default function Configuracoes() {
       <div className="max-w-5xl mx-auto">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-foreground">Configurações</h1>
-          <p className="text-muted-foreground mt-1">Dados da empresa, impressora e personalização</p>
+          <p className="text-muted-foreground mt-1">
+            Dados da empresa, impressora e personalização
+          </p>
         </div>
 
         <Tabs defaultValue="company" className="w-full">
@@ -132,116 +134,119 @@ export default function Configuracoes() {
           <TabsContent value="company">
             <div className="bg-card p-6 rounded-lg shadow-sm border">
               <form onSubmit={handleSubmit} className="space-y-6">
-            <div>
-              <Label htmlFor="name">Nome da Empresa *</Label>
-              <Input
-                id="name"
-                value={config.name}
-                onChange={(e) => setConfig({ ...config, name: e.target.value })}
-                placeholder="Estacionamento Exemplo"
-              />
-            </div>
+                <div>
+                  <Label htmlFor="name">Nome da Empresa *</Label>
+                  <Input
+                    id="name"
+                    value={config.name}
+                    onChange={(e) => setConfig({ ...config, name: e.target.value })}
+                    placeholder="Estacionamento Exemplo"
+                  />
+                </div>
 
-            <div>
-              <Label htmlFor="legalName">Razão Social</Label>
-              <Input
-                id="legalName"
-                value={config.legalName}
-                onChange={(e) => setConfig({ ...config, legalName: e.target.value })}
-                placeholder="Empresa Exemplo Ltda"
-              />
-            </div>
+                <div>
+                  <Label htmlFor="legalName">Razão Social</Label>
+                  <Input
+                    id="legalName"
+                    value={config.legalName}
+                    onChange={(e) => setConfig({ ...config, legalName: e.target.value })}
+                    placeholder="Empresa Exemplo Ltda"
+                  />
+                </div>
 
-            <div>
-              <Label htmlFor="cnpj">CNPJ</Label>
-              <Input
-                id="cnpj"
-                value={config.cnpj}
-                onChange={(e) => setConfig({ ...config, cnpj: e.target.value })}
-                placeholder="00.000.000/0000-00"
-              />
-            </div>
+                <div>
+                  <Label htmlFor="cnpj">CNPJ</Label>
+                  <Input
+                    id="cnpj"
+                    value={config.cnpj}
+                    onChange={(e) => setConfig({ ...config, cnpj: e.target.value })}
+                    placeholder="00.000.000/0000-00"
+                  />
+                </div>
 
-            <div>
-              <Label htmlFor="address">Endereço</Label>
-              <Input
-                id="address"
-                value={config.address}
-                onChange={(e) => setConfig({ ...config, address: e.target.value })}
-                placeholder="Rua Exemplo, 123 - Bairro - Cidade/UF"
-              />
-            </div>
+                <div>
+                  <Label htmlFor="address">Endereço</Label>
+                  <Input
+                    id="address"
+                    value={config.address}
+                    onChange={(e) => setConfig({ ...config, address: e.target.value })}
+                    placeholder="Rua Exemplo, 123 - Bairro - Cidade/UF"
+                  />
+                </div>
 
-            <div>
-              <Label htmlFor="phone">Telefone / WhatsApp</Label>
-              <Input
-                id="phone"
-                value={config.phone}
-                onChange={(e) => setConfig({ ...config, phone: e.target.value })}
-                placeholder="(00) 00000-0000"
-              />
-            </div>
+                <div>
+                  <Label htmlFor="phone">Telefone / WhatsApp</Label>
+                  <Input
+                    id="phone"
+                    value={config.phone}
+                    onChange={(e) => setConfig({ ...config, phone: e.target.value })}
+                    placeholder="(00) 00000-0000"
+                  />
+                </div>
 
-            <div>
-              <Label htmlFor="primaryColor">Cor Primária</Label>
-              <div className="flex gap-4 items-center">
-                <Input
-                  id="primaryColor"
-                  type="color"
-                  value={config.primaryColor}
-                  onChange={(e) => setConfig({ ...config, primaryColor: e.target.value })}
-                  className="w-20 h-10"
-                />
-                <span className="text-sm text-muted-foreground">{config.primaryColor}</span>
-              </div>
-            </div>
+                <div>
+                  <Label htmlFor="primaryColor">Cor Primária</Label>
+                  <div className="flex gap-4 items-center">
+                    <Input
+                      id="primaryColor"
+                      type="color"
+                      value={config.primaryColor}
+                      onChange={(e) => setConfig({ ...config, primaryColor: e.target.value })}
+                      className="w-20 h-10"
+                    />
+                    <span className="text-sm text-muted-foreground">{config.primaryColor}</span>
+                  </div>
+                </div>
 
-            <div className="bg-muted p-4 rounded-lg">
-              <p className="text-sm text-muted-foreground">
-                <strong>Contador de Recibos:</strong> {config.receiptCounter.toString().padStart(6, '0')}
-              </p>
-              <p className="text-xs text-muted-foreground mt-1">
-                O contador é incrementado automaticamente a cada recibo emitido
-              </p>
-            </div>
+                <div className="bg-muted p-4 rounded-lg">
+                  <p className="text-sm text-muted-foreground">
+                    <strong>Contador de Recibos:</strong>{' '}
+                    {config.receiptCounter.toString().padStart(6, '0')}
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    O contador é incrementado automaticamente a cada recibo emitido
+                  </p>
+                </div>
 
-            <div className="flex justify-end pt-4">
-              {hasPermission('manageCompanyConfig') ? (
-                <Button type="submit">Salvar Configurações</Button>
-              ) : (
-                <p className="text-xs text-muted-foreground">Visualização somente. Sem permissão para editar.</p>
-              )}
+                <div className="flex justify-end pt-4">
+                  {hasPermission('manageCompanyConfig') ? (
+                    <Button type="submit">Salvar Configurações</Button>
+                  ) : (
+                    <p className="text-xs text-muted-foreground">
+                      Visualização somente. Sem permissão para editar.
+                    </p>
+                  )}
+                </div>
+              </form>
             </div>
-          </form>
-        </div>
-      </TabsContent>
+          </TabsContent>
 
-      <TabsContent value="printer">
-        <PrinterConfigSection
-          config={config.printerConfig || {}}
-          onChange={(printerConfig) => setConfig({ ...config, printerConfig })}
-          onSave={() => handleSubmit({ preventDefault: () => {} } as React.FormEvent)}
-          onPreview={() => setPreviewOpen(true)}
+          <TabsContent value="printer">
+            <PrinterConfigSection
+              config={config.printerConfig || {}}
+              onChange={(printerConfig) => setConfig({ ...config, printerConfig })}
+              onSave={() => handleSubmit({ preventDefault: () => {} } as React.FormEvent)}
+              onPreview={() => setPreviewOpen(true)}
+            />
+          </TabsContent>
+
+          <TabsContent value="backup">
+            <BackupSettingsSection />
+          </TabsContent>
+        </Tabs>
+
+        <PrintPreviewDialog
+          open={previewOpen}
+          onOpenChange={setPreviewOpen}
+          printerConfig={config.printerConfig || {}}
+          companyInfo={{
+            name: config.name,
+            legalName: config.legalName,
+            cnpj: config.cnpj,
+            address: config.address,
+            phone: config.phone,
+          }}
         />
-      </TabsContent>
-
-      <TabsContent value="backup">
-        <BackupSettingsSection />
-      </TabsContent>
-    </Tabs>
-
-    <PrintPreviewDialog
-      open={previewOpen}
-      onOpenChange={setPreviewOpen}
-      printerConfig={config.printerConfig || {}}
-      companyInfo={{
-        name: config.name,
-        legalName: config.legalName,
-        cnpj: config.cnpj,
-        address: config.address,
-        phone: config.phone
-      }}
-    />
       </div>
     </div>
   );

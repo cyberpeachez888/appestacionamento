@@ -3,7 +3,13 @@ import api from '@/lib/api';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from '@/components/ui/select';
+import {
+  Select,
+  SelectTrigger,
+  SelectContent,
+  SelectItem,
+  SelectValue,
+} from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -116,8 +122,10 @@ const AuditLogDialog: React.FC<AuditLogDialogProps> = ({ open, onOpenChange }) =
     return 'text-gray-600';
   };
 
-  const uniqueActions = Array.from(new Set(events.map(e => e.action)));
-  const uniqueActors = Array.from(new Set(events.map(e => ({ id: e.actor_id, name: e.actor_name }))));
+  const uniqueActions = Array.from(new Set(events.map((e) => e.action)));
+  const uniqueActors = Array.from(
+    new Set(events.map((e) => ({ id: e.actor_id, name: e.actor_name })))
+  );
 
   // Professional: Refine return type for parseDetails
   const parseDetails = (detailsStr: string | null): object | string | null => {
@@ -143,7 +151,9 @@ const AuditLogDialog: React.FC<AuditLogDialogProps> = ({ open, onOpenChange }) =
         <div className="bg-muted/30 rounded-lg border p-4 space-y-3">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
             <div>
-              <label className="text-xs font-medium text-muted-foreground mb-1 block">Data Início</label>
+              <label className="text-xs font-medium text-muted-foreground mb-1 block">
+                Data Início
+              </label>
               <Input
                 type="date"
                 value={filters.startDate}
@@ -151,7 +161,9 @@ const AuditLogDialog: React.FC<AuditLogDialogProps> = ({ open, onOpenChange }) =
               />
             </div>
             <div>
-              <label className="text-xs font-medium text-muted-foreground mb-1 block">Data Fim</label>
+              <label className="text-xs font-medium text-muted-foreground mb-1 block">
+                Data Fim
+              </label>
               <Input
                 type="date"
                 value={filters.endDate}
@@ -160,28 +172,40 @@ const AuditLogDialog: React.FC<AuditLogDialogProps> = ({ open, onOpenChange }) =
             </div>
             <div>
               <label className="text-xs font-medium text-muted-foreground mb-1 block">Ação</label>
-              <Select value={filters.action} onValueChange={(v) => setFilters({ ...filters, action: v })}>
+              <Select
+                value={filters.action}
+                onValueChange={(v) => setFilters({ ...filters, action: v })}
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="Todas" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="">Todas</SelectItem>
-                  {uniqueActions.map(action => (
-                    <SelectItem key={action} value={action}>{getActionLabel(action)}</SelectItem>
+                  {uniqueActions.map((action) => (
+                    <SelectItem key={action} value={action}>
+                      {getActionLabel(action)}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
             <div>
-              <label className="text-xs font-medium text-muted-foreground mb-1 block">Usuário</label>
-              <Select value={filters.actorId} onValueChange={(v) => setFilters({ ...filters, actorId: v })}>
+              <label className="text-xs font-medium text-muted-foreground mb-1 block">
+                Usuário
+              </label>
+              <Select
+                value={filters.actorId}
+                onValueChange={(v) => setFilters({ ...filters, actorId: v })}
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="Todos" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="">Todos</SelectItem>
-                  {uniqueActors.map(actor => (
-                    <SelectItem key={actor.id} value={actor.id}>{actor.name}</SelectItem>
+                  {uniqueActors.map((actor) => (
+                    <SelectItem key={actor.id} value={actor.id}>
+                      {actor.name}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -189,7 +213,8 @@ const AuditLogDialog: React.FC<AuditLogDialogProps> = ({ open, onOpenChange }) =
           </div>
           <div className="flex items-center justify-between">
             <div className="text-sm text-muted-foreground">
-              {events.length} evento{events.length !== 1 ? 's' : ''} encontrado{events.length !== 1 ? 's' : ''}
+              {events.length} evento{events.length !== 1 ? 's' : ''} encontrado
+              {events.length !== 1 ? 's' : ''}
             </div>
             <div className="flex gap-2">
               <Button
@@ -229,7 +254,11 @@ const AuditLogDialog: React.FC<AuditLogDialogProps> = ({ open, onOpenChange }) =
                           className="mt-0.5 text-muted-foreground hover:text-foreground transition-colors"
                           aria-label={isExpanded ? 'Recolher detalhes' : 'Expandir detalhes'}
                         >
-                          {isExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                          {isExpanded ? (
+                            <ChevronDown className="h-4 w-4" />
+                          ) : (
+                            <ChevronRight className="h-4 w-4" />
+                          )}
                         </button>
                       ) : (
                         <div className="w-4" />
@@ -256,7 +285,9 @@ const AuditLogDialog: React.FC<AuditLogDialogProps> = ({ open, onOpenChange }) =
                               </span>
                               <span className="flex items-center gap-1">
                                 <Calendar className="h-3 w-3" />
-                                {format(new Date(event.created_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                                {format(new Date(event.created_at), "dd/MM/yyyy 'às' HH:mm", {
+                                  locale: ptBR,
+                                })}
                               </span>
                             </div>
                           </div>
@@ -267,8 +298,8 @@ const AuditLogDialog: React.FC<AuditLogDialogProps> = ({ open, onOpenChange }) =
                           <div className="mt-3 p-3 bg-muted/50 rounded border text-xs">
                             <div className="font-medium mb-2">Detalhes:</div>
                             <pre className="whitespace-pre-wrap font-mono text-xs overflow-x-auto">
-                              {typeof details === 'object' 
-                                ? JSON.stringify(details, null, 2) 
+                              {typeof details === 'object'
+                                ? JSON.stringify(details, null, 2)
                                 : String(details)}
                             </pre>
                           </div>

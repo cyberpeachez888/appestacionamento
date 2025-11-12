@@ -5,12 +5,15 @@
 ### ✅ O Que JÁ EXISTE
 
 #### 1. **Sistema Básico de Tarifas** ✅
+
 **Localização:**
+
 - Frontend: `/src/pages/Tarifas.tsx`
 - Backend: `/backend/src/controllers/ratesController.js`
 - Contexto: `/src/contexts/ParkingContext.tsx`
 
 **Funcionalidades Implementadas:**
+
 - ✅ CRUD completo de tarifas
 - ✅ Tipos de veículos customizáveis (Carro, Moto, Caminhonete, Van, Ônibus)
 - ✅ 6 tipos de tarifação:
@@ -27,18 +30,20 @@
 - ✅ Permissões (`manageRates`)
 
 **Estrutura de Dados:**
+
 ```typescript
 interface Rate {
   id: string;
-  vehicleType: VehicleType;  // 'Carro' | 'Moto' | etc
-  rateType: RateType;         // 'Hora/Fração' | 'Diária' | etc
-  value: number;              // Valor em R$
-  unit: string;               // 'hora' | 'dia' | 'mês'
-  courtesyMinutes: number;    // ✅ Grace period já implementado!
+  vehicleType: VehicleType; // 'Carro' | 'Moto' | etc
+  rateType: RateType; // 'Hora/Fração' | 'Diária' | etc
+  value: number; // Valor em R$
+  unit: string; // 'hora' | 'dia' | 'mês'
+  courtesyMinutes: number; // ✅ Grace period já implementado!
 }
 ```
 
 **Cálculo de Tarifa Atual:**
+
 ```typescript
 // Localização: /src/contexts/ParkingContext.tsx linha 140
 const calculateRate = (vehicle, rate, exitDate, exitTime) => {
@@ -53,7 +58,7 @@ const calculateRate = (vehicle, rate, exitDate, exitTime) => {
     // ✅ Grace period já implementado aqui!
     if (remainingMinutes > rate.courtesyMinutes) fractions += 1;
     return Math.max(fractions, 1) * rate.value;
-  } 
+  }
   // ... outros tipos
 };
 ```
@@ -65,6 +70,7 @@ const calculateRate = (vehicle, rate, exitDate, exitTime) => {
 ### 1. ❌ **Time-Based Pricing Rules** (Regras Complexas de Tempo)
 
 **O que precisa:**
+
 - ❌ Primeira hora com preço diferente (ex: 1ª hora R$ 5, demais R$ 3)
 - ❌ Valor máximo diário (daily cap)
 - ❌ Progressão de preços (ex: 1-2h = R$5, 3-5h = R$4, 6h+ = R$3)
@@ -77,6 +83,7 @@ const calculateRate = (vehicle, rate, exitDate, exitTime) => {
 ### 2. ❌ **Weekend/Holiday Pricing** (Fim de Semana e Feriados)
 
 **O que precisa:**
+
 - ❌ Detectar fins de semana automaticamente
 - ❌ Cadastro de feriados personalizados
 - ❌ Tarifas diferentes para sábado/domingo
@@ -89,6 +96,7 @@ const calculateRate = (vehicle, rate, exitDate, exitTime) => {
 ### 3. ❌ **Monthly Customer Pricing Tiers** (Níveis de Preço Mensalistas)
 
 **O que precisa:**
+
 - ❌ Planos bronze/prata/ouro com benefícios diferentes
 - ❌ Desconto por tempo de contrato (6 meses, 12 meses)
 - ❌ Múltiplas vagas para um cliente (desconto progressivo)
@@ -101,6 +109,7 @@ const calculateRate = (vehicle, rate, exitDate, exitTime) => {
 ### 4. ❌ **Discount Codes/Coupons** (Cupons e Códigos de Desconto)
 
 **O que precisa:**
+
 - ❌ Sistema de cupons com códigos únicos
 - ❌ Tipos de desconto (percentual ou valor fixo)
 - ❌ Validade temporal dos cupons
@@ -115,10 +124,12 @@ const calculateRate = (vehicle, rate, exitDate, exitTime) => {
 ### 5. ⚠️ **Advanced Grace Period** (Período de Cortesia Avançado)
 
 **O que já existe:**
+
 - ✅ Minutos de cortesia básico (10 minutos padrão)
 - ✅ Configurável por tarifa
 
 **O que falta:**
+
 - ❌ Primeira hora grátis em certas condições
 - ❌ Cortesia diferente por horário
 - ❌ Cortesia acumulativa para clientes frequentes
@@ -128,13 +139,13 @@ const calculateRate = (vehicle, rate, exitDate, exitTime) => {
 
 ## 📋 MATRIZ DE PRIORIDADES
 
-| Funcionalidade | Complexidade | Impacto | Prioridade | Estimativa |
-|----------------|--------------|---------|------------|------------|
-| **Grace Period Settings** | ✅ Baixa (já existe básico) | 🟢 Médio | 🔵 BAIXA | 2h |
-| **Time-Based Rules (1ª hora, max diário)** | 🟡 Média | 🔴 Alto | 🟠 ALTA | 8h |
-| **Weekend/Holiday Pricing** | 🟡 Média | 🟡 Médio | 🟠 MÉDIA | 6h |
-| **Monthly Pricing Tiers** | 🟡 Média | 🟡 Médio | 🟠 MÉDIA | 6h |
-| **Discount Codes/Coupons** | 🔴 Alta | 🟢 Médio | 🟢 BAIXA | 12h |
+| Funcionalidade                             | Complexidade                | Impacto  | Prioridade | Estimativa |
+| ------------------------------------------ | --------------------------- | -------- | ---------- | ---------- |
+| **Grace Period Settings**                  | ✅ Baixa (já existe básico) | 🟢 Médio | 🔵 BAIXA   | 2h         |
+| **Time-Based Rules (1ª hora, max diário)** | 🟡 Média                    | 🔴 Alto  | 🟠 ALTA    | 8h         |
+| **Weekend/Holiday Pricing**                | 🟡 Média                    | 🟡 Médio | 🟠 MÉDIA   | 6h         |
+| **Monthly Pricing Tiers**                  | 🟡 Média                    | 🟡 Médio | 🟠 MÉDIA   | 6h         |
+| **Discount Codes/Coupons**                 | 🔴 Alta                     | 🟢 Médio | 🟢 BAIXA   | 12h        |
 
 **Total Estimado:** ~34 horas de desenvolvimento
 
@@ -143,15 +154,18 @@ const calculateRate = (vehicle, rate, exitDate, exitTime) => {
 ## 🎯 RECOMENDAÇÃO DE IMPLEMENTAÇÃO
 
 ### **FASE 1 - Time-Based Pricing Rules** 🚀 **PRIORITY 1**
+
 **Por quê:** Maior impacto na automação de cálculos e ROI imediato
 
 **Entregas:**
+
 1. Primeira hora com preço diferenciado
 2. Valor máximo diário (daily cap)
 3. Múltiplas faixas horárias com preços diferentes
 4. Interface de configuração
 
 **Benefícios:**
+
 - Reduz cálculos manuais em 80%
 - Permite estratégias de pricing competitivas
 - Aumenta fidelização (clientes sabem exatamente quanto vão pagar)
@@ -159,15 +173,18 @@ const calculateRate = (vehicle, rate, exitDate, exitTime) => {
 ---
 
 ### **FASE 2 - Weekend/Holiday Pricing** 🌟 **PRIORITY 2**
+
 **Por quê:** Diferenciação competitiva e maximização de receita
 
 **Entregas:**
+
 1. Calendário de feriados (cadastro manual + API)
 2. Detecção automática de fins de semana
 3. Override de preços por data
 4. Regras de aplicação automática
 
 **Benefícios:**
+
 - Preços mais altos em dias de maior demanda
 - Preços promocionais em dias fracos
 - Gestão automatizada
@@ -175,15 +192,18 @@ const calculateRate = (vehicle, rate, exitDate, exitTime) => {
 ---
 
 ### **FASE 3 - Monthly Pricing Tiers** 💎 **PRIORITY 3**
+
 **Por quê:** Aumenta ticket médio e retenção de mensalistas
 
 **Entregas:**
+
 1. Sistema de planos (Bronze, Prata, Ouro)
 2. Benefícios por plano (vagas adicionais, horário estendido)
 3. Desconto por tempo de contrato
 4. Upgrade/downgrade automático
 
 **Benefícios:**
+
 - Upsell para planos premium
 - Fidelização por contratos longos
 - Receita previsível
@@ -191,6 +211,7 @@ const calculateRate = (vehicle, rate, exitDate, exitTime) => {
 ---
 
 ### **FASE 4 - Discount Codes (Opcional)** 🎟️ **NICE TO HAVE**
+
 **Por quê:** Marketing e promoções, mas não essencial para operação
 
 ---
@@ -198,6 +219,7 @@ const calculateRate = (vehicle, rate, exitDate, exitTime) => {
 ## 📊 ARQUITETURA PROPOSTA
 
 ### 1. Nova Tabela: `pricing_rules`
+
 ```sql
 CREATE TABLE pricing_rules (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -212,6 +234,7 @@ CREATE TABLE pricing_rules (
 ```
 
 ### 2. Nova Tabela: `holidays`
+
 ```sql
 CREATE TABLE holidays (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -224,6 +247,7 @@ CREATE TABLE holidays (
 ```
 
 ### 3. Nova Tabela: `discount_codes`
+
 ```sql
 CREATE TABLE discount_codes (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -240,6 +264,7 @@ CREATE TABLE discount_codes (
 ```
 
 ### 4. Nova Tabela: `monthly_plans`
+
 ```sql
 CREATE TABLE monthly_plans (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -258,31 +283,33 @@ CREATE TABLE monthly_plans (
 ## 🔧 ALTERAÇÕES NO CÓDIGO EXISTENTE
 
 ### Backend: Novo Service `pricingCalculator.js`
+
 ```javascript
 // /backend/src/services/pricingCalculator.js
 export async function calculateTicketPrice(ticket, exitTime) {
   const rate = await getRate(ticket.rateId);
   const rules = await getPricingRules(rate.id);
-  
+
   let basePrice = calculateBasePrice(ticket, rate, exitTime);
-  
+
   // Aplicar regras em ordem de prioridade
   for (const rule of rules.sort((a, b) => a.priority - b.priority)) {
     if (await shouldApplyRule(rule, ticket, exitTime)) {
       basePrice = applyRule(basePrice, rule);
     }
   }
-  
+
   // Aplicar descontos (cupons)
   if (ticket.discountCode) {
     basePrice = await applyDiscount(basePrice, ticket.discountCode);
   }
-  
+
   return basePrice;
 }
 ```
 
 ### Frontend: Novo Component `PricingRulesManager.tsx`
+
 Interface para configurar regras de pricing avançadas
 
 ---
@@ -290,6 +317,7 @@ Interface para configurar regras de pricing avançadas
 ## 📈 MÉTRICAS DE SUCESSO
 
 Após implementação completa:
+
 - ✅ Redução de 80% em cálculos manuais
 - ✅ Aumento de 15-20% na receita (via pricing dinâmico)
 - ✅ Redução de 90% em erros de cobrança

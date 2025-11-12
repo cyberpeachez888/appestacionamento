@@ -7,16 +7,16 @@ export const loginLimiter = rateLimit({
   max: 5, // 5 requests per window
   message: {
     error: 'Muitas tentativas de login. Por favor, tente novamente em 15 minutos.',
-    retryAfter: '15 minutos'
+    retryAfter: '15 minutos',
   },
   standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
   legacyHeaders: false, // Disable the `X-RateLimit-*` headers
   handler: (req, res) => {
     res.status(429).json({
       error: 'Muitas tentativas de login. Por favor, tente novamente em 15 minutos.',
-      retryAfter: Math.ceil(req.rateLimit.resetTime / 1000 / 60) + ' minutos'
+      retryAfter: Math.ceil(req.rateLimit.resetTime / 1000 / 60) + ' minutos',
     });
-  }
+  },
 });
 
 // General API rate limiter
@@ -25,10 +25,10 @@ export const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 100, // 100 requests per window
   message: {
-    error: 'Muitas requisições. Por favor, tente novamente mais tarde.'
+    error: 'Muitas requisições. Por favor, tente novamente mais tarde.',
   },
   standardHeaders: true,
-  legacyHeaders: false
+  legacyHeaders: false,
 });
 
 // Strict rate limiter for sensitive operations
@@ -38,14 +38,14 @@ export const strictLimiter = rateLimit({
   max: 3, // 3 requests per window
   message: {
     error: 'Muitas tentativas. Por favor, tente novamente em 1 hora.',
-    retryAfter: '1 hora'
+    retryAfter: '1 hora',
   },
   standardHeaders: true,
   legacyHeaders: false,
   handler: (req, res) => {
     res.status(429).json({
       error: 'Muitas tentativas. Por favor, tente novamente em 1 hora.',
-      retryAfter: Math.ceil(req.rateLimit.resetTime / 1000 / 60) + ' minutos'
+      retryAfter: Math.ceil(req.rateLimit.resetTime / 1000 / 60) + ' minutos',
     });
-  }
+  },
 });

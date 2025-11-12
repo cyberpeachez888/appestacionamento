@@ -1,5 +1,16 @@
 import { NavLink } from 'react-router-dom';
-import { Car, Users as UsersIcon, DollarSign, Receipt, Settings, FileText, Plug, FileCheck, Calendar, BarChart3 } from 'lucide-react';
+import {
+  Car,
+  Users as UsersIcon,
+  DollarSign,
+  Receipt,
+  Settings,
+  FileText,
+  Plug,
+  FileCheck,
+  Calendar,
+  BarChart3,
+} from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useParking } from '@/contexts/ParkingContext';
 import { useAuth } from '@/contexts/AuthContext';
@@ -20,23 +31,36 @@ export const Sidebar = () => {
     { to: '/relatorios-mensais', icon: FileText, label: 'Relatórios Mensais', perm: 'viewReports' },
     { to: '/users', icon: UsersIcon, label: 'Usuários', perm: 'manageUsers' },
     { to: '/tarifas', icon: Receipt, label: 'Gerenciar Tarifas', perm: 'manageRates' },
-    { to: '/horarios-feriados', icon: Calendar, label: 'Horários e Feriados', perm: 'manageCompanyConfig' },
-    { to: '/configuracoes-dashboard', icon: BarChart3, label: 'Dashboard Analytics', perm: 'viewReports' },
+    {
+      to: '/horarios-feriados',
+      icon: Calendar,
+      label: 'Horários e Feriados',
+      perm: 'manageCompanyConfig',
+    },
+    {
+      to: '/configuracoes-dashboard',
+      icon: BarChart3,
+      label: 'Dashboard Analytics',
+      perm: 'viewReports',
+    },
     { to: '/configuracoes', icon: Settings, label: 'Configurações', perm: 'manageCompanyConfig' },
-  ].filter(item => hasPermission(item.perm));
+  ].filter((item) => hasPermission(item.perm));
 
   // Add integrations for admins only
   if (isAdmin) {
     navItems.push({ to: '/integracoes', icon: Plug, label: 'Integrações', perm: '' });
-    navItems.push({ to: '/modelos-recibos', icon: FileCheck, label: 'Modelos de Recibos', perm: '' });
+    navItems.push({
+      to: '/modelos-recibos',
+      icon: FileCheck,
+      label: 'Modelos de Recibos',
+      perm: '',
+    });
   }
 
   return (
     <aside className="w-64 bg-sidebar-background text-sidebar-foreground flex flex-col border-r border-sidebar-border">
       <div className="p-6 border-b border-sidebar-border">
-        <h1 className="text-xl font-bold text-sidebar-primary">
-          Estacionamento
-        </h1>
+        <h1 className="text-xl font-bold text-sidebar-primary">Estacionamento</h1>
         <p className="text-sm text-sidebar-foreground/70 mt-1">Sistema de Gestão</p>
       </div>
 
@@ -46,23 +70,23 @@ export const Sidebar = () => {
           const isReports = item.to === '/relatorios-mensais';
           const disabled = !cashIsOpen && !isFinance && !isReports;
           return (
-          <NavLink
-            key={item.to}
-            to={item.to}
-            end={item.to === '/'}
-            className={({ isActive }) =>
-              cn(
-                'flex items-center gap-3 px-4 py-3 rounded-lg transition-colors',
-                disabled ? 'opacity-50 pointer-events-none' : '',
-                isActive
-                  ? 'bg-sidebar-primary text-sidebar-primary-foreground font-medium'
-                  : 'text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'
-              )
-            }
-          >
-            <item.icon className="h-5 w-5" />
-            <span>{item.label}</span>
-          </NavLink>
+            <NavLink
+              key={item.to}
+              to={item.to}
+              end={item.to === '/'}
+              className={({ isActive }) =>
+                cn(
+                  'flex items-center gap-3 px-4 py-3 rounded-lg transition-colors',
+                  disabled ? 'opacity-50 pointer-events-none' : '',
+                  isActive
+                    ? 'bg-sidebar-primary text-sidebar-primary-foreground font-medium'
+                    : 'text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'
+                )
+              }
+            >
+              <item.icon className="h-5 w-5" />
+              <span>{item.label}</span>
+            </NavLink>
           );
         })}
       </nav>
@@ -86,7 +110,9 @@ export const Sidebar = () => {
               Sair
             </Button>
           </div>
-          <p className="text-xs text-sidebar-foreground/60 text-center w-full">© 2024 Estacionamento</p>
+          <p className="text-xs text-sidebar-foreground/60 text-center w-full">
+            © 2024 Estacionamento
+          </p>
         </div>
       </div>
     </aside>

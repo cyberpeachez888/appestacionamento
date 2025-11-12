@@ -4,7 +4,10 @@ export default {
   async summary(req, res) {
     try {
       const { start, end } = req.query;
-      let q = supabase.from('payments').select('*, target_type').order('date', { ascending: false });
+      let q = supabase
+        .from('payments')
+        .select('*, target_type')
+        .order('date', { ascending: false });
       if (start) q = q.gte('date', start);
       if (end) q = q.lte('date', end);
       const paymentsResp = await q;
@@ -21,5 +24,5 @@ export default {
     } catch (err) {
       res.status(500).json({ error: err.message || err });
     }
-  }
+  },
 };

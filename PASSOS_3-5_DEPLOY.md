@@ -3,12 +3,14 @@
 ## ✅ Passo 3: Diretórios Criados ✓
 
 Os diretórios já foram criados:
+
 ```
 backend/backups/manual/
 backend/backups/automatic/
 ```
 
 Verificar com:
+
 ```bash
 ls -la backend/backups/
 ```
@@ -20,6 +22,7 @@ ls -la backend/backups/
 ### Opção A: Via SQL (Recomendado - Mais Rápido)
 
 Execute o arquivo no **Supabase SQL Editor**:
+
 ```sql
 -- Arquivo: backend/add-manageBackups-permission.sql
 
@@ -42,12 +45,14 @@ WHERE role = 'admin';
 ### Opção B: Via Interface (Manual)
 
 1. Inicie o servidor backend:
+
    ```bash
    cd backend
    npm start
    ```
 
 2. Inicie o frontend:
+
    ```bash
    npm run dev
    ```
@@ -69,13 +74,16 @@ WHERE role = 'admin';
 ### 5.1 Iniciar os Servidores
 
 **Terminal 1 - Backend:**
+
 ```bash
 cd backend
 npm start
 ```
+
 Aguarde ver: `✓ Scheduled backup service initialized`
 
 **Terminal 2 - Frontend:**
+
 ```bash
 npm run dev
 ```
@@ -90,6 +98,7 @@ npm run dev
 6. ✅ Verifique que o backup aparece na lista
 
 **Verificar arquivo criado:**
+
 ```bash
 ls -lh backend/backups/manual/
 ```
@@ -139,12 +148,15 @@ ls -lh backend/backups/manual/
 2. Clique em **"Salvar Configuração"**
 
 3. ✅ Aguarde 2 minutos e verifique:
+
    ```bash
    ls -lh backend/backups/automatic/
    ```
+
    Deve aparecer um novo arquivo!
 
 4. ✅ Verifique os logs do backend:
+
    ```
    [Scheduled Backup] Starting automatic backup...
    [Scheduled Backup] Success! File: backup-TIMESTAMP.json
@@ -185,6 +197,7 @@ Se você tiver outro usuário **não-admin**:
 - [ ] Passo 5: Testes executados
 
 ### Testes do Passo 5:
+
 - [ ] 5.1 - Servidores iniciando sem erros
 - [ ] 5.2 - Criar backup manual funciona
 - [ ] 5.3 - Download de backup funciona
@@ -225,21 +238,24 @@ Se você tiver outro usuário **não-admin**:
 ## 🚨 Troubleshooting
 
 ### "Scheduled backup service initialized" não aparece
+
 ```bash
 # Verificar se a migração foi executada
 # No Supabase SQL Editor:
-SELECT backup_enabled, backup_schedule, backup_retention_days 
-FROM company_config 
+SELECT backup_enabled, backup_schedule, backup_retention_days
+FROM company_config
 WHERE id = 'default';
 ```
 
 ### Erro "Permission denied" ao criar backup
+
 ```bash
 # Verificar permissões do diretório
 chmod -R 755 backend/backups
 ```
 
 ### Backup automático não está rodando
+
 ```bash
 # Verificar configuração no banco
 SELECT backup_enabled FROM company_config;

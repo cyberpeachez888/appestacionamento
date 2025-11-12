@@ -96,10 +96,15 @@ interface ParkingContextData {
   addRate: (rate: Omit<Rate, 'id'>) => Promise<void>;
   updateRate: (id: string, rate: Partial<Rate>) => Promise<void>;
   deleteRate: (id: string) => Promise<void>;
-  addMonthlyCustomer: (customer: Omit<MonthlyCustomer, 'id' | 'paymentHistory'>) => Promise<MonthlyCustomer>;
+  addMonthlyCustomer: (
+    customer: Omit<MonthlyCustomer, 'id' | 'paymentHistory'>
+  ) => Promise<MonthlyCustomer>;
   updateMonthlyCustomer: (id: string, customer: Partial<MonthlyCustomer>) => Promise<void>;
   deleteMonthlyCustomer: (id: string) => Promise<void>;
-  registerPayment: (customerId: string, payment: Omit<Payment, 'id' | 'receiptNumber'>) => Promise<number>;
+  registerPayment: (
+    customerId: string,
+    payment: Omit<Payment, 'id' | 'receiptNumber'>
+  ) => Promise<number>;
   updateCompanyConfig: (config: Partial<CompanyConfig>) => Promise<void>;
   calculateRate: (vehicle: Vehicle, rate: Rate, exitDate: string, exitTime: string) => number;
 }
@@ -150,13 +155,25 @@ export const ParkingProvider: React.FC<{ children: ReactNode }> = ({ children })
   });
 
   useEffect(() => {
-    try { localStorage.setItem('cash:isOpen', JSON.stringify(cashIsOpen)); } catch (e) { void e; }
+    try {
+      localStorage.setItem('cash:isOpen', JSON.stringify(cashIsOpen));
+    } catch (e) {
+      void e;
+    }
   }, [cashIsOpen]);
   useEffect(() => {
-    try { localStorage.setItem('cash:session', JSON.stringify(cashSession)); } catch (e) { void e; }
+    try {
+      localStorage.setItem('cash:session', JSON.stringify(cashSession));
+    } catch (e) {
+      void e;
+    }
   }, [cashSession]);
   useEffect(() => {
-    try { localStorage.setItem('cash:lastClosingAmount', String(lastClosingAmount)); } catch (e) { void e; }
+    try {
+      localStorage.setItem('cash:lastClosingAmount', String(lastClosingAmount));
+    } catch (e) {
+      void e;
+    }
   }, [lastClosingAmount]);
 
   // =======================
@@ -166,8 +183,14 @@ export const ParkingProvider: React.FC<{ children: ReactNode }> = ({ children })
     const fetchData = async () => {
       try {
         const [vehiclesData, ratesData] = await Promise.all([
-          api.getVehicles().catch(err => { console.error('Error loading vehicles:', err); return []; }),
-          api.getRates().catch(err => { console.error('Error loading rates:', err); return []; }),
+          api.getVehicles().catch((err) => {
+            console.error('Error loading vehicles:', err);
+            return [];
+          }),
+          api.getRates().catch((err) => {
+            console.error('Error loading rates:', err);
+            return [];
+          }),
         ]);
         setVehicles(vehiclesData || []);
         setRates(ratesData || []);
@@ -175,9 +198,12 @@ export const ParkingProvider: React.FC<{ children: ReactNode }> = ({ children })
         // Auth-dependent resources
         if (token) {
           const [customersData, configData] = await Promise.all([
-            api.getMonthlyCustomers().catch(err => { console.error('Error loading monthly customers:', err); return []; }),
-            api.getCompanyConfig().catch(err => { 
-              console.error('Error loading company config:', err); 
+            api.getMonthlyCustomers().catch((err) => {
+              console.error('Error loading monthly customers:', err);
+              return [];
+            }),
+            api.getCompanyConfig().catch((err) => {
+              console.error('Error loading company config:', err);
               return null as any;
             }),
           ]);
@@ -218,7 +244,16 @@ export const ParkingProvider: React.FC<{ children: ReactNode }> = ({ children })
 
   const closeCashRegister = (closingAmount: number, operatorName?: string) => {
     const nowIso = new Date().toISOString();
-    setCashSession(prev => prev ? { ...prev, closedAt: nowIso, closingAmount, operatorName: operatorName || prev.operatorName } : undefined);
+    setCashSession((prev) =>
+      prev
+        ? {
+            ...prev,
+            closedAt: nowIso,
+            closingAmount,
+            operatorName: operatorName || prev.operatorName,
+          }
+        : undefined
+    );
     setCashIsOpen(false);
     setLastClosingAmount(closingAmount);
   };
@@ -226,7 +261,12 @@ export const ParkingProvider: React.FC<{ children: ReactNode }> = ({ children })
   // =======================
   // Cálculo de tarifa
   // =======================
-  const calculateRate = (vehicle: Vehicle, rate: Rate, exitDate: string, exitTime: string): number => {
+  const calculateRate = (
+    vehicle: Vehicle,
+    rate: Rate,
+    exitDate: string,
+    exitTime: string
+  ): number => {
     const entry = new Date(`${vehicle.entryDate}T${vehicle.entryTime}`);
     const exit = new Date(`${exitDate}T${exitTime}`);
     const diffMinutes = Math.floor((exit.getTime() - entry.getTime()) / 60000);
@@ -245,8 +285,11 @@ export const ParkingProvider: React.FC<{ children: ReactNode }> = ({ children })
     } else if (['Semanal', 'Quinzenal', 'Mensal'].includes(rate.rateType)) {
       const contractedMinutes = (vehicle.contractedDays || 30) * 24 * 60;
       if (diffMinutes <= contractedMinutes) return rate.value;
-      const hourlyRate = rates.find(r => r.vehicleType === vehicle.vehicleType && r.rateType === 'Hora/Fração');
-      if (hourlyRate) return rate.value + Math.ceil((diffMinutes - contractedMinutes) / 60) * hourlyRate.value;
+      const hourlyRate = rates.find(
+        (r) => r.vehicleType === vehicle.vehicleType && r.rateType === 'Hora/Fração'
+      );
+      if (hourlyRate)
+        return rate.value + Math.ceil((diffMinutes - contractedMinutes) / 60) * hourlyRate.value;
       return rate.value;
     }
 
@@ -260,8 +303,8 @@ export const ParkingProvider: React.FC<{ children: ReactNode }> = ({ children })
     const start = opts?.start ? new Date(opts.start) : undefined;
     const end = opts?.end ? new Date(opts.end) : undefined;
     return vehicles
-      .filter(v => v.status === 'Concluído')
-      .filter(v => {
+      .filter((v) => v.status === 'Concluído')
+      .filter((v) => {
         if (!start && !end) return true;
         const d = v.exitDate ? new Date(v.exitDate) : undefined;
         if (!d) return false;
@@ -269,7 +312,7 @@ export const ParkingProvider: React.FC<{ children: ReactNode }> = ({ children })
         if (end) {
           // Include end day fully
           const endDay = new Date(end);
-          endDay.setHours(23,59,59,999);
+          endDay.setHours(23, 59, 59, 999);
           if (d > endDay) return false;
         }
         return true;
@@ -283,13 +326,13 @@ export const ParkingProvider: React.FC<{ children: ReactNode }> = ({ children })
     return monthlyCustomers.reduce((acc, c) => {
       const hist = c.paymentHistory || [];
       const sum = hist
-        .filter(p => {
+        .filter((p) => {
           const d = p.date ? new Date(p.date) : undefined;
           if (!d) return false;
           if (start && d < start) return false;
           if (end) {
             const endDay = new Date(end);
-            endDay.setHours(23,59,59,999);
+            endDay.setHours(23, 59, 59, 999);
             if (d > endDay) return false;
           }
           return true;
@@ -309,7 +352,7 @@ export const ParkingProvider: React.FC<{ children: ReactNode }> = ({ children })
   const addVehicle = async (vehicle: Omit<Vehicle, 'id'>) => {
     try {
       const data = await api.createVehicle(vehicle);
-      setVehicles(prev => [...prev, data]);
+      setVehicles((prev) => [...prev, data]);
     } catch (err) {
       console.error('Erro ao adicionar veículo:', err);
       throw err;
@@ -319,7 +362,7 @@ export const ParkingProvider: React.FC<{ children: ReactNode }> = ({ children })
   const updateVehicle = async (id: string, vehicle: Partial<Vehicle>) => {
     try {
       const data = await api.updateVehicle(id, vehicle);
-      setVehicles(prev => prev.map(v => v.id === id ? data : v));
+      setVehicles((prev) => prev.map((v) => (v.id === id ? data : v)));
     } catch (err) {
       console.error('Erro ao atualizar veículo:', err);
       throw err;
@@ -329,7 +372,7 @@ export const ParkingProvider: React.FC<{ children: ReactNode }> = ({ children })
   const deleteVehicle = async (id: string) => {
     try {
       await api.deleteVehicle(id);
-      setVehicles(prev => prev.filter(v => v.id !== id));
+      setVehicles((prev) => prev.filter((v) => v.id !== id));
     } catch (err) {
       console.error('Erro ao remover veículo:', err);
       throw err;
@@ -341,7 +384,7 @@ export const ParkingProvider: React.FC<{ children: ReactNode }> = ({ children })
       console.log('Adding rate:', rate);
       const data = await api.createRate(rate);
       console.log('API response:', data);
-      setRates(prev => {
+      setRates((prev) => {
         const updated = [...prev, data];
         console.log('Updated rates:', updated);
         return updated;
@@ -355,7 +398,7 @@ export const ParkingProvider: React.FC<{ children: ReactNode }> = ({ children })
   const updateRate = async (id: string, rate: Partial<Rate>) => {
     try {
       const data = await api.updateRate(id, rate);
-      setRates(prev => prev.map(r => r.id === id ? data : r));
+      setRates((prev) => prev.map((r) => (r.id === id ? data : r)));
     } catch (err) {
       console.error('Erro ao atualizar tarifa:', err);
       throw err;
@@ -365,17 +408,19 @@ export const ParkingProvider: React.FC<{ children: ReactNode }> = ({ children })
   const deleteRate = async (id: string) => {
     try {
       await api.deleteRate(id);
-      setRates(prev => prev.filter(r => r.id !== id));
+      setRates((prev) => prev.filter((r) => r.id !== id));
     } catch (err) {
       console.error('Erro ao remover tarifa:', err);
       throw err;
     }
   };
 
-  const addMonthlyCustomer = async (customerData: Omit<MonthlyCustomer, 'id' | 'paymentHistory'>) => {
+  const addMonthlyCustomer = async (
+    customerData: Omit<MonthlyCustomer, 'id' | 'paymentHistory'>
+  ) => {
     try {
       const data = await api.createMonthlyCustomer(customerData);
-      setMonthlyCustomers(prev => [...prev, data]);
+      setMonthlyCustomers((prev) => [...prev, data]);
       return data;
     } catch (err) {
       console.error('Erro ao adicionar cliente:', err);
@@ -386,7 +431,7 @@ export const ParkingProvider: React.FC<{ children: ReactNode }> = ({ children })
   const updateMonthlyCustomer = async (id: string, customer: Partial<MonthlyCustomer>) => {
     try {
       const data = await api.updateMonthlyCustomer(id, customer);
-      setMonthlyCustomers(prev => prev.map(c => c.id === id ? data : c));
+      setMonthlyCustomers((prev) => prev.map((c) => (c.id === id ? data : c)));
     } catch (err) {
       console.error('Erro ao atualizar cliente mensalista:', err);
       throw err;
@@ -396,24 +441,27 @@ export const ParkingProvider: React.FC<{ children: ReactNode }> = ({ children })
   const deleteMonthlyCustomer = async (id: string) => {
     try {
       await api.deleteMonthlyCustomer(id);
-      setMonthlyCustomers(prev => prev.filter(c => c.id !== id));
+      setMonthlyCustomers((prev) => prev.filter((c) => c.id !== id));
     } catch (err) {
       console.error('Erro ao remover cliente mensalista:', err);
       throw err;
     }
   };
 
-  const registerPayment = async (customerId: string, payment: Omit<Payment, 'id' | 'receiptNumber'>): Promise<number> => {
+  const registerPayment = async (
+    customerId: string,
+    payment: Omit<Payment, 'id' | 'receiptNumber'>
+  ): Promise<number> => {
     try {
       const response = await api.registerMonthlyPayment(customerId, {
         value: payment.value,
         method: payment.method,
       });
       // Update customer with new payment info
-      setMonthlyCustomers(prev => prev.map(c => c.id === customerId ? response.customer : c));
-  setCompanyConfig(prev => ({ ...prev, receiptCounter: prev.receiptCounter + 1 }));
-  const receiptId = Number(response.payment?.id) || Date.now();
-  return receiptId;
+      setMonthlyCustomers((prev) => prev.map((c) => (c.id === customerId ? response.customer : c)));
+      setCompanyConfig((prev) => ({ ...prev, receiptCounter: prev.receiptCounter + 1 }));
+      const receiptId = Number(response.payment?.id) || Date.now();
+      return receiptId;
     } catch (err) {
       console.error('Erro ao registrar pagamento:', err);
       throw err;

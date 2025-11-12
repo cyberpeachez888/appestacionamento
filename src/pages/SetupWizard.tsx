@@ -26,7 +26,7 @@ export default function SetupWizard() {
     zipCode: '',
     phone: '',
     email: '',
-    
+
     // Admin user
     adminName: '',
     adminEmail: '',
@@ -38,9 +38,9 @@ export default function SetupWizard() {
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const updateField = (field: string, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    setFormData((prev) => ({ ...prev, [field]: value }));
     if (errors[field]) {
-      setErrors(prev => ({ ...prev, [field]: '' }));
+      setErrors((prev) => ({ ...prev, [field]: '' }));
     }
   };
 
@@ -76,12 +76,12 @@ export default function SetupWizard() {
 
   const nextStep = () => {
     if (validateStep(currentStep)) {
-      setCurrentStep(prev => prev + 1);
+      setCurrentStep((prev) => prev + 1);
     }
   };
 
   const prevStep = () => {
-    setCurrentStep(prev => prev - 1);
+    setCurrentStep((prev) => prev - 1);
   };
 
   const handleSubmit = async () => {
@@ -111,7 +111,6 @@ export default function SetupWizard() {
         // Force navigation to login and prevent going back
         window.location.href = '/login';
       }, 2000);
-
     } catch (error: any) {
       toast({
         variant: 'destructive',
@@ -143,9 +142,7 @@ export default function SetupWizard() {
   const formatPhone = (value: string) => {
     const numbers = value.replace(/\D/g, '');
     if (numbers.length <= 11) {
-      return numbers
-        .replace(/^(\d{2})(\d)/, '($1) $2')
-        .replace(/(\d{5})(\d)/, '$1-$2');
+      return numbers.replace(/^(\d{2})(\d)/, '($1) $2').replace(/(\d{5})(\d)/, '$1-$2');
     }
     return value;
   };
@@ -174,9 +171,7 @@ export default function SetupWizard() {
               <div key={step} className="flex items-center">
                 <div
                   className={`w-10 h-10 rounded-full flex items-center justify-center font-semibold ${
-                    currentStep >= step
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-gray-200 text-gray-500'
+                    currentStep >= step ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-500'
                   }`}
                 >
                   {step}
@@ -195,9 +190,7 @@ export default function SetupWizard() {
           {/* Step 1: Welcome */}
           {currentStep === 1 && (
             <div className="text-center space-y-6 py-8">
-              <h2 className="text-2xl font-bold text-gray-800">
-                Primeira Execução
-              </h2>
+              <h2 className="text-2xl font-bold text-gray-800">Primeira Execução</h2>
               <p className="text-gray-600 text-lg">
                 Este assistente irá guiá-lo na configuração inicial do sistema.
               </p>
@@ -222,10 +215,8 @@ export default function SetupWizard() {
           {/* Step 2: Company Info */}
           {currentStep === 2 && (
             <div className="space-y-4">
-              <h2 className="text-2xl font-bold text-gray-800 mb-4">
-                Informações da Empresa
-              </h2>
-              
+              <h2 className="text-2xl font-bold text-gray-800 mb-4">Informações da Empresa</h2>
+
               <div className="space-y-2">
                 <Label htmlFor="companyName">
                   Nome da Empresa <span className="text-red-500">*</span>
@@ -237,9 +228,7 @@ export default function SetupWizard() {
                   placeholder="Estacionamento XYZ"
                   className={errors.companyName ? 'border-red-500' : ''}
                 />
-                {errors.companyName && (
-                  <p className="text-sm text-red-500">{errors.companyName}</p>
-                )}
+                {errors.companyName && <p className="text-sm text-red-500">{errors.companyName}</p>}
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -253,9 +242,7 @@ export default function SetupWizard() {
                     maxLength={18}
                     className={errors.cnpj ? 'border-red-500' : ''}
                   />
-                  {errors.cnpj && (
-                    <p className="text-sm text-red-500">{errors.cnpj}</p>
-                  )}
+                  {errors.cnpj && <p className="text-sm text-red-500">{errors.cnpj}</p>}
                 </div>
 
                 <div className="space-y-2">
@@ -329,9 +316,7 @@ export default function SetupWizard() {
                 <Button onClick={prevStep} variant="outline">
                   Voltar
                 </Button>
-                <Button onClick={nextStep}>
-                  Próximo
-                </Button>
+                <Button onClick={nextStep}>Próximo</Button>
               </div>
             </div>
           )}
@@ -339,10 +324,8 @@ export default function SetupWizard() {
           {/* Step 3: Admin User */}
           {currentStep === 3 && (
             <div className="space-y-4">
-              <h2 className="text-2xl font-bold text-gray-800 mb-4">
-                Criar Usuário Administrador
-              </h2>
-              
+              <h2 className="text-2xl font-bold text-gray-800 mb-4">Criar Usuário Administrador</h2>
+
               <div className="space-y-2">
                 <Label htmlFor="adminName">Nome Completo</Label>
                 <Input
@@ -375,9 +358,7 @@ export default function SetupWizard() {
                   placeholder="admin"
                   className={errors.adminLogin ? 'border-red-500' : ''}
                 />
-                {errors.adminLogin && (
-                  <p className="text-sm text-red-500">{errors.adminLogin}</p>
-                )}
+                {errors.adminLogin && <p className="text-sm text-red-500">{errors.adminLogin}</p>}
               </div>
 
               <div className="space-y-2">
@@ -403,8 +384,8 @@ export default function SetupWizard() {
                           formData.adminPassword.length < 6
                             ? 'bg-red-500 w-1/3'
                             : formData.adminPassword.length < 8
-                            ? 'bg-yellow-500 w-2/3'
-                            : 'bg-green-500 w-full'
+                              ? 'bg-yellow-500 w-2/3'
+                              : 'bg-green-500 w-full'
                         }`}
                       />
                     </div>
@@ -412,8 +393,8 @@ export default function SetupWizard() {
                       {formData.adminPassword.length < 6
                         ? 'Senha fraca'
                         : formData.adminPassword.length < 8
-                        ? 'Senha média'
-                        : 'Senha forte'}
+                          ? 'Senha média'
+                          : 'Senha forte'}
                     </p>
                   </div>
                 )}
@@ -430,27 +411,28 @@ export default function SetupWizard() {
                   onChange={(e) => updateField('adminPasswordConfirm', e.target.value)}
                   placeholder="Digite a senha novamente"
                   className={
-                    errors.adminPasswordConfirm 
-                      ? 'border-red-500' 
-                      : formData.adminPasswordConfirm && formData.adminPassword === formData.adminPasswordConfirm
-                      ? 'border-green-500'
-                      : ''
+                    errors.adminPasswordConfirm
+                      ? 'border-red-500'
+                      : formData.adminPasswordConfirm &&
+                          formData.adminPassword === formData.adminPasswordConfirm
+                        ? 'border-green-500'
+                        : ''
                   }
                 />
                 {errors.adminPasswordConfirm && (
                   <p className="text-sm text-red-500">{errors.adminPasswordConfirm}</p>
                 )}
-                {formData.adminPasswordConfirm && formData.adminPassword === formData.adminPasswordConfirm && (
-                  <p className="text-sm text-green-600 flex items-center gap-1">
-                    <CheckCircle2 className="w-4 h-4" />
-                    As senhas coincidem
-                  </p>
-                )}
-                {formData.adminPasswordConfirm && formData.adminPassword !== formData.adminPasswordConfirm && (
-                  <p className="text-sm text-red-500">
-                    As senhas não coincidem
-                  </p>
-                )}
+                {formData.adminPasswordConfirm &&
+                  formData.adminPassword === formData.adminPasswordConfirm && (
+                    <p className="text-sm text-green-600 flex items-center gap-1">
+                      <CheckCircle2 className="w-4 h-4" />
+                      As senhas coincidem
+                    </p>
+                  )}
+                {formData.adminPasswordConfirm &&
+                  formData.adminPassword !== formData.adminPasswordConfirm && (
+                    <p className="text-sm text-red-500">As senhas não coincidem</p>
+                  )}
               </div>
 
               <div className="flex justify-between pt-4">
@@ -477,20 +459,14 @@ export default function SetupWizard() {
               <div className="mx-auto w-20 h-20 bg-green-100 rounded-full flex items-center justify-center">
                 <CheckCircle2 className="w-12 h-12 text-green-600" />
               </div>
-              <h2 className="text-2xl font-bold text-gray-800">
-                Configuração Concluída!
-              </h2>
-              <p className="text-gray-600 text-lg">
-                Seu sistema está pronto para uso.
-              </p>
+              <h2 className="text-2xl font-bold text-gray-800">Configuração Concluída!</h2>
+              <p className="text-gray-600 text-lg">Seu sistema está pronto para uso.</p>
               <div className="bg-green-50 p-4 rounded-lg">
                 <p className="text-sm text-green-800">
                   Use o login <strong>{formData.adminLogin}</strong> para acessar o sistema.
                 </p>
               </div>
-              <p className="text-sm text-gray-500">
-                Redirecionando para a tela de login...
-              </p>
+              <p className="text-sm text-gray-500">Redirecionando para a tela de login...</p>
             </div>
           )}
         </CardContent>

@@ -19,18 +19,18 @@ import { Badge } from '@/components/ui/badge';
 // Helper function to format payment method display
 const formatPaymentMethod = (method: string | undefined): string => {
   if (!method) return '-';
-  
+
   const methodMap: Record<string, string> = {
-    'cash': 'Dinheiro',
-    'pix': 'Pix',
-    'debit_card': 'Cartão Débito',
-    'credit_card': 'Cartão Crédito',
-    'Dinheiro': 'Dinheiro',
-    'Pix': 'Pix',
+    cash: 'Dinheiro',
+    pix: 'Pix',
+    debit_card: 'Cartão Débito',
+    credit_card: 'Cartão Crédito',
+    Dinheiro: 'Dinheiro',
+    Pix: 'Pix',
     'Cartão Débito': 'Cartão Débito',
-    'Cartão Crédito': 'Cartão Crédito'
+    'Cartão Crédito': 'Cartão Crédito',
   };
-  
+
   return methodMap[method] || method;
 };
 
@@ -88,14 +88,16 @@ export default function Mensalistas() {
             <p className="text-muted-foreground mt-1">Gestão de clientes recorrentes</p>
             {!canManage && (
               <div className="mt-2">
-                <Badge variant="secondary" className="text-xs">Somente leitura</Badge>
+                <Badge variant="secondary" className="text-xs">
+                  Somente leitura
+                </Badge>
               </div>
             )}
           </div>
           {canManage && (
             <Button onClick={handleAddNew}>
-            <Plus className="h-4 w-4 mr-2" />
-            Adicionar Cliente
+              <Plus className="h-4 w-4 mr-2" />
+              Adicionar Cliente
             </Button>
           )}
         </div>
@@ -105,16 +107,34 @@ export default function Mensalistas() {
             <table className="w-full">
               <thead className="bg-muted/50">
                 <tr>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-foreground">Cliente</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-foreground">Placas</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-foreground">Vaga Reservada</th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-foreground">
+                    Cliente
+                  </th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-foreground">
+                    Placas
+                  </th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-foreground">
+                    Vaga Reservada
+                  </th>
                   <th className="px-4 py-3 text-left text-sm font-medium text-foreground">Valor</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-foreground">Data de Contratação</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-foreground">Próximo Vencimento</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-foreground">Último Pagamento</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-foreground">Método de Pagamento</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-foreground">Status</th>
-                  <th className="px-4 py-3 text-right text-sm font-medium text-foreground">Ações</th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-foreground">
+                    Data de Contratação
+                  </th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-foreground">
+                    Próximo Vencimento
+                  </th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-foreground">
+                    Último Pagamento
+                  </th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-foreground">
+                    Método de Pagamento
+                  </th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-foreground">
+                    Status
+                  </th>
+                  <th className="px-4 py-3 text-right text-sm font-medium text-foreground">
+                    Ações
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -125,7 +145,8 @@ export default function Mensalistas() {
                     </td>
                   </tr>
                 ) : (
-                  monthlyCustomers.map((customer, index) => { // Usar monthlyCustomers do contexto
+                  monthlyCustomers.map((customer, index) => {
+                    // Usar monthlyCustomers do contexto
                     const status = getCustomerStatus(customer);
                     // Log de debug para contractDate
                     console.log('Cliente:', customer.name, 'contractDate:', customer.contractDate);
@@ -148,16 +169,24 @@ export default function Mensalistas() {
                                 Vaga {customer.parkingSlot}
                               </span>
                             </td>
-                            <td className="px-4 py-3 font-medium">R$ {customer.value.toFixed(2)}</td>
+                            <td className="px-4 py-3 font-medium">
+                              R$ {customer.value.toFixed(2)}
+                            </td>
                             <td className="px-4 py-3 text-sm">
-                              {customer.contractDate ? format(new Date(customer.contractDate), 'dd/MM/yyyy', { locale: ptBR }) : '-'}
+                              {customer.contractDate
+                                ? format(new Date(customer.contractDate), 'dd/MM/yyyy', {
+                                    locale: ptBR,
+                                  })
+                                : '-'}
                             </td>
                             <td className="px-4 py-3 text-sm">
                               {format(new Date(customer.dueDate), 'dd/MM/yyyy', { locale: ptBR })}
                             </td>
                             <td className="px-4 py-3 text-sm">
                               {customer.lastPayment
-                                ? format(new Date(customer.lastPayment), 'dd/MM/yyyy', { locale: ptBR })
+                                ? format(new Date(customer.lastPayment), 'dd/MM/yyyy', {
+                                    locale: ptBR,
+                                  })
                                 : '-'}
                             </td>
                             <td className="px-4 py-3 text-sm">
@@ -165,7 +194,9 @@ export default function Mensalistas() {
                                 <span className="inline-flex items-center px-2 py-1 rounded text-xs bg-muted">
                                   {formatPaymentMethod(customer.lastPaymentMethod)}
                                 </span>
-                              ) : '-'}
+                              ) : (
+                                '-'
+                              )}
                             </td>
                             <td className="px-4 py-3">
                               <span
@@ -190,9 +221,16 @@ export default function Mensalistas() {
                         <ContextMenuContent>
                           {canManage && (
                             <>
-                              <ContextMenuItem onClick={() => handleEdit(customer)}>Editar</ContextMenuItem>
-                              <ContextMenuItem onClick={() => handleRegisterPayment(customer)}>Efetuar Pagamento</ContextMenuItem>
-                              <ContextMenuItem onClick={() => handleDelete(customer)} className="text-destructive">
+                              <ContextMenuItem onClick={() => handleEdit(customer)}>
+                                Editar
+                              </ContextMenuItem>
+                              <ContextMenuItem onClick={() => handleRegisterPayment(customer)}>
+                                Efetuar Pagamento
+                              </ContextMenuItem>
+                              <ContextMenuItem
+                                onClick={() => handleDelete(customer)}
+                                className="text-destructive"
+                              >
                                 Remover
                               </ContextMenuItem>
                             </>
@@ -209,7 +247,11 @@ export default function Mensalistas() {
       </div>
 
       <CustomerDialog open={dialogOpen} onOpenChange={setDialogOpen} customer={selectedCustomer} />
-      <PaymentDialog open={paymentDialogOpen} onOpenChange={setPaymentDialogOpen} customer={selectedCustomer} />
+      <PaymentDialog
+        open={paymentDialogOpen}
+        onOpenChange={setPaymentDialogOpen}
+        customer={selectedCustomer}
+      />
     </div>
   );
 }

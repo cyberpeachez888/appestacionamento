@@ -1,14 +1,41 @@
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Pencil, Trash2, Plus, Settings as SettingsIcon, LayoutDashboard, Bell, Mail } from 'lucide-react';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import {
+  Pencil,
+  Trash2,
+  Plus,
+  Settings as SettingsIcon,
+  LayoutDashboard,
+  Bell,
+  Mail,
+} from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
@@ -67,21 +94,21 @@ interface ReportSchedule {
 export default function ConfiguracoesDashboard() {
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState('settings');
-  
+
   // Dashboard Settings
   const [settings, setSettings] = useState<DashboardSettings | null>(null);
   const [settingsLoading, setSettingsLoading] = useState(true);
-  
+
   // Widgets
   const [widgets, setWidgets] = useState<Widget[]>([]);
   const [widgetDialogOpen, setWidgetDialogOpen] = useState(false);
   const [selectedWidget, setSelectedWidget] = useState<Widget | null>(null);
-  
+
   // KPI Thresholds
   const [thresholds, setThresholds] = useState<KPIThreshold[]>([]);
   const [thresholdDialogOpen, setThresholdDialogOpen] = useState(false);
   const [selectedThreshold, setSelectedThreshold] = useState<KPIThreshold | null>(null);
-  
+
   // Report Schedules
   const [schedules, setSchedules] = useState<ReportSchedule[]>([]);
   const [scheduleDialogOpen, setScheduleDialogOpen] = useState(false);
@@ -95,12 +122,12 @@ export default function ConfiguracoesDashboard() {
   }, []);
 
   // ============ Dashboard Settings Functions ============
-  
+
   const fetchSettings = async () => {
     try {
       const token = getAuthToken();
       const response = await fetch(`${API_BASE_URL}/dashboard-settings`, {
-        headers: { 'Authorization': `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${token}` },
       });
       const data = await response.json();
       if (data.success) {
@@ -108,7 +135,11 @@ export default function ConfiguracoesDashboard() {
       }
     } catch (error) {
       console.error('Error fetching settings:', error);
-      toast({ title: 'Erro', description: 'Falha ao carregar configurações', variant: 'destructive' });
+      toast({
+        title: 'Erro',
+        description: 'Falha ao carregar configurações',
+        variant: 'destructive',
+      });
     } finally {
       setSettingsLoading(false);
     }
@@ -116,16 +147,16 @@ export default function ConfiguracoesDashboard() {
 
   const handleSaveSettings = async () => {
     if (!settings) return;
-    
+
     try {
       const token = getAuthToken();
       const response = await fetch(`${API_BASE_URL}/dashboard-settings`, {
         method: 'PUT',
         headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
         },
-        body: JSON.stringify(settings)
+        body: JSON.stringify(settings),
       });
       const data = await response.json();
       if (data.success) {
@@ -133,17 +164,21 @@ export default function ConfiguracoesDashboard() {
         setSettings(data.data);
       }
     } catch (error) {
-      toast({ title: 'Erro', description: 'Falha ao salvar configurações', variant: 'destructive' });
+      toast({
+        title: 'Erro',
+        description: 'Falha ao salvar configurações',
+        variant: 'destructive',
+      });
     }
   };
 
   // ============ Widget Functions ============
-  
+
   const fetchWidgets = async () => {
     try {
       const token = getAuthToken();
       const response = await fetch(`${API_BASE_URL}/dashboard-widgets`, {
-        headers: { 'Authorization': `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${token}` },
       });
       const data = await response.json();
       if (data.success) {
@@ -167,18 +202,18 @@ export default function ConfiguracoesDashboard() {
   const handleSaveWidget = async (widget: Partial<Widget>) => {
     try {
       const token = getAuthToken();
-      const url = widget.id 
+      const url = widget.id
         ? `${API_BASE_URL}/dashboard-widgets/${widget.id}`
         : `${API_BASE_URL}/dashboard-widgets`;
       const method = widget.id ? 'PUT' : 'POST';
-      
+
       const response = await fetch(url, {
         method,
         headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
         },
-        body: JSON.stringify(widget)
+        body: JSON.stringify(widget),
       });
       const data = await response.json();
       if (data.success) {
@@ -193,12 +228,12 @@ export default function ConfiguracoesDashboard() {
 
   const handleDeleteWidget = async (id: string) => {
     if (!confirm('Excluir widget?')) return;
-    
+
     try {
       const token = getAuthToken();
       const response = await fetch(`${API_BASE_URL}/dashboard-widgets/${id}`, {
         method: 'DELETE',
-        headers: { 'Authorization': `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${token}` },
       });
       const data = await response.json();
       if (data.success) {
@@ -211,12 +246,12 @@ export default function ConfiguracoesDashboard() {
   };
 
   // ============ KPI Threshold Functions ============
-  
+
   const fetchThresholds = async () => {
     try {
       const token = getAuthToken();
       const response = await fetch(`${API_BASE_URL}/kpi-thresholds`, {
-        headers: { 'Authorization': `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${token}` },
       });
       const data = await response.json();
       if (data.success) {
@@ -240,18 +275,18 @@ export default function ConfiguracoesDashboard() {
   const handleSaveThreshold = async (threshold: Partial<KPIThreshold>) => {
     try {
       const token = getAuthToken();
-      const url = threshold.id 
+      const url = threshold.id
         ? `${API_BASE_URL}/kpi-thresholds/${threshold.id}`
         : `${API_BASE_URL}/kpi-thresholds`;
       const method = threshold.id ? 'PUT' : 'POST';
-      
+
       const response = await fetch(url, {
         method,
         headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
         },
-        body: JSON.stringify(threshold)
+        body: JSON.stringify(threshold),
       });
       const data = await response.json();
       if (data.success) {
@@ -266,12 +301,12 @@ export default function ConfiguracoesDashboard() {
 
   const handleDeleteThreshold = async (id: string) => {
     if (!confirm('Excluir alerta?')) return;
-    
+
     try {
       const token = getAuthToken();
       const response = await fetch(`${API_BASE_URL}/kpi-thresholds/${id}`, {
         method: 'DELETE',
-        headers: { 'Authorization': `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${token}` },
       });
       const data = await response.json();
       if (data.success) {
@@ -284,12 +319,12 @@ export default function ConfiguracoesDashboard() {
   };
 
   // ============ Report Schedule Functions ============
-  
+
   const fetchSchedules = async () => {
     try {
       const token = getAuthToken();
       const response = await fetch(`${API_BASE_URL}/report-schedules`, {
-        headers: { 'Authorization': `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${token}` },
       });
       const data = await response.json();
       if (data.success) {
@@ -313,18 +348,18 @@ export default function ConfiguracoesDashboard() {
   const handleSaveSchedule = async (schedule: Partial<ReportSchedule>) => {
     try {
       const token = getAuthToken();
-      const url = schedule.id 
+      const url = schedule.id
         ? `${API_BASE_URL}/report-schedules/${schedule.id}`
         : `${API_BASE_URL}/report-schedules`;
       const method = schedule.id ? 'PUT' : 'POST';
-      
+
       const response = await fetch(url, {
         method,
         headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
         },
-        body: JSON.stringify(schedule)
+        body: JSON.stringify(schedule),
       });
       const data = await response.json();
       if (data.success) {
@@ -339,12 +374,12 @@ export default function ConfiguracoesDashboard() {
 
   const handleDeleteSchedule = async (id: string) => {
     if (!confirm('Excluir agendamento?')) return;
-    
+
     try {
       const token = getAuthToken();
       const response = await fetch(`${API_BASE_URL}/report-schedules/${id}`, {
         method: 'DELETE',
-        headers: { 'Authorization': `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${token}` },
       });
       const data = await response.json();
       if (data.success) {
@@ -360,9 +395,7 @@ export default function ConfiguracoesDashboard() {
     <div className="p-6 space-y-6">
       <div>
         <h1 className="text-3xl font-bold">Configurações do Dashboard</h1>
-        <p className="text-muted-foreground">
-          Personalize sua experiência de análise e relatórios
-        </p>
+        <p className="text-muted-foreground">Personalize sua experiência de análise e relatórios</p>
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
@@ -388,96 +421,117 @@ export default function ConfiguracoesDashboard() {
         {/* Settings Tab */}
         <TabsContent value="settings" className="space-y-4">
           {settingsLoading ? (
-            <Card><CardContent className="pt-6">Carregando...</CardContent></Card>
-          ) : settings && (
-            <div className="space-y-4">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Atualização e Exibição</CardTitle>
-                  <CardDescription>Configure como o dashboard é exibido e atualizado</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label>Intervalo de Atualização (segundos)</Label>
-                      <Input
-                        type="number"
-                        value={settings.refresh_interval}
-                        onChange={(e) => setSettings({ ...settings, refresh_interval: parseInt(e.target.value) })}
+            <Card>
+              <CardContent className="pt-6">Carregando...</CardContent>
+            </Card>
+          ) : (
+            settings && (
+              <div className="space-y-4">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Atualização e Exibição</CardTitle>
+                    <CardDescription>
+                      Configure como o dashboard é exibido e atualizado
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label>Intervalo de Atualização (segundos)</Label>
+                        <Input
+                          type="number"
+                          value={settings.refresh_interval}
+                          onChange={(e) =>
+                            setSettings({ ...settings, refresh_interval: parseInt(e.target.value) })
+                          }
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Período Padrão</Label>
+                        <Select
+                          value={settings.default_date_range}
+                          onValueChange={(v) => setSettings({ ...settings, default_date_range: v })}
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="last_7_days">Últimos 7 dias</SelectItem>
+                            <SelectItem value="last_30_days">Últimos 30 dias</SelectItem>
+                            <SelectItem value="this_month">Este mês</SelectItem>
+                            <SelectItem value="custom">Personalizado</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <Label>Mostrar Tendências</Label>
+                      <Switch
+                        checked={settings.show_trends}
+                        onCheckedChange={(checked) =>
+                          setSettings({ ...settings, show_trends: checked })
+                        }
                       />
                     </div>
+
+                    <div className="flex items-center justify-between">
+                      <Label>Mostrar Comparações</Label>
+                      <Switch
+                        checked={settings.show_comparisons}
+                        onCheckedChange={(checked) =>
+                          setSettings({ ...settings, show_comparisons: checked })
+                        }
+                      />
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Retenção de Dados</CardTitle>
+                    <CardDescription>Gerencie o armazenamento de dados históricos</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
                     <div className="space-y-2">
-                      <Label>Período Padrão</Label>
-                      <Select
-                        value={settings.default_date_range}
-                        onValueChange={(v) => setSettings({ ...settings, default_date_range: v })}
-                      >
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="last_7_days">Últimos 7 dias</SelectItem>
-                          <SelectItem value="last_30_days">Últimos 30 dias</SelectItem>
-                          <SelectItem value="this_month">Este mês</SelectItem>
-                          <SelectItem value="custom">Personalizado</SelectItem>
-                        </SelectContent>
-                      </Select>
+                      <Label>Manter dados por (meses)</Label>
+                      <Input
+                        type="number"
+                        min="1"
+                        max="60"
+                        value={settings.data_retention_months}
+                        onChange={(e) =>
+                          setSettings({
+                            ...settings,
+                            data_retention_months: parseInt(e.target.value),
+                          })
+                        }
+                      />
+                      <p className="text-sm text-muted-foreground">
+                        Dados mais antigos serão arquivados ou excluídos automaticamente
+                      </p>
                     </div>
-                  </div>
-                  
-                  <div className="flex items-center justify-between">
-                    <Label>Mostrar Tendências</Label>
-                    <Switch
-                      checked={settings.show_trends}
-                      onCheckedChange={(checked) => setSettings({ ...settings, show_trends: checked })}
-                    />
-                  </div>
-                  
-                  <div className="flex items-center justify-between">
-                    <Label>Mostrar Comparações</Label>
-                    <Switch
-                      checked={settings.show_comparisons}
-                      onCheckedChange={(checked) => setSettings({ ...settings, show_comparisons: checked })}
-                    />
-                  </div>
-                </CardContent>
-              </Card>
 
-              <Card>
-                <CardHeader>
-                  <CardTitle>Retenção de Dados</CardTitle>
-                  <CardDescription>Gerencie o armazenamento de dados históricos</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="space-y-2">
-                    <Label>Manter dados por (meses)</Label>
-                    <Input
-                      type="number"
-                      min="1"
-                      max="60"
-                      value={settings.data_retention_months}
-                      onChange={(e) => setSettings({ ...settings, data_retention_months: parseInt(e.target.value) })}
-                    />
-                    <p className="text-sm text-muted-foreground">
-                      Dados mais antigos serão arquivados ou excluídos automaticamente
-                    </p>
-                  </div>
-                  
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <Label>Arquivar dados antigos</Label>
-                      <p className="text-sm text-muted-foreground">Em vez de excluir, mova para arquivo</p>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <Label>Arquivar dados antigos</Label>
+                        <p className="text-sm text-muted-foreground">
+                          Em vez de excluir, mova para arquivo
+                        </p>
+                      </div>
+                      <Switch
+                        checked={settings.archive_old_data}
+                        onCheckedChange={(checked) =>
+                          setSettings({ ...settings, archive_old_data: checked })
+                        }
+                      />
                     </div>
-                    <Switch
-                      checked={settings.archive_old_data}
-                      onCheckedChange={(checked) => setSettings({ ...settings, archive_old_data: checked })}
-                    />
-                  </div>
-                </CardContent>
-              </Card>
+                  </CardContent>
+                </Card>
 
-              <Button onClick={handleSaveSettings}>Salvar Configurações</Button>
-            </div>
+                <Button onClick={handleSaveSettings}>Salvar Configurações</Button>
+              </div>
+            )
           )}
         </TabsContent>
 
@@ -489,7 +543,7 @@ export default function ConfiguracoesDashboard() {
               Adicionar Widget
             </Button>
           </div>
-          
+
           <Card>
             <CardContent className="pt-6">
               <Table>
@@ -513,10 +567,18 @@ export default function ConfiguracoesDashboard() {
                       <TableCell>{widget.is_visible ? 'Sim' : 'Não'}</TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-2">
-                          <Button variant="ghost" size="icon" onClick={() => handleEditWidget(widget)}>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleEditWidget(widget)}
+                          >
                             <Pencil className="w-4 h-4" />
                           </Button>
-                          <Button variant="ghost" size="icon" onClick={() => handleDeleteWidget(widget.id)}>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleDeleteWidget(widget.id)}
+                          >
                             <Trash2 className="w-4 h-4" />
                           </Button>
                         </div>
@@ -537,7 +599,7 @@ export default function ConfiguracoesDashboard() {
               Adicionar Alerta
             </Button>
           </div>
-          
+
           <Card>
             <CardContent className="pt-6">
               <Table>
@@ -559,7 +621,8 @@ export default function ConfiguracoesDashboard() {
                       <TableCell>
                         {threshold.threshold_type === 'minimum' && `≥ ${threshold.min_value}`}
                         {threshold.threshold_type === 'maximum' && `≤ ${threshold.max_value}`}
-                        {threshold.threshold_type === 'range' && `${threshold.min_value} - ${threshold.max_value}`}
+                        {threshold.threshold_type === 'range' &&
+                          `${threshold.min_value} - ${threshold.max_value}`}
                       </TableCell>
                       <TableCell>{threshold.alert_method}</TableCell>
                       <TableCell>
@@ -569,10 +632,18 @@ export default function ConfiguracoesDashboard() {
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-2">
-                          <Button variant="ghost" size="icon" onClick={() => handleEditThreshold(threshold)}>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleEditThreshold(threshold)}
+                          >
                             <Pencil className="w-4 h-4" />
                           </Button>
-                          <Button variant="ghost" size="icon" onClick={() => handleDeleteThreshold(threshold.id)}>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleDeleteThreshold(threshold.id)}
+                          >
                             <Trash2 className="w-4 h-4" />
                           </Button>
                         </div>
@@ -593,7 +664,7 @@ export default function ConfiguracoesDashboard() {
               Agendar Relatório
             </Button>
           </div>
-          
+
           <Card>
             <CardContent className="pt-6">
               <Table>
@@ -621,10 +692,18 @@ export default function ConfiguracoesDashboard() {
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-2">
-                          <Button variant="ghost" size="icon" onClick={() => handleEditSchedule(schedule)}>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleEditSchedule(schedule)}
+                          >
                             <Pencil className="w-4 h-4" />
                           </Button>
-                          <Button variant="ghost" size="icon" onClick={() => handleDeleteSchedule(schedule.id)}>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleDeleteSchedule(schedule.id)}
+                          >
                             <Trash2 className="w-4 h-4" />
                           </Button>
                         </div>
@@ -650,7 +729,9 @@ export default function ConfiguracoesDashboard() {
             </p>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setWidgetDialogOpen(false)}>Cancelar</Button>
+            <Button variant="outline" onClick={() => setWidgetDialogOpen(false)}>
+              Cancelar
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -667,7 +748,9 @@ export default function ConfiguracoesDashboard() {
             </p>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setThresholdDialogOpen(false)}>Cancelar</Button>
+            <Button variant="outline" onClick={() => setThresholdDialogOpen(false)}>
+              Cancelar
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -684,7 +767,9 @@ export default function ConfiguracoesDashboard() {
             </p>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setScheduleDialogOpen(false)}>Cancelar</Button>
+            <Button variant="outline" onClick={() => setScheduleDialogOpen(false)}>
+              Cancelar
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

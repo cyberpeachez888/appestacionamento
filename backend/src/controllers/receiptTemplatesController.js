@@ -13,13 +13,13 @@ function toFrontendFormat(template) {
     templateType: template.template_type,
     description: template.description,
     layout: template.layout,
-    
+
     // Header
     showLogo: template.show_logo,
     showCompanyName: template.show_company_name,
     showCompanyDetails: template.show_company_details,
     headerText: template.header_text,
-    
+
     // Body fields
     showReceiptNumber: template.show_receipt_number,
     showDate: template.show_date,
@@ -33,10 +33,10 @@ function toFrontendFormat(template) {
     showValue: template.show_value,
     showPaymentMethod: template.show_payment_method,
     showOperator: template.show_operator,
-    
+
     // Custom fields
     customFields: template.custom_fields,
-    
+
     // Footer
     showQrCode: template.show_qr_code,
     qrCodeData: template.qr_code_data,
@@ -46,23 +46,23 @@ function toFrontendFormat(template) {
     termsAndConditions: template.terms_and_conditions,
     footerText: template.footer_text,
     showSignatureLine: template.show_signature_line,
-    
+
     // Styling
     primaryColor: template.primary_color,
     secondaryColor: template.secondary_color,
     fontFamily: template.font_family,
-    
+
     // Email/WhatsApp
     emailSubject: template.email_subject,
     emailBodyHtml: template.email_body_html,
     emailBodyText: template.email_body_text,
     whatsappMessage: template.whatsapp_message,
-    
+
     availableVariables: template.available_variables,
     isDefault: template.is_default,
     isActive: template.is_active,
     createdAt: template.created_at,
-    updatedAt: template.updated_at
+    updatedAt: template.updated_at,
   };
 }
 
@@ -73,12 +73,12 @@ function toDbFormat(template) {
     template_type: template.templateType,
     description: template.description,
     layout: template.layout,
-    
+
     show_logo: template.showLogo,
     show_company_name: template.showCompanyName,
     show_company_details: template.showCompanyDetails,
     header_text: template.headerText,
-    
+
     show_receipt_number: template.showReceiptNumber,
     show_date: template.showDate,
     show_time: template.showTime,
@@ -91,9 +91,9 @@ function toDbFormat(template) {
     show_value: template.showValue,
     show_payment_method: template.showPaymentMethod,
     show_operator: template.showOperator,
-    
+
     custom_fields: template.customFields,
-    
+
     show_qr_code: template.showQrCode,
     qr_code_data: template.qrCodeData,
     show_barcode: template.showBarcode,
@@ -102,36 +102,36 @@ function toDbFormat(template) {
     terms_and_conditions: template.termsAndConditions,
     footer_text: template.footerText,
     show_signature_line: template.showSignatureLine,
-    
+
     primary_color: template.primaryColor,
     secondary_color: template.secondaryColor,
     font_family: template.fontFamily,
-    
+
     email_subject: template.emailSubject,
     email_body_html: template.emailBodyHtml,
     email_body_text: template.emailBodyText,
     whatsapp_message: template.whatsappMessage,
-    
+
     available_variables: template.availableVariables,
     is_default: template.isDefault,
-    is_active: template.isActive
+    is_active: template.isActive,
   };
-  
+
   if (template.id) db.id = template.id;
-  
+
   return db;
 }
 
 // Replace template variables with actual values
 function renderTemplate(templateString, variables) {
   if (!templateString) return '';
-  
+
   let result = templateString;
-  Object.keys(variables).forEach(key => {
+  Object.keys(variables).forEach((key) => {
     const regex = new RegExp(`{{${key}}}`, 'g');
     result = result.replace(regex, variables[key] || '');
   });
-  
+
   return result;
 }
 
@@ -141,17 +141,17 @@ export default {
     try {
       const { type, active } = req.query;
       let query = supabase.from(table).select('*');
-      
+
       if (type) {
         query = query.eq('template_type', type);
       }
-      
+
       if (active === 'true') {
         query = query.eq('is_active', true);
       }
-      
+
       const { data, error } = await query.order('template_name');
-      
+
       if (error) return res.status(500).json({ error });
       res.json(data.map(toFrontendFormat));
     } catch (err) {
@@ -167,7 +167,7 @@ export default {
         .select('*')
         .eq('id', req.params.id)
         .single();
-      
+
       if (error) return res.status(404).json({ error: 'Template not found' });
       res.json(toFrontendFormat(data));
     } catch (err) {
@@ -179,7 +179,7 @@ export default {
   async getDefault(req, res) {
     try {
       const { type } = req.params; // parking_ticket, monthly_payment, general_receipt
-      
+
       const { data, error } = await supabase
         .from(table)
         .select('*')
@@ -187,7 +187,7 @@ export default {
         .eq('is_default', true)
         .eq('is_active', true)
         .single();
-      
+
       if (error) {
         // If no default found, return any active template of this type
         const { data: fallback, error: fbError } = await supabase
@@ -197,11 +197,11 @@ export default {
           .eq('is_active', true)
           .limit(1)
           .single();
-        
+
         if (fbError) return res.status(404).json({ error: 'No template found for this type' });
         return res.json(toFrontendFormat(fallback));
       }
-      
+
       res.json(toFrontendFormat(data));
     } catch (err) {
       res.status(500).json({ error: err.message || err });
@@ -213,7 +213,7 @@ export default {
     try {
       const payload = toDbFormat(req.body);
       payload.id = uuid();
-      
+
       // If setting as default, unset other defaults for this type
       if (payload.is_default) {
         await supabase
@@ -221,23 +221,19 @@ export default {
           .update({ is_default: false })
           .eq('template_type', payload.template_type);
       }
-      
-      const { data, error } = await supabase
-        .from(table)
-        .insert(payload)
-        .select()
-        .single();
-      
+
+      const { data, error } = await supabase.from(table).insert(payload).select().single();
+
       if (error) return res.status(500).json({ error });
-      
-      await logEvent({ 
-        actor: req.user, 
-        action: 'receipt_template.create', 
-        targetType: 'receipt_template', 
+
+      await logEvent({
+        actor: req.user,
+        action: 'receipt_template.create',
+        targetType: 'receipt_template',
         targetId: data.id,
-        details: { templateName: data.template_name, templateType: data.template_type }
+        details: { templateName: data.template_name, templateType: data.template_type },
       });
-      
+
       res.status(201).json(toFrontendFormat(data));
     } catch (err) {
       res.status(500).json({ error: err.message || err });
@@ -251,7 +247,7 @@ export default {
       const payload = toDbFormat(req.body);
       delete payload.id; // Don't update ID
       payload.updated_at = new Date().toISOString();
-      
+
       // If setting as default, unset other defaults for this type
       if (payload.is_default) {
         await supabase
@@ -260,24 +256,24 @@ export default {
           .eq('template_type', payload.template_type)
           .neq('id', id);
       }
-      
+
       const { data, error } = await supabase
         .from(table)
         .update(payload)
         .eq('id', id)
         .select()
         .single();
-      
+
       if (error) return res.status(500).json({ error });
-      
-      await logEvent({ 
-        actor: req.user, 
-        action: 'receipt_template.update', 
-        targetType: 'receipt_template', 
+
+      await logEvent({
+        actor: req.user,
+        action: 'receipt_template.update',
+        targetType: 'receipt_template',
         targetId: id,
-        details: { templateName: data.template_name }
+        details: { templateName: data.template_name },
       });
-      
+
       res.json(toFrontendFormat(data));
     } catch (err) {
       res.status(500).json({ error: err.message || err });
@@ -288,35 +284,32 @@ export default {
   async delete(req, res) {
     try {
       const { id } = req.params;
-      
+
       // Check if it's the default template
       const { data: existing } = await supabase
         .from(table)
         .select('is_default, template_type, template_name')
         .eq('id', id)
         .single();
-      
+
       if (existing?.is_default) {
-        return res.status(400).json({ 
-          error: 'Cannot delete default template. Set another template as default first.' 
+        return res.status(400).json({
+          error: 'Cannot delete default template. Set another template as default first.',
         });
       }
-      
-      const { error } = await supabase
-        .from(table)
-        .delete()
-        .eq('id', id);
-      
+
+      const { error } = await supabase.from(table).delete().eq('id', id);
+
       if (error) return res.status(500).json({ error });
-      
-      await logEvent({ 
-        actor: req.user, 
-        action: 'receipt_template.delete', 
-        targetType: 'receipt_template', 
+
+      await logEvent({
+        actor: req.user,
+        action: 'receipt_template.delete',
+        targetType: 'receipt_template',
         targetId: id,
-        details: { templateName: existing?.template_name }
+        details: { templateName: existing?.template_name },
       });
-      
+
       res.status(204).send();
     } catch (err) {
       res.status(500).json({ error: err.message || err });
@@ -327,22 +320,22 @@ export default {
   async setDefault(req, res) {
     try {
       const { id } = req.params;
-      
+
       // Get template type
       const { data: template } = await supabase
         .from(table)
         .select('template_type')
         .eq('id', id)
         .single();
-      
+
       if (!template) return res.status(404).json({ error: 'Template not found' });
-      
+
       // Unset all defaults for this type
       await supabase
         .from(table)
         .update({ is_default: false })
         .eq('template_type', template.template_type);
-      
+
       // Set this as default
       const { data, error } = await supabase
         .from(table)
@@ -350,16 +343,16 @@ export default {
         .eq('id', id)
         .select()
         .single();
-      
+
       if (error) return res.status(500).json({ error });
-      
-      await logEvent({ 
-        actor: req.user, 
-        action: 'receipt_template.set_default', 
-        targetType: 'receipt_template', 
-        targetId: id
+
+      await logEvent({
+        actor: req.user,
+        action: 'receipt_template.set_default',
+        targetType: 'receipt_template',
+        targetId: id,
       });
-      
+
       res.json(toFrontendFormat(data));
     } catch (err) {
       res.status(500).json({ error: err.message || err });
@@ -371,24 +364,24 @@ export default {
     try {
       const { id } = req.params;
       const variables = req.body; // Object with variable values
-      
+
       const { data: template, error } = await supabase
         .from(table)
         .select('*')
         .eq('id', id)
         .single();
-      
+
       if (error) return res.status(404).json({ error: 'Template not found' });
-      
+
       const rendered = {
         emailSubject: renderTemplate(template.email_subject, variables),
         emailBodyHtml: renderTemplate(template.email_body_html, variables),
         emailBodyText: renderTemplate(template.email_body_text, variables),
         whatsappMessage: renderTemplate(template.whatsapp_message, variables),
         qrCodeData: renderTemplate(template.qr_code_data, variables),
-        barcodeData: renderTemplate(template.barcode_data, variables)
+        barcodeData: renderTemplate(template.barcode_data, variables),
       };
-      
+
       res.json(rendered);
     } catch (err) {
       res.status(500).json({ error: err.message || err });
@@ -399,15 +392,15 @@ export default {
   async clone(req, res) {
     try {
       const { id } = req.params;
-      
+
       const { data: original, error } = await supabase
         .from(table)
         .select('*')
         .eq('id', id)
         .single();
-      
+
       if (error) return res.status(404).json({ error: 'Template not found' });
-      
+
       // Create clone
       const clone = { ...original };
       delete clone.id;
@@ -416,26 +409,26 @@ export default {
       clone.template_name = `${original.template_name} (Cópia)`;
       clone.is_default = false;
       clone.id = uuid();
-      
+
       const { data: newTemplate, error: createError } = await supabase
         .from(table)
         .insert(clone)
         .select()
         .single();
-      
+
       if (createError) return res.status(500).json({ error: createError });
-      
-      await logEvent({ 
-        actor: req.user, 
-        action: 'receipt_template.clone', 
-        targetType: 'receipt_template', 
+
+      await logEvent({
+        actor: req.user,
+        action: 'receipt_template.clone',
+        targetType: 'receipt_template',
         targetId: newTemplate.id,
-        details: { originalId: id }
+        details: { originalId: id },
       });
-      
+
       res.status(201).json(toFrontendFormat(newTemplate));
     } catch (err) {
       res.status(500).json({ error: err.message || err });
     }
-  }
+  },
 };

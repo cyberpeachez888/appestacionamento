@@ -8,7 +8,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import api from '@/lib/api';
@@ -72,11 +78,11 @@ export function PricingRulesManager({ rateId, onClose }: PricingRulesManagerProp
       console.error('Error details:', {
         message: error.message,
         status: error.status,
-        rateId: rateId
+        rateId: rateId,
       });
       toast({
         title: 'Erro ao carregar regras',
-  description: err.message || 'Não foi possível carregar as regras de precificação.',
+        description: err.message || 'Não foi possível carregar as regras de precificação.',
         variant: 'destructive',
       });
     } finally {
@@ -98,7 +104,7 @@ export function PricingRulesManager({ rateId, onClose }: PricingRulesManagerProp
       const err = error as Error;
       toast({
         title: 'Erro ao criar regra',
-  description: err.message,
+        description: err.message,
         variant: 'destructive',
       });
     }
@@ -106,7 +112,7 @@ export function PricingRulesManager({ rateId, onClose }: PricingRulesManagerProp
 
   const handleUpdate = async () => {
     if (!editingRule) return;
-    
+
     try {
       const ruleData = buildRuleData();
       await api.updatePricingRule(editingRule.id, ruleData);
@@ -120,7 +126,7 @@ export function PricingRulesManager({ rateId, onClose }: PricingRulesManagerProp
       const err = error as Error;
       toast({
         title: 'Erro ao atualizar regra',
-  description: err.message,
+        description: err.message,
         variant: 'destructive',
       });
     }
@@ -140,7 +146,7 @@ export function PricingRulesManager({ rateId, onClose }: PricingRulesManagerProp
       const err = error as Error;
       toast({
         title: 'Erro ao excluir regra',
-  description: err.message,
+        description: err.message,
         variant: 'destructive',
       });
     }
@@ -158,7 +164,7 @@ export function PricingRulesManager({ rateId, onClose }: PricingRulesManagerProp
       const err = error as Error;
       toast({
         title: 'Erro ao alterar status',
-  description: err.message,
+        description: err.message,
         variant: 'destructive',
       });
     }
@@ -232,7 +238,7 @@ export function PricingRulesManager({ rateId, onClose }: PricingRulesManagerProp
   const startEdit = (rule: PricingRule) => {
     setEditingRule(rule);
     setRuleType(rule.ruleType);
-    
+
     // Extract value from adjustment
     const adj = rule.valueAdjustment;
     if ('value' in adj && typeof adj.value === 'number') {
@@ -240,7 +246,7 @@ export function PricingRulesManager({ rateId, onClose }: PricingRulesManagerProp
     } else if ('ranges' in adj && Array.isArray(adj.ranges) && adj.ranges.length > 0) {
       setValue(adj.ranges[0].value.toString());
     }
-    
+
     setDescription(rule.description);
     setPriority(rule.priority.toString());
     setShowForm(true);
@@ -272,7 +278,8 @@ export function PricingRulesManager({ rateId, onClose }: PricingRulesManagerProp
         <CardHeader>
           <CardTitle>Regras de Precificação Avançada</CardTitle>
           <CardDescription>
-            Configure regras especiais de preço baseadas em tempo (primeira hora, máximo diário, etc.)
+            Configure regras especiais de preço baseadas em tempo (primeira hora, máximo diário,
+            etc.)
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -319,11 +326,7 @@ export function PricingRulesManager({ rateId, onClose }: PricingRulesManagerProp
                         <Button size="sm" variant="ghost" onClick={() => startEdit(rule)}>
                           <Edit className="h-4 w-4" />
                         </Button>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => handleDelete(rule.id)}
-                        >
+                        <Button size="sm" variant="ghost" onClick={() => handleDelete(rule.id)}>
                           <Trash2 className="h-4 w-4 text-destructive" />
                         </Button>
                       </div>
@@ -362,7 +365,8 @@ export function PricingRulesManager({ rateId, onClose }: PricingRulesManagerProp
                   {ruleType === 'first_hour' && 'Valor fixo para a primeira hora'}
                   {ruleType === 'daily_max' && 'Valor máximo cobrado por dia'}
                   {ruleType === 'time_range' && 'Multiplicador (ex: 1.5 = 150%)'}
-                  {ruleType === 'hourly_progression' && 'Valor base (será reduzido progressivamente)'}
+                  {ruleType === 'hourly_progression' &&
+                    'Valor base (será reduzido progressivamente)'}
                 </p>
               </div>
 
@@ -384,7 +388,8 @@ export function PricingRulesManager({ rateId, onClose }: PricingRulesManagerProp
                   placeholder="0"
                 />
                 <p className="text-xs text-muted-foreground">
-                  Menor número = maior prioridade. Sugerido: primeira hora=1, progressivo=2, faixa horária=3, máximo diário=99
+                  Menor número = maior prioridade. Sugerido: primeira hora=1, progressivo=2, faixa
+                  horária=3, máximo diário=99
                 </p>
               </div>
 

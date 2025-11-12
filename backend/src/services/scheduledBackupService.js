@@ -100,7 +100,7 @@ async function createAutoBackup() {
 async function cleanOldBackups() {
   try {
     ensureDir();
-    const files = fs.readdirSync(BACKUP_DIR).filter(f => f.endsWith('.json'));
+    const files = fs.readdirSync(BACKUP_DIR).filter((f) => f.endsWith('.json'));
     const now = Date.now();
     const maxAge = backupConfig.retentionDays * 24 * 60 * 60 * 1000;
 
@@ -151,7 +151,9 @@ export function startScheduledBackups(config = {}) {
     await createAutoBackup();
   });
 
-  console.log(`[Auto Backup] Scheduled: ${backupConfig.schedule} (Retention: ${backupConfig.retentionDays} days)`);
+  console.log(
+    `[Auto Backup] Scheduled: ${backupConfig.schedule} (Retention: ${backupConfig.retentionDays} days)`
+  );
 }
 
 export function stopScheduledBackups() {
@@ -187,7 +189,7 @@ export async function updateBackupConfig(newConfig) {
         backup_retention_days: backupConfig.retentionDays,
       })
       .eq('id', 'default');
-    
+
     if (error) console.warn('[Auto Backup] Failed to persist config:', error.message);
   } catch (err) {
     console.warn('[Auto Backup] Failed to persist config:', err.message);

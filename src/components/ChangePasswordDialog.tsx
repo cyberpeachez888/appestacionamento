@@ -1,5 +1,12 @@
 import { useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -28,11 +35,11 @@ interface PasswordValidation {
   suggestions?: string[];
 }
 
-export const ChangePasswordDialog = ({ 
-  open, 
-  onOpenChange, 
+export const ChangePasswordDialog = ({
+  open,
+  onOpenChange,
   isFirstLogin = false,
-  onSuccess 
+  onSuccess,
 }: ChangePasswordDialogProps) => {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
@@ -52,7 +59,9 @@ export const ChangePasswordDialog = ({
     requireSpecialChar: boolean;
     passwordHistoryLimit: number;
   }
-  const [passwordRequirements, setPasswordRequirements] = useState<PasswordRequirements | null>(null);
+  const [passwordRequirements, setPasswordRequirements] = useState<PasswordRequirements | null>(
+    null
+  );
 
   useEffect(() => {
     if (open) {
@@ -115,7 +124,7 @@ export const ChangePasswordDialog = ({
       toast({
         variant: 'destructive',
         title: 'Erro',
-        description: 'As senhas não coincidem'
+        description: 'As senhas não coincidem',
       });
       return;
     }
@@ -125,7 +134,7 @@ export const ChangePasswordDialog = ({
       toast({
         variant: 'destructive',
         title: 'Senha fraca',
-        description: 'A senha não atende aos requisitos de segurança'
+        description: 'A senha não atende aos requisitos de segurança',
       });
       return;
     }
@@ -135,7 +144,7 @@ export const ChangePasswordDialog = ({
       toast({
         variant: 'destructive',
         title: 'Erro',
-        description: 'Informe a senha atual'
+        description: 'Informe a senha atual',
       });
       return;
     }
@@ -145,12 +154,12 @@ export const ChangePasswordDialog = ({
     try {
       await api.changePassword({
         currentPassword: isFirstLogin ? undefined : currentPassword,
-        newPassword
+        newPassword,
       });
 
       toast({
         title: 'Sucesso',
-        description: 'Senha alterada com sucesso'
+        description: 'Senha alterada com sucesso',
       });
       onOpenChange(false);
       if (onSuccess) {
@@ -162,7 +171,7 @@ export const ChangePasswordDialog = ({
       toast({
         variant: 'destructive',
         title: 'Erro',
-        description: message || 'Erro ao alterar senha'
+        description: message || 'Erro ao alterar senha',
       });
     } finally {
       setLoading(false);
@@ -193,8 +202,8 @@ export const ChangePasswordDialog = ({
             {isFirstLogin ? 'Primeiro Acesso - Altere sua Senha' : 'Alterar Senha'}
           </DialogTitle>
           <DialogDescription>
-            {isFirstLogin 
-              ? 'Por segurança, você precisa alterar sua senha no primeiro acesso.' 
+            {isFirstLogin
+              ? 'Por segurança, você precisa alterar sua senha no primeiro acesso.'
               : 'Crie uma senha forte para proteger sua conta.'}
           </DialogDescription>
         </DialogHeader>
@@ -252,14 +261,18 @@ export const ChangePasswordDialog = ({
               <div className="space-y-2">
                 <div className="flex items-center justify-between text-sm">
                   <span className="text-gray-600">Força da senha:</span>
-                  <span className={`font-medium ${validation.valid ? 'text-green-600' : 'text-orange-600'}`}>
+                  <span
+                    className={`font-medium ${validation.valid ? 'text-green-600' : 'text-orange-600'}`}
+                  >
                     {validation.strength && getStrengthText(validation.strength.score)}
                   </span>
                 </div>
                 <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
                   <div
                     className={`h-full transition-all ${validation.strength && getStrengthColor(validation.strength.score)}`}
-                    style={{ width: `${validation.strength ? (validation.strength.score + 1) * 20 : 0}%` }}
+                    style={{
+                      width: `${validation.strength ? (validation.strength.score + 1) * 20 : 0}%`,
+                    }}
                   />
                 </div>
               </div>
@@ -326,8 +339,12 @@ export const ChangePasswordDialog = ({
                   {passwordRequirements.requireUppercase && <li>Pelo menos 1 letra maiúscula</li>}
                   {passwordRequirements.requireLowercase && <li>Pelo menos 1 letra minúscula</li>}
                   {passwordRequirements.requireDigit && <li>Pelo menos 1 número</li>}
-                  {passwordRequirements.requireSpecialChar && <li>Pelo menos 1 caractere especial</li>}
-                  <li>Não pode ser uma das últimas {passwordRequirements.passwordHistoryLimit} senhas</li>
+                  {passwordRequirements.requireSpecialChar && (
+                    <li>Pelo menos 1 caractere especial</li>
+                  )}
+                  <li>
+                    Não pode ser uma das últimas {passwordRequirements.passwordHistoryLimit} senhas
+                  </li>
                 </ul>
               </AlertDescription>
             </Alert>
@@ -344,9 +361,11 @@ export const ChangePasswordDialog = ({
                 Cancelar
               </Button>
             )}
-            <Button 
-              type="submit" 
-              disabled={loading || (validation && !validation.valid) || newPassword !== confirmPassword}
+            <Button
+              type="submit"
+              disabled={
+                loading || (validation && !validation.valid) || newPassword !== confirmPassword
+              }
             >
               {loading ? 'Alterando...' : 'Alterar Senha'}
             </Button>

@@ -22,7 +22,7 @@ export async function logEvent({ actor, action, targetType, targetId, details })
       target_type: targetType || null,
       target_id: targetId || null,
       details: details ? JSON.stringify(details) : null,
-      created_at: new Date().toISOString()
+      created_at: new Date().toISOString(),
     };
     await supabase.from('user_events').insert(payload);
   } catch (err) {

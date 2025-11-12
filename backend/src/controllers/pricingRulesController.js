@@ -7,7 +7,7 @@ import {
   getRulesForRate,
   createPricingRule,
   updatePricingRule,
-  deletePricingRule
+  deletePricingRule,
 } from '../services/pricingCalculator.js';
 import { logEvent } from '../middleware/auditLogger.js';
 
@@ -49,7 +49,7 @@ export async function createRule(req, res) {
       action: 'pricing_rule.create',
       targetType: 'pricing_rule',
       targetId: newRule.id,
-      details: { rateId: ruleData.rateId, ruleType: ruleData.ruleType }
+      details: { rateId: ruleData.rateId, ruleType: ruleData.ruleType },
     });
 
     res.status(201).json(toFrontendFormat(newRule));
@@ -80,7 +80,7 @@ export async function updateRule(req, res) {
       action: 'pricing_rule.update',
       targetType: 'pricing_rule',
       targetId: id,
-      details: { updates }
+      details: { updates },
     });
 
     res.json(toFrontendFormat(updatedRule));
@@ -104,7 +104,7 @@ export async function deleteRule(req, res) {
       actor: req.user,
       action: 'pricing_rule.delete',
       targetType: 'pricing_rule',
-      targetId: id
+      targetId: id,
     });
 
     res.json({ message: 'Pricing rule deleted successfully' });
@@ -129,7 +129,7 @@ export async function toggleRuleStatus(req, res) {
       action: 'pricing_rule.toggle',
       targetType: 'pricing_rule',
       targetId: id,
-      details: { isActive }
+      details: { isActive },
     });
 
     res.json(toFrontendFormat(updatedRule));
@@ -153,7 +153,7 @@ function toFrontendFormat(rule) {
     isActive: rule.is_active,
     description: rule.description,
     createdAt: rule.created_at,
-    updatedAt: rule.updated_at
+    updatedAt: rule.updated_at,
   };
 }
 

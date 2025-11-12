@@ -14,6 +14,7 @@ cd /workspaces/appestacionamento
 ```
 
 **You should see:**
+
 ```
 ✅ Connecting to Supabase: https://nnpvazzeomwklugawceg.supabase.co
 Backend running on http://localhost:3000
@@ -34,6 +35,7 @@ cd /workspaces/appestacionamento
 ```
 
 **You should see:**
+
 ```
 ➜ Local: http://localhost:8080/
 ```
@@ -45,6 +47,7 @@ cd /workspaces/appestacionamento
 ## 🌐 Step 3: Open the App (10 seconds)
 
 **In your browser, go to:**
+
 ```
 http://localhost:8080
 ```
@@ -69,11 +72,13 @@ http://localhost:8080
 ## 📱 Step 5: Access from Phone (Optional - 2 minutes)
 
 **Find your computer's IP:**
+
 ```bash
 hostname -I | awk '{print $1}'
 ```
 
 **On your phone (same WiFi):**
+
 1. Open browser
 2. Go to: `http://YOUR-IP:8080` (replace YOUR-IP with the IP from command above)
 3. Try to login
@@ -83,6 +88,7 @@ hostname -I | awk '{print $1}'
 ## 🆘 If Something Goes Wrong:
 
 ### Backend won't start?
+
 ```bash
 # Check the log
 cat /tmp/backend-final.log
@@ -95,6 +101,7 @@ lsof -ti:3000 | xargs kill -9
 ```
 
 ### Frontend won't start?
+
 ```bash
 # Install dependencies
 cd /workspaces/appestacionamento
@@ -105,6 +112,7 @@ npm run dev
 ```
 
 ### Can't login?
+
 1. Press F12 in browser
 2. Click "Console" tab
 3. Look for red errors
@@ -133,7 +141,7 @@ Once everything works here, tell me:
 
 2. **What operating system?**
    - Windows
-   - Mac  
+   - Mac
    - Linux
 
 3. **Do you want auto-start on boot?**
@@ -149,12 +157,14 @@ Once everything works here, tell me:
 **Run these two commands in separate terminals:**
 
 **Terminal 1:**
+
 ```bash
 cd /workspaces/appestacionamento
 ./start-backend.sh
 ```
 
 **Terminal 2:**
+
 ```bash
 cd /workspaces/appestacionamento
 ./start-frontend.sh

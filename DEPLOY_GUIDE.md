@@ -7,10 +7,12 @@ Deploy **GRATUITO** do seu sistema de estacionamento usando Render (backend) + V
 ## 📋 Pré-requisitos
 
 Você já tem:
+
 - ✅ Conta GitHub (com código)
 - ✅ Supabase configurado e rodando
 
 Você vai precisar criar conta (grátis):
+
 - [ ] Conta no [Render.com](https://render.com)
 - [ ] Conta no [Vercel.com](https://vercel.com)
 
@@ -45,16 +47,17 @@ Você vai precisar criar conta (grátis):
 
 Na seção **"Environment Variables"**, adicione:
 
-| Key | Value |
-|-----|-------|
-| `NODE_ENV` | `production` |
-| `PORT` | `3000` |
-| `SUPABASE_URL` | Sua URL do Supabase (ex: https://xxx.supabase.co) |
-| `SUPABASE_ANON_KEY` | Sua chave anon do Supabase |
-| `JWT_SECRET` | Clique em "Generate" (será gerado automaticamente) |
-| `FRONTEND_URL` | `*` (depois você atualiza com a URL do Vercel) |
+| Key                 | Value                                              |
+| ------------------- | -------------------------------------------------- |
+| `NODE_ENV`          | `production`                                       |
+| `PORT`              | `3000`                                             |
+| `SUPABASE_URL`      | Sua URL do Supabase (ex: https://xxx.supabase.co)  |
+| `SUPABASE_ANON_KEY` | Sua chave anon do Supabase                         |
+| `JWT_SECRET`        | Clique em "Generate" (será gerado automaticamente) |
+| `FRONTEND_URL`      | `*` (depois você atualiza com a URL do Vercel)     |
 
 **Onde encontrar suas credenciais do Supabase:**
+
 1. Acesse seu projeto no [Supabase](https://supabase.com)
 2. Vá em **Settings → API**
 3. Copie:
@@ -71,11 +74,13 @@ Na seção **"Environment Variables"**, adicione:
 ### 1.5 Testar o Backend
 
 Abra no navegador:
+
 ```
 https://theproparking-backend-xxx.onrender.com/health
 ```
 
 Deve retornar:
+
 ```json
 {
   "status": "ok",
@@ -104,6 +109,7 @@ Deve retornar:
 ### 2.3 Configurar Projeto
 
 Configure:
+
 ```
 Framework Preset: Vite
 Root Directory: ./
@@ -116,8 +122,8 @@ Install Command: npm install
 
 Na seção **"Environment Variables"**, adicione:
 
-| Key | Value |
-|-----|-------|
+| Key            | Value                                                                          |
+| -------------- | ------------------------------------------------------------------------------ |
 | `VITE_API_URL` | URL do seu backend Render (ex: https://theproparking-backend-xxx.onrender.com) |
 
 **IMPORTANTE:** Use a URL do Render que você copiou no Passo 1.4!
@@ -130,6 +136,7 @@ Na seção **"Environment Variables"**, adicione:
 4. Clique em **"Visit"** para abrir seu site!
 
 **Sua URL será algo como:**
+
 ```
 https://appestacionamento-xxx.vercel.app
 ```
@@ -197,6 +204,7 @@ Você precisa executar o SQL inicial no Supabase:
 ## 📱 Acesso de Qualquer Lugar
 
 Agora você pode acessar o sistema de:
+
 - 💻 Computador do estacionamento
 - 📱 Celular
 - 🏠 Casa
@@ -209,6 +217,7 @@ Basta abrir: `https://appestacionamento-xxx.vercel.app`
 ## 🔄 Deploy Automático
 
 **Toda vez que você fizer `git push`:**
+
 - ✅ Vercel atualiza o frontend automaticamente
 - ✅ Render atualiza o backend automaticamente
 - ✅ Sem precisar fazer nada manualmente!
@@ -218,16 +227,19 @@ Basta abrir: `https://appestacionamento-xxx.vercel.app`
 ## ⚠️ Limitações do Plano Gratuito
 
 ### Render (Backend):
+
 - Backend "dorme" após 15 minutos sem uso
 - Primeira requisição após "acordar" demora ~30 segundos
 - Depois funciona normalmente
 - **Solução:** Upgrade para $7/mês remove essa limitação
 
 ### Vercel (Frontend):
+
 - Sem limitações significativas para o seu uso
 - 100 GB de banda/mês (muito mais que suficiente)
 
 ### Supabase (Banco):
+
 - 500 MB de armazenamento
 - Mais que suficiente para anos de dados
 
@@ -238,11 +250,13 @@ Basta abrir: `https://appestacionamento-xxx.vercel.app`
 Quando seu estacionamento crescer e você quiser performance 24/7:
 
 ### Render Pro - $7/mês
+
 - Backend sempre ativo (sem sleep)
 - 512 MB RAM
 - Resposta instantânea
 
 ### Domínio Próprio - ~$15/ano
+
 - `app.seudominio.com.br`
 - Mais profissional
 
@@ -251,18 +265,22 @@ Quando seu estacionamento crescer e você quiser performance 24/7:
 ## 🆘 Problemas Comuns
 
 ### "Service Unavailable" no primeiro acesso
+
 - **Causa:** Backend estava dormindo
 - **Solução:** Aguarde 30 segundos e recarregue
 
 ### "Failed to fetch" no frontend
+
 - **Causa:** URL do backend errada no Vercel
 - **Solução:** Verifique a variável `VITE_API_URL`
 
 ### "CORS Error"
+
 - **Causa:** `FRONTEND_URL` errada no Render
 - **Solução:** Atualize com a URL correta do Vercel
 
 ### Login não funciona
+
 - **Causa:** Não executou o SQL no Supabase
 - **Solução:** Execute `EXECUTE-THIS-IN-SUPABASE.sql`
 

@@ -1,7 +1,7 @@
 /**
  * Advanced Pricing Calculator Service
  * Applies time-based pricing rules to calculate final ticket price
- * 
+ *
  * Supports:
  * - First hour pricing
  * - Daily maximum caps
@@ -27,7 +27,7 @@ export async function calculateAdvancedPrice(vehicle, rate, exitDate, exitTime) 
 
   // Get all active pricing rules for this rate
   const rules = await getPricingRules(rate.id);
-  
+
   // Calculate base price (without rules)
   let basePrice = calculateBasePrice(vehicle, rate, diffMinutes, diffHours);
   let finalPrice = basePrice;
@@ -36,7 +36,7 @@ export async function calculateAdvancedPrice(vehicle, rate, exitDate, exitTime) 
   // Apply rules in priority order (lower number = higher priority)
   for (const rule of rules.sort((a, b) => a.priority - b.priority)) {
     const shouldApply = checkRuleConditions(rule, entry, exit, diffHours);
-    
+
     if (shouldApply) {
       const result = applyRule(finalPrice, basePrice, rule, diffHours, diffMinutes, rate);
       finalPrice = result.price;
@@ -44,7 +44,7 @@ export async function calculateAdvancedPrice(vehicle, rate, exitDate, exitTime) 
         ruleId: rule.id,
         ruleType: rule.rule_type,
         description: rule.description,
-        adjustment: result.adjustment
+        adjustment: result.adjustment,
       });
     }
   }
@@ -53,7 +53,7 @@ export async function calculateAdvancedPrice(vehicle, rate, exitDate, exitTime) 
     price: Math.max(finalPrice, 0), // Never negative
     basePrice,
     appliedRules,
-    duration: { hours: Math.floor(diffHours), minutes: diffMinutes % 60 }
+    duration: { hours: Math.floor(diffHours), minutes: diffMinutes % 60 },
   };
 }
 
@@ -86,30 +86,30 @@ function calculateBasePrice(vehicle, rate, diffMinutes, diffHours) {
       const remainingMinutes = diffMinutes % 60;
       let fractions = hours;
       const courtesyMinutes = rate.courtesy_minutes || rate.courtesyMinutes || 0;
-      
+
       if (remainingMinutes > courtesyMinutes) {
         fractions += 1;
       }
-      
+
       return Math.max(fractions, 1) * (rate.value || 0);
     }
-    
+
     case 'Diária': {
       const days = Math.ceil(diffHours / 24);
       return days * (rate.value || 0);
     }
-    
+
     case 'Pernoite': {
       return rate.value || 0;
     }
-    
+
     case 'Semanal':
     case 'Quinzenal':
     case 'Mensal': {
       // These are typically fixed prices
       return rate.value || 0;
     }
-    
+
     default:
       return 0;
   }
@@ -172,7 +172,7 @@ function applyRule(currentPrice, basePrice, rule, diffHours, diffMinutes, rate) 
       if (adjustment.type === 'override') {
         return {
           price: adjustment.value || 0,
-          adjustment: `Primeira hora: R$ ${adjustment.value}`
+          adjustment: `Primeira hora: R$ ${adjustment.value}`,
         };
       }
       return { price: currentPrice, adjustment: 'N/A' };
@@ -184,9 +184,10 @@ function applyRule(currentPrice, basePrice, rule, diffHours, diffMinutes, rate) 
         const cappedPrice = Math.min(currentPrice, adjustment.value || Infinity);
         return {
           price: cappedPrice,
-          adjustment: currentPrice > cappedPrice 
-            ? `Limitado ao máximo diário: R$ ${adjustment.value}` 
-            : 'Dentro do limite'
+          adjustment:
+            currentPrice > cappedPrice
+              ? `Limitado ao máximo diário: R$ ${adjustment.value}`
+              : 'Dentro do limite',
         };
       }
       return { price: currentPrice, adjustment: 'N/A' };
@@ -198,7 +199,7 @@ function applyRule(currentPrice, basePrice, rule, diffHours, diffMinutes, rate) 
         const multipliedPrice = currentPrice * (adjustment.value || 1);
         return {
           price: multipliedPrice,
-          adjustment: `Multiplicador ${adjustment.value}x aplicado`
+          adjustment: `Multiplicador ${adjustment.value}x aplicado`,
         };
       }
       return { price: currentPrice, adjustment: 'N/A' };
@@ -210,7 +211,7 @@ function applyRule(currentPrice, basePrice, rule, diffHours, diffMinutes, rate) 
       if (adjustment.type === 'progressive' && adjustment.ranges) {
         const hours = Math.ceil(diffHours);
         let totalPrice = 0;
-        
+
         for (const range of adjustment.ranges) {
           const rangeStart = range.from || 0;
           const rangeEnd = range.to || Infinity;
@@ -226,7 +227,7 @@ function applyRule(currentPrice, basePrice, rule, diffHours, diffMinutes, rate) 
 
         return {
           price: totalPrice,
-          adjustment: `Preço progressivo aplicado: R$ ${totalPrice.toFixed(2)}`
+          adjustment: `Preço progressivo aplicado: R$ ${totalPrice.toFixed(2)}`,
         };
       }
       return { price: currentPrice, adjustment: 'N/A' };
@@ -261,15 +262,17 @@ export async function getRulesForRate(rateId) {
 export async function createPricingRule(ruleData) {
   const { data, error } = await supabase
     .from('pricing_rules')
-    .insert([{
-      rate_id: ruleData.rateId,
-      rule_type: ruleData.ruleType,
-      conditions: ruleData.conditions || {},
-      value_adjustment: ruleData.valueAdjustment,
-      priority: ruleData.priority || 0,
-      description: ruleData.description,
-      is_active: ruleData.isActive !== false
-    }])
+    .insert([
+      {
+        rate_id: ruleData.rateId,
+        rule_type: ruleData.ruleType,
+        conditions: ruleData.conditions || {},
+        value_adjustment: ruleData.valueAdjustment,
+        priority: ruleData.priority || 0,
+        description: ruleData.description,
+        is_active: ruleData.isActive !== false,
+      },
+    ])
     .select()
     .single();
 
@@ -302,10 +305,7 @@ export async function updatePricingRule(ruleId, updates) {
  * Delete a pricing rule
  */
 export async function deletePricingRule(ruleId) {
-  const { error } = await supabase
-    .from('pricing_rules')
-    .delete()
-    .eq('id', ruleId);
+  const { error } = await supabase.from('pricing_rules').delete().eq('id', ruleId);
 
   if (error) {
     throw new Error(`Failed to delete pricing rule: ${error.message}`);

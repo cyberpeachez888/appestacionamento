@@ -7,7 +7,7 @@ function toFrontendFormat(type) {
     id: type.id,
     name: type.name,
     isDefault: type.is_default,
-    createdAt: type.created_at
+    createdAt: type.created_at,
   };
 }
 
@@ -21,7 +21,7 @@ export async function getVehicleTypes(req, res) {
       .order('name', { ascending: true });
 
     if (error) throw error;
-    
+
     const formatted = data.map(toFrontendFormat);
     res.json(formatted);
   } catch (err) {
@@ -34,7 +34,7 @@ export async function getVehicleTypes(req, res) {
 export async function createVehicleType(req, res) {
   try {
     const { name } = req.body;
-    
+
     if (!name || !name.trim()) {
       return res.status(400).json({ error: 'Vehicle type name is required' });
     }
@@ -43,14 +43,10 @@ export async function createVehicleType(req, res) {
       id: uuidv4(),
       name: name.trim(),
       is_default: false,
-      created_at: new Date().toISOString()
+      created_at: new Date().toISOString(),
     };
 
-    const { data, error } = await supabase
-      .from('vehicle_types')
-      .insert(newType)
-      .select()
-      .single();
+    const { data, error } = await supabase.from('vehicle_types').insert(newType).select().single();
 
     if (error) {
       if (error.message?.includes('unique') || error.message?.includes('duplicate')) {
@@ -82,10 +78,7 @@ export async function deleteVehicleType(req, res) {
       return res.status(403).json({ error: 'Não é possível excluir tipos de veículo padrão' });
     }
 
-    const { error } = await supabase
-      .from('vehicle_types')
-      .delete()
-      .eq('id', id);
+    const { error } = await supabase.from('vehicle_types').delete().eq('id', id);
 
     if (error) throw error;
 

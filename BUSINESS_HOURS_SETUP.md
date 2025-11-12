@@ -5,6 +5,7 @@
 The "Horários e Feriados" page will show errors until you execute the SQL migration in Supabase.
 
 ## Status:
+
 - ✅ Backend API: **READY** (all controllers and routes working)
 - ✅ Frontend UI: **READY** (page created with 3 tabs)
 - ❌ Database Tables: **NOT CREATED YET**
@@ -12,6 +13,7 @@ The "Horários e Feriados" page will show errors until you execute the SQL migra
 ## Why You're Seeing Errors:
 
 The error "Falha ao carregar eventos" (and similar errors) happens because:
+
 1. The frontend tries to fetch data from `/business-hours`, `/holidays`, `/special-events`
 2. The backend tries to query tables that **don't exist yet**
 3. Supabase returns an error because tables are missing
@@ -43,8 +45,8 @@ After running the migration, verify in Supabase:
 
 ```sql
 -- Check if tables exist
-SELECT table_name FROM information_schema.tables 
-WHERE table_schema = 'public' 
+SELECT table_name FROM information_schema.tables
+WHERE table_schema = 'public'
 AND table_name IN ('business_hours', 'holidays', 'special_events');
 
 -- Check default data was inserted
@@ -53,6 +55,7 @@ SELECT * FROM holidays ORDER BY holiday_date;
 ```
 
 You should see:
+
 - ✅ 7 rows in `business_hours` (Sunday-Saturday)
 - ✅ 11 rows in `holidays` (Brazilian national holidays)
 - ✅ 0 rows in `special_events` (empty, ready for custom events)
@@ -60,6 +63,7 @@ You should see:
 ### Step 3: Reload Frontend
 
 After migration completes:
+
 1. Go to `http://localhost:8080`
 2. Login as admin
 3. Click "Horários e Feriados" in sidebar
@@ -71,6 +75,7 @@ After migration completes:
 ## What the Page Should Look Like:
 
 ### Tab 1: Horário de Funcionamento
+
 - Grid of 7 cards (Domingo, Segunda, Terça, Quarta, Quinta, Sexta, Sábado)
 - Each card shows:
   - Day name
@@ -86,6 +91,7 @@ After migration completes:
   - **Salvar button**
 
 ### Tab 2: Feriados
+
 - **"Adicionar Feriado" button** at top
 - Grid of holiday cards showing:
   - Holiday name (e.g., "Ano Novo", "Natal")
@@ -95,6 +101,7 @@ After migration completes:
   - Edit and Delete buttons
 
 ### Tab 3: Eventos Especiais
+
 - **"Novo Evento" button** at top
 - Grid of event cards (empty initially) showing:
   - Event name
@@ -106,17 +113,21 @@ After migration completes:
 ## Default Data Included:
 
 ### Business Hours (Monday-Friday):
+
 - Open: 08:00 - 18:00
 - After-hours: Allowed (+20% surcharge)
 
 ### Saturday:
+
 - Open: 08:00 - 14:00
 - After-hours: Allowed (+30% surcharge)
 
 ### Sunday:
+
 - Closed
 
 ### Holidays (11 Brazilian National Holidays):
+
 1. Ano Novo (January 1) - Recurring
 2. Carnaval 2025 (March 4) - Non-recurring
 3. Sexta-feira Santa 2025 (April 18) - Non-recurring
@@ -132,17 +143,20 @@ After migration completes:
 ## Troubleshooting:
 
 ### Still seeing errors after migration?
+
 1. Check Supabase logs for error details
 2. Verify token in localStorage is valid
 3. Check browser console for network errors
 4. Restart backend: `pkill -f "node.*server" && cd backend && npm start`
 
 ### Tables not showing in Supabase?
+
 - Make sure you ran the migration in the correct project
 - Check the "public" schema (not "auth" or other schemas)
 - Verify no SQL syntax errors in migration output
 
 ### Frontend not loading data?
+
 1. Open browser DevTools (F12)
 2. Go to Network tab
 3. Navigate to "Horários e Feriados"
@@ -152,6 +166,7 @@ After migration completes:
 ## Files Created for This Feature:
 
 ### Backend:
+
 - `/backend/create-business-hours-table.sql` - Database migration (360 lines)
 - `/backend/src/controllers/businessHoursController.js` - Business hours API
 - `/backend/src/controllers/holidaysController.js` - Holidays API
@@ -159,6 +174,7 @@ After migration completes:
 - `/backend/src/routes/index.js` - Routes added (lines 120-137)
 
 ### Frontend:
+
 - `/src/pages/HorariosFeriados.tsx` - Main page component (653 lines)
 - `/src/App.tsx` - Route added
 - `/src/components/Sidebar.tsx` - Menu item added

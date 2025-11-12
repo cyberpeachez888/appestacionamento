@@ -1,5 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useParking } from '@/contexts/ParkingContext';
@@ -35,22 +42,30 @@ export const OpenCashRegisterDialog: React.FC<Props> = ({ open, onOpenChange }) 
         <div className="space-y-4 py-2">
           <div className="flex flex-col gap-1">
             <label className="text-sm font-medium">Operador</label>
-            <div className="text-sm text-muted-foreground italic">(será preenchido após implementação de login)</div>
+            <div className="text-sm text-muted-foreground italic">
+              (será preenchido após implementação de login)
+            </div>
           </div>
           <div className="flex flex-col gap-1">
-            <label className="text-sm font-medium" htmlFor="openingAmount">Valor de Abertura</label>
+            <label className="text-sm font-medium" htmlFor="openingAmount">
+              Valor de Abertura
+            </label>
             <Input
               id="openingAmount"
               type="number"
               min={0}
               value={amount}
-              onChange={e => setAmount(Number(e.target.value))}
+              onChange={(e) => setAmount(Number(e.target.value))}
             />
-            <p className="text-xs text-muted-foreground">Pré-preenchido com o último valor de fechamento.</p>
+            <p className="text-xs text-muted-foreground">
+              Pré-preenchido com o último valor de fechamento.
+            </p>
           </div>
         </div>
         <DialogFooter className="flex justify-end gap-2">
-          <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
+            Cancelar
+          </Button>
           <Button onClick={handleOpen}>Abrir Caixa</Button>
         </DialogFooter>
       </DialogContent>
