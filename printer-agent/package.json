@@ -1,0 +1,22 @@
+{
+  "name": "parking-print-agent",
+  "version": "0.1.0",
+  "description": "Agente local para impressão térmica do App Estacionamento",
+  "type": "module",
+  "bin": {
+    "parking-print-agent": "./src/index.js"
+  },
+  "scripts": {
+    "start": "node ./src/index.js"
+  },
+  "dependencies": {
+    "@node-escpos/core": "^0.4.3",
+    "@node-escpos/network": "^0.4.3",
+    "@node-escpos/usb": "^0.4.3",
+    "axios": "^1.6.7",
+    "commander": "^11.1.0",
+    "dotenv": "^16.4.5",
+    "pino": "^8.15.1"
+  }
+}
+

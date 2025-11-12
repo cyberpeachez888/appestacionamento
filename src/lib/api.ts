@@ -720,6 +720,60 @@ class ApiClient {
   async getOperationalStatus() {
     return this.request<any>('/operational-status');
   }
+
+  // Printer jobs (Print Agent)
+  async enqueuePrinterJob(job: {
+    jobType: string;
+    payload: any;
+    printerProfile?: string;
+    priority?: number;
+    scheduledFor?: string;
+    jobKey?: string;
+    maxRetries?: number;
+  }) {
+    return this.request<{ job: any; duplicate?: boolean }>('/printer-jobs', {
+      method: 'POST',
+      body: JSON.stringify(job),
+    });
+  }
+
+  async listPrinterJobs(params?: {
+    status?: string[] | string;
+    jobType?: string[] | string;
+    limit?: number;
+    since?: string;
+    search?: string;
+  }) {
+    const query = new URLSearchParams();
+    if (params?.status) {
+      const values = Array.isArray(params.status) ? params.status : [params.status];
+      values.forEach((value) => query.append('status', value));
+    }
+    if (params?.jobType) {
+      const values = Array.isArray(params.jobType) ? params.jobType : [params.jobType];
+      values.forEach((value) => query.append('jobType', value));
+    }
+    if (typeof params?.limit === 'number') query.set('limit', params.limit.toString());
+    if (params?.since) query.set('since', params.since);
+    if (params?.search) query.set('search', params.search);
+    const queryString = query.toString();
+    return this.request<{ jobs: any[] }>(`/printer-jobs${queryString ? `?${queryString}` : ''}`);
+  }
+
+  async getPrinterJob(id: string) {
+    return this.request<{ job: any; events: any[] }>(`/printer-jobs/${id}`);
+  }
+
+  async cancelPrinterJob(id: string, reason?: string) {
+    return this.request<{ job: any }>(`/printer-jobs/${id}/cancel`, {
+      method: 'POST',
+      body: JSON.stringify({ reason }),
+    });
+  }
+
+  async getPrinterJobStatuses() {
+    return this.request<{ statuses: Record<string, string> }>('/printer-jobs/statuses');
+  }
 }
 
 export const api = new ApiClient(API_BASE_URL);

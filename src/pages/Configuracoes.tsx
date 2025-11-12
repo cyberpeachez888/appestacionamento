@@ -44,6 +44,10 @@ export default function Configuracoes() {
         left: 5,
         right: 5,
       },
+      usbVendorId: '',
+      usbProductId: '',
+      networkHost: '',
+      networkPort: 9100,
     },
   });
 
@@ -77,6 +81,10 @@ export default function Configuracoes() {
             left: 5,
             right: 5,
           },
+          usbVendorId: '',
+          usbProductId: '',
+          networkHost: '',
+          networkPort: 9100,
         },
       });
     } catch (err) {

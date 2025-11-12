@@ -36,6 +36,12 @@ interface PrinterConfig {
     left: number;
     right: number;
   };
+  usbVendorId?: string;
+  usbProductId?: string;
+  networkHost?: string;
+  networkPort?: number;
+  serialPath?: string;
+  serialBaudRate?: number;
 }
 
 interface PrinterConfigSectionProps {
@@ -202,6 +208,62 @@ export default function PrinterConfigSection({
               </SelectContent>
             </Select>
           </div>
+
+          {config.connectionType === 'usb' && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="usbVendorId">Vendor ID (USB)</Label>
+                <Input
+                  id="usbVendorId"
+                  value={config.usbVendorId || ''}
+                  onChange={(e) => onChange({ ...config, usbVendorId: e.target.value })}
+                  placeholder="Ex: 0x0416"
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  Utilize o ID hexadecimal da impressora (ex.: 0x0416). Consulte o gerenciador de
+                  dispositivos do sistema operacional.
+                </p>
+              </div>
+              <div>
+                <Label htmlFor="usbProductId">Product ID (USB)</Label>
+                <Input
+                  id="usbProductId"
+                  value={config.usbProductId || ''}
+                  onChange={(e) => onChange({ ...config, usbProductId: e.target.value })}
+                  placeholder="Ex: 0x5011"
+                />
+              </div>
+            </div>
+          )}
+
+          {config.connectionType === 'network' && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="networkHost">Endereço IP da Impressora</Label>
+                <Input
+                  id="networkHost"
+                  value={config.networkHost || ''}
+                  onChange={(e) => onChange({ ...config, networkHost: e.target.value })}
+                  placeholder="Ex: 192.168.0.50"
+                />
+              </div>
+              <div>
+                <Label htmlFor="networkPort">Porta</Label>
+                <Input
+                  id="networkPort"
+                  type="number"
+                  value={config.networkPort != null ? String(config.networkPort) : '9100'}
+                  onChange={(e) =>
+                    onChange({
+                      ...config,
+                      networkPort: Number(e.target.value) || 9100,
+                    })
+                  }
+                  placeholder="9100"
+                />
+              </div>
+            </div>
+          )}
 
           <div>
             <Label htmlFor="defaultPrinter">Nome da Impressora (opcional)</Label>

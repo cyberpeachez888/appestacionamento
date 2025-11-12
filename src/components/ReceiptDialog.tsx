@@ -13,9 +13,10 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Printer, Download } from 'lucide-react';
+import { Printer } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import api from '@/lib/api';
 
 interface ReceiptTemplate {
   showCompanyName?: boolean;
@@ -61,6 +62,7 @@ export const ReceiptDialog = ({ open, onOpenChange }: ReceiptDialogProps) => {
   const [receiptNumber, setReceiptNumber] = useState(0);
   const [template, setTemplate] = useState<ReceiptTemplate | null>(null);
   const [customFieldValues, setCustomFieldValues] = useState<Record<string, string>>({});
+  const [isSendingToPrinter, setIsSendingToPrinter] = useState(false);
 
   useEffect(() => {
     if (open) {
@@ -113,8 +115,123 @@ export const ReceiptDialog = ({ open, onOpenChange }: ReceiptDialogProps) => {
     setShowReceipt(true);
   };
 
-  const handlePrint = () => {
+  const handleBrowserPrint = () => {
     window.print();
+  };
+
+  const buildReceiptPayload = () => {
+    const printerConfig = companyConfig?.printerConfig || {};
+    const parsedValue = Number.parseFloat(formData.value || '0');
+    const amount = Number.isFinite(parsedValue) ? parsedValue : 0;
+    const customFields = (template?.customFields || [])
+      .map((field) => {
+        let value: string | undefined;
+        if (field.name === 'description') {
+          value = formData.observation;
+        } else if (field.name === 'issuedBy') {
+          value = formData.issuedBy;
+        } else {
+          value = customFieldValues[field.name] || field.defaultValue;
+        }
+        if (!value) return null;
+        return {
+          name: field.name,
+          label: field.label,
+          value,
+        };
+      })
+      .filter(
+        (field): field is { name: string; label: string; value: string } => Boolean(field)
+      );
+
+    const resolvedTemplate = {
+      showCompanyName: template?.showCompanyName !== false,
+      showCompanyDetails: template?.showCompanyDetails !== false,
+      showReceiptNumber: template?.showReceiptNumber !== false,
+      showDate: template?.showDate !== false,
+      showTime: template?.showTime !== false,
+      showPlate: template?.showPlate !== false,
+      showValue: template?.showValue !== false,
+      showPaymentMethod: template?.showPaymentMethod !== false,
+      showSignatureLine: template?.showSignatureLine !== false,
+      termsAndConditions: template?.termsAndConditions || null,
+      footerText: template?.footerText || null,
+      primaryColor: template?.primaryColor || '#000000',
+    };
+
+    return {
+      type: 'manual_receipt',
+      receiptNumber,
+      issuedAt: new Date().toISOString(),
+      company: {
+        name: companyConfig.name,
+        legalName: companyConfig.legalName,
+        cnpj: companyConfig.cnpj,
+        address: companyConfig.address,
+        phone: companyConfig.phone,
+      },
+      printerConfig,
+      totals: {
+        amount,
+      },
+      payment: {
+        method: formData.paymentMethod,
+      },
+      vehicle: {
+        plate: formData.plate,
+      },
+      operator: {
+        issuedBy: formData.issuedBy || null,
+      },
+      observation: formData.observation || null,
+      customFields,
+      template: resolvedTemplate,
+      preview: {
+        html: receiptRef.current?.innerHTML || null,
+        text: receiptRef.current?.innerText || null,
+      },
+    };
+  };
+
+  const handleSendToPrinter = async () => {
+    if (!showReceipt || !receiptRef.current) {
+      toast({
+        title: 'Recibo não gerado',
+        description: 'Gere o recibo antes de enviar para a impressora.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setIsSendingToPrinter(true);
+    try {
+      const payload = buildReceiptPayload();
+      const response = await api.enqueuePrinterJob({
+        jobType: 'manual_receipt',
+        payload,
+      });
+
+      if (response.duplicate) {
+        toast({
+          title: 'Recibo já na fila',
+          description: 'Um job de impressão para este recibo já foi registrado.',
+        });
+      } else {
+        toast({
+          title: 'Enviado para impressão',
+          description: `Job #${response.job.id} foi enfileirado para o agente de impressão.`,
+        });
+      }
+    } catch (error: any) {
+      console.error('Erro ao enviar recibo para impressão:', error);
+      toast({
+        title: 'Erro ao enviar para impressora',
+        description: error?.message || 'Não foi possível enfileirar o recibo.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsSendingToPrinter(false);
+    }
   };
 
   const resetForm = () => {
@@ -340,9 +457,12 @@ export const ReceiptDialog = ({ open, onOpenChange }: ReceiptDialogProps) => {
             </div>
 
             <div className="flex gap-2 mt-4">
-              <Button variant="outline" onClick={handlePrint} className="flex-1">
+              <Button onClick={handleSendToPrinter} className="flex-1" disabled={isSendingToPrinter}>
+                {isSendingToPrinter ? 'Enviando...' : 'Enviar para Impressora'}
+              </Button>
+              <Button variant="outline" onClick={handleBrowserPrint} className="flex-1">
                 <Printer className="h-4 w-4 mr-2" />
-                Imprimir
+                Imprimir no navegador
               </Button>
               <Button variant="outline" onClick={resetForm} className="flex-1">
                 Novo Recibo
