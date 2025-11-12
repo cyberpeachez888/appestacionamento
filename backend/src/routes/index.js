@@ -150,6 +150,12 @@ router.post(
   ticketsController.exit
 ); // saída
 router.get('/tickets/:id', requireAuth, ticketsController.get);
+router.post(
+  '/tickets/:id/change-tariff',
+  requireAuth,
+  requirePermission('openCloseCash'),
+  ticketsController.changeTariff
+);
 
 // Payments and receipts (creating payments requires openCloseCash; listing/reporting requires viewReports)
 router.post(
