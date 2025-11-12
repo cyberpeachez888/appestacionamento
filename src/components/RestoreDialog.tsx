@@ -14,7 +14,16 @@ interface RestoreDialogProps {
 }
 
 const RestoreDialog: React.FC<RestoreDialogProps> = ({ open, onOpenChange, backupId, onRestored }) => {
-  const [preview, setPreview] = useState<any>(null);
+  interface BackupPreview {
+    summary?: Record<string, number>;
+    metadata?: {
+      timestamp: string;
+      created_by: string;
+      version: string;
+      checksum?: string;
+    };
+  }
+  const [preview, setPreview] = useState<BackupPreview | null>(null);
   const [loading, setLoading] = useState(false);
   const [restoring, setRestoring] = useState(false);
   const [selectedTables, setSelectedTables] = useState<string[]>([]);
@@ -41,14 +50,15 @@ const RestoreDialog: React.FC<RestoreDialogProps> = ({ open, onOpenChange, backu
     if (!backupId) return;
     setLoading(true);
     try {
-      const data = await api.previewBackup(backupId);
+      const data: BackupPreview = await api.previewBackup(backupId);
       setPreview(data);
       // Pre-select all tables by default
       if (data.summary) {
         setSelectedTables(Object.keys(data.summary));
       }
-    } catch (err: any) {
-      toast({ title: 'Erro ao carregar preview', description: err.message, variant: 'destructive' });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      toast({ title: 'Erro ao carregar preview', description: message, variant: 'destructive' });
     } finally {
       setLoading(false);
     }
@@ -91,8 +101,9 @@ const RestoreDialog: React.FC<RestoreDialogProps> = ({ open, onOpenChange, backu
       });
       onOpenChange(false);
       if (onRestored) onRestored();
-    } catch (err: any) {
-      toast({ title: 'Erro ao restaurar', description: err.message, variant: 'destructive' });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      toast({ title: 'Erro ao restaurar', description: message, variant: 'destructive' });
     } finally {
       setRestoring(false);
     }

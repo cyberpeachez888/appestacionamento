@@ -16,10 +16,23 @@ import { useParking } from '@/contexts/ParkingContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { Pencil, Trash2, Plus } from 'lucide-react';
 
+// Professional: Define explicit type for customer
+interface MonthlyCustomer {
+  id?: string;
+  name: string;
+  cpf?: string;
+  phone?: string;
+  parkingSlot?: number;
+  plates?: string[];
+  value: number;
+  operatorName?: string;
+  contractDate?: string;
+}
+
 interface CustomerDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  customer?: any;
+  customer?: MonthlyCustomer;
   onSaved?: () => void;
 }
 
@@ -313,16 +326,43 @@ export function CustomerDialog({ open, onOpenChange, customer, onSaved }: Custom
       }
       onOpenChange(false);
       if (onSaved) onSaved();
-    } catch (err: any) {
-      console.error('Erro ao salvar cliente:', err);
-      // Normalize error message
-      const message = (err && typeof err === 'object') ? (err.message || (err.error ? String(err.error) : null)) : String(err);
-      const pretty = message || 'Erro desconhecido';
-      alert(`Erro ao salvar cliente: ${pretty}\n\nVerifique o console para mais detalhes.`);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err);
+      console.error('Erro ao salvar cliente:', message);
+      alert(`Erro ao salvar cliente: ${message}\n\nVerifique o console para mais detalhes.`);
     }
   };
 
-  const printReceipt = (receiptData: any) => {
+  // Professional: Define explicit type for receiptData
+  interface ReceiptData {
+    company: {
+      name: string;
+      legalName?: string;
+      cnpj?: string;
+      address?: string;
+      phone?: string;
+    };
+    customer: {
+      name: string;
+      cpf?: string;
+      phone?: string;
+      parkingSlot?: number;
+      plates: string[];
+    };
+    contract: {
+      date: string;
+      value: number;
+      dueDate: string;
+    };
+    payment?: {
+      method: string;
+      value: number;
+      date: string;
+    };
+    operator?: string;
+  }
+
+  const printReceipt = (receiptData: ReceiptData) => {
     const printWindow = window.open('', '_blank');
     if (!printWindow) return;
 

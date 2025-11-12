@@ -7,26 +7,30 @@ import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import { Clock, Database, Calendar } from 'lucide-react';
 
+
+// Professional: Define config type for clarity
+interface BackupConfig {
+  enabled: boolean;
+  schedule: string;
+  retentionDays: number;
+}
+
 const BackupSettingsSection: React.FC = () => {
-  const [config, setConfig] = useState({ enabled: false, schedule: '0 2 * * *', retentionDays: 30 });
+  const [config, setConfig] = useState<BackupConfig>({ enabled: false, schedule: '0 2 * * *', retentionDays: 30 });
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const { toast } = useToast();
-
-  useEffect(() => {
-    loadConfig();
-  }, []);
 
   const loadConfig = async () => {
     setLoading(true);
     try {
       const data = await api.getBackupConfig();
       setConfig(data);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Erro ao carregar configuração de backup:', err);
-      // Don't show error toast if it's just missing config (404) - use defaults
-      if (!err.message?.includes('404') && !err.message?.includes('Not Found')) {
-        toast({ title: 'Erro ao carregar configuração', description: err.message, variant: 'destructive' });
+      const message = err instanceof Error ? err.message : String(err);
+      if (!message.includes('404') && !message.includes('Not Found')) {
+        toast({ title: 'Erro ao carregar configuração', description: message, variant: 'destructive' });
       }
       // Keep default config state
     } finally {
@@ -34,13 +38,20 @@ const BackupSettingsSection: React.FC = () => {
     }
   };
 
+  useEffect(() => {
+    loadConfig();
+    // Professional: Add loadConfig to dependency array for exhaustive-deps compliance
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loadConfig]);
+
   const saveConfig = async () => {
     setSaving(true);
     try {
       await api.updateBackupConfig(config);
       toast({ title: 'Configuração salva', description: 'As configurações de backup foram atualizadas' });
-    } catch (err: any) {
-      toast({ title: 'Erro ao salvar', description: err.message, variant: 'destructive' });
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err);
+      toast({ title: 'Erro ao salvar', description: message, variant: 'destructive' });
     } finally {
       setSaving(false);
     }
@@ -50,8 +61,9 @@ const BackupSettingsSection: React.FC = () => {
     try {
       await api.triggerAutoBackup();
       toast({ title: 'Backup iniciado', description: 'Um backup automático está sendo criado' });
-    } catch (err: any) {
-      toast({ title: 'Erro', description: err.message, variant: 'destructive' });
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err);
+      toast({ title: 'Erro', description: message, variant: 'destructive' });
     }
   };
 

@@ -12,18 +12,39 @@ import { ptBR } from 'date-fns/locale';
 import { PaymentMethod } from '@/contexts/ParkingContext';
 import { Printer, Calculator } from 'lucide-react';
 
+// Professional: Define explicit types for vehicle, rate, and receiptData
+interface Vehicle {
+  plate: string;
+  vehicleType: string;
+  entryDate: string;
+  entryTime: string;
+}
+
+interface Rate {
+  rateType: string;
+}
+
+interface ReceiptData {
+  receiptType: 'individual_reembolso' | 'simple';
+  clientName?: string | null;
+  clientCpf?: string | null;
+  notes?: string | null;
+}
+
+interface CompanyConfig {
+  name: string;
+  cnpj: string;
+  address?: string;
+}
+
 interface ExitConfirmationDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  vehicle: any;
-  rate: any;
+  vehicle: Vehicle | null;
+  rate: Rate | null;
   calculatedValue: number;
-  onConfirm: (paymentMethod: PaymentMethod, receiptData?: any) => void;
-  companyConfig?: {
-    name: string;
-    cnpj: string;
-    address?: string;
-  };
+  onConfirm: (paymentMethod: PaymentMethod, receiptData?: ReceiptData | null) => void;
+  companyConfig?: CompanyConfig;
   operatorName?: string;
 }
 
@@ -115,12 +136,14 @@ export const ExitConfirmationDialog = ({
   };
 
   const handlePrint = async () => {
-    const receiptData = receiptType !== 'none' ? {
-      receiptType: receiptType === 'reimbursement' ? 'individual_reembolso' : 'simple',
-      clientName: receiptType === 'reimbursement' ? clientName : null,
-      clientCpf: receiptType === 'reimbursement' ? clientCpf : null,
-      notes: receiptType === 'reimbursement' ? notes : null,
-    } : null;
+    const receiptData: ReceiptData | null = receiptType !== 'none'
+      ? {
+          receiptType: receiptType === 'reimbursement' ? 'individual_reembolso' : 'simple',
+          clientName: receiptType === 'reimbursement' ? clientName : null,
+          clientCpf: receiptType === 'reimbursement' ? clientCpf : null,
+          notes: receiptType === 'reimbursement' ? notes : null,
+        }
+      : null;
 
     window.print();
     onConfirm(paymentMethod, receiptData);
@@ -356,7 +379,7 @@ export const ExitConfirmationDialog = ({
           {/* Receipt Options */}
           <div className="space-y-3 p-4 border rounded-lg bg-muted/20">
             <Label className="text-base font-semibold">Emitir recibo:</Label>
-            <RadioGroup value={receiptType} onValueChange={(v) => setReceiptType(v as any)}>
+            <RadioGroup value={receiptType} onValueChange={(v) => setReceiptType(v as 'none' | 'simple' | 'reimbursement')}>
               <div className="flex items-center space-x-2">
                 <RadioGroupItem value="none" id="none" />
                 <Label htmlFor="none" className="font-normal cursor-pointer">

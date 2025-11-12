@@ -70,10 +70,17 @@ export const PaymentDialog = ({ open, onOpenChange, customer, onSaved }: Payment
         const data = await res.json();
         setTemplate(data);
         
-        // Initialize custom field values
+        // Professional: Use explicit type for custom fields
+        type CustomField = {
+          name: string;
+          label: string;
+          type: string;
+          required: boolean;
+          defaultValue: string;
+        };
         const initialValues: Record<string, string> = {};
-        if (data.customFields) {
-          data.customFields.forEach((field: any) => {
+        if (Array.isArray(data.customFields)) {
+          (data.customFields as CustomField[]).forEach((field) => {
             initialValues[field.name] = field.defaultValue || '';
           });
         }
@@ -81,8 +88,9 @@ export const PaymentDialog = ({ open, onOpenChange, customer, onSaved }: Payment
         initialValues.referenceMonth = format(new Date(), 'MMMM/yyyy', { locale: ptBR });
         setCustomFieldValues(initialValues);
       }
-    } catch (err) {
-      console.error('Error fetching template:', err);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err);
+      console.error('Error fetching template:', message);
     }
   };
 

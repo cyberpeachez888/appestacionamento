@@ -74,7 +74,13 @@ export const ReceiptDialog = ({ open, onOpenChange }: ReceiptDialogProps) => {
         // Initialize custom field values
         const initialValues: Record<string, string> = {};
         if (data.customFields) {
-          data.customFields.forEach((field: any) => {
+          data.customFields.forEach((field: {
+            name: string;
+            label: string;
+            type: string;
+            required: boolean;
+            defaultValue: string;
+          }) => {
             initialValues[field.name] = field.defaultValue || '';
           });
         }

@@ -74,10 +74,11 @@ export function VehicleTypeSelect({ value, onValueChange, placeholder = "Selecio
       onValueChange(newType.name);
       setDialogOpen(false);
       setNewTypeName('');
-    } catch (err: any) {
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
       toast({
         title: 'Erro ao criar tipo',
-        description: err.message || 'Tente novamente',
+        description: message || 'Tente novamente',
         variant: 'destructive',
       });
     } finally {

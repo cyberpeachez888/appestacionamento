@@ -43,7 +43,16 @@ export const ChangePasswordDialog = ({
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [validation, setValidation] = useState<PasswordValidation | null>(null);
-  const [passwordRequirements, setPasswordRequirements] = useState<any>(null);
+  // Professional: Define explicit type for password requirements
+  interface PasswordRequirements {
+    minLength: number;
+    requireUppercase: boolean;
+    requireLowercase: boolean;
+    requireDigit: boolean;
+    requireSpecialChar: boolean;
+    passwordHistoryLimit: number;
+  }
+  const [passwordRequirements, setPasswordRequirements] = useState<PasswordRequirements | null>(null);
 
   useEffect(() => {
     if (open) {
@@ -73,9 +82,18 @@ export const ChangePasswordDialog = ({
   const fetchPasswordRequirements = async () => {
     try {
       const data = await api.getPasswordRequirements();
-      setPasswordRequirements(data);
-    } catch (err) {
-      console.error('Error fetching password requirements:', err);
+      // Map API response to PasswordRequirements type
+      setPasswordRequirements({
+        minLength: data.minLength,
+        requireUppercase: data.requireUppercase,
+        requireLowercase: data.requireLowercase,
+        requireDigit: data.requireNumbers ?? false,
+        requireSpecialChar: data.requireSpecialChars ?? false,
+        passwordHistoryLimit: 5, // Default value if not present in API response
+      });
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err);
+      console.error('Error fetching password requirements:', message);
     }
   };
 
@@ -83,8 +101,9 @@ export const ChangePasswordDialog = ({
     try {
       const data = await api.validatePasswordStrength(password);
       setValidation(data);
-    } catch (err) {
-      console.error('Error validating password:', err);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err);
+      console.error('Error validating password:', message);
     }
   };
 
@@ -137,12 +156,13 @@ export const ChangePasswordDialog = ({
       if (onSuccess) {
         onSuccess();
       }
-    } catch (err: any) {
-      console.error('Error changing password:', err);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err);
+      console.error('Error changing password:', message);
       toast({
         variant: 'destructive',
         title: 'Erro',
-        description: err.message || 'Erro ao alterar senha'
+        description: message || 'Erro ao alterar senha'
       });
     } finally {
       setLoading(false);

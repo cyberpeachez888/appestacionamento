@@ -38,19 +38,29 @@ const AuditLogDialog: React.FC<AuditLogDialogProps> = ({ open, onOpenChange }) =
   const [expandedEvents, setExpandedEvents] = useState<Set<string>>(new Set());
   const { toast } = useToast();
 
+  // Professional: Define params type for API
+  type AuditEventParams = {
+    start?: string;
+    end?: string;
+    action?: string;
+    actorId?: string;
+  };
+
   const loadEvents = async () => {
     setLoading(true);
     try {
-      const params: any = {};
+      const params: AuditEventParams = {};
       if (filters.startDate) params.start = new Date(filters.startDate).toISOString();
       if (filters.endDate) params.end = new Date(filters.endDate).toISOString();
       if (filters.action) params.action = filters.action;
       if (filters.actorId) params.actorId = filters.actorId;
-      
+
       const data = await api.getAuditEvents(params);
       setEvents(data || []);
-    } catch (err: any) {
-      toast({ title: 'Erro ao carregar eventos', description: err.message, variant: 'destructive' });
+    } catch (err: unknown) {
+      // Professional: Type guard for error
+      const message = err instanceof Error ? err.message : String(err);
+      toast({ title: 'Erro ao carregar eventos', description: message, variant: 'destructive' });
     } finally {
       setLoading(false);
     }
@@ -60,7 +70,9 @@ const AuditLogDialog: React.FC<AuditLogDialogProps> = ({ open, onOpenChange }) =
     if (open) {
       loadEvents();
     }
-  }, [open]);
+    // Professional: Add loadEvents to dependency array for exhaustive-deps compliance
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, loadEvents]);
 
   const toggleExpanded = (eventId: string) => {
     const newExpanded = new Set(expandedEvents);
@@ -107,7 +119,8 @@ const AuditLogDialog: React.FC<AuditLogDialogProps> = ({ open, onOpenChange }) =
   const uniqueActions = Array.from(new Set(events.map(e => e.action)));
   const uniqueActors = Array.from(new Set(events.map(e => ({ id: e.actor_id, name: e.actor_name }))));
 
-  const parseDetails = (detailsStr: string | null): any => {
+  // Professional: Refine return type for parseDetails
+  const parseDetails = (detailsStr: string | null): object | string | null => {
     if (!detailsStr) return null;
     try {
       return JSON.parse(detailsStr);

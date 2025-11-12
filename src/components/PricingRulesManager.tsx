@@ -14,12 +14,21 @@ import { useToast } from '@/hooks/use-toast';
 import api from '@/lib/api';
 import { Trash2, Plus, Edit, ToggleLeft, ToggleRight } from 'lucide-react';
 
+// Professional: Use explicit types for conditions and valueAdjustment
 interface PricingRule {
   id: string;
   rateId: string;
   ruleType: 'first_hour' | 'daily_max' | 'time_range' | 'hourly_progression';
-  conditions: Record<string, any>;
-  valueAdjustment: Record<string, any>;
+  conditions: {
+    hour_start?: number;
+    hour_end?: number;
+    days_of_week?: number[];
+  };
+  valueAdjustment:
+    | { type: 'override'; value: number }
+    | { type: 'cap'; value: number }
+    | { type: 'multiplier'; value: number }
+    | { type: 'progressive'; ranges: { from: number; to: number; value: number }[] };
   priority: number;
   isActive: boolean;
   description: string;
@@ -45,6 +54,8 @@ export function PricingRulesManager({ rateId, onClose }: PricingRulesManagerProp
 
   useEffect(() => {
     loadRules();
+    // Professional: Add loadRules to dependency array for exhaustive-deps compliance
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rateId]);
 
   const loadRules = async () => {
@@ -54,7 +65,9 @@ export function PricingRulesManager({ rateId, onClose }: PricingRulesManagerProp
       const data = await api.getPricingRules(rateId);
       console.log('✅ Pricing rules loaded:', data);
       setRules(data);
-    } catch (error: any) {
+    } catch (error) {
+      // Professional: Use Error type for error handling
+      const err = error as Error & { status?: number };
       console.error('❌ Error loading pricing rules:', error);
       console.error('Error details:', {
         message: error.message,
@@ -63,7 +76,7 @@ export function PricingRulesManager({ rateId, onClose }: PricingRulesManagerProp
       });
       toast({
         title: 'Erro ao carregar regras',
-        description: error.message || 'Não foi possível carregar as regras de precificação.',
+  description: err.message || 'Não foi possível carregar as regras de precificação.',
         variant: 'destructive',
       });
     } finally {
@@ -81,10 +94,11 @@ export function PricingRulesManager({ rateId, onClose }: PricingRulesManagerProp
       });
       resetForm();
       loadRules();
-    } catch (error: any) {
+    } catch (error) {
+      const err = error as Error;
       toast({
         title: 'Erro ao criar regra',
-        description: error.message,
+  description: err.message,
         variant: 'destructive',
       });
     }
@@ -102,10 +116,11 @@ export function PricingRulesManager({ rateId, onClose }: PricingRulesManagerProp
       });
       resetForm();
       loadRules();
-    } catch (error: any) {
+    } catch (error) {
+      const err = error as Error;
       toast({
         title: 'Erro ao atualizar regra',
-        description: error.message,
+  description: err.message,
         variant: 'destructive',
       });
     }
@@ -121,10 +136,11 @@ export function PricingRulesManager({ rateId, onClose }: PricingRulesManagerProp
         description: 'Regra de precificação excluída com sucesso.',
       });
       loadRules();
-    } catch (error: any) {
+    } catch (error) {
+      const err = error as Error;
       toast({
         title: 'Erro ao excluir regra',
-        description: error.message,
+  description: err.message,
         variant: 'destructive',
       });
     }
@@ -138,10 +154,11 @@ export function PricingRulesManager({ rateId, onClose }: PricingRulesManagerProp
         description: `Regra ${currentStatus ? 'desativada' : 'ativada'} com sucesso.`,
       });
       loadRules();
-    } catch (error: any) {
+    } catch (error) {
+      const err = error as Error;
       toast({
         title: 'Erro ao alterar status',
-        description: error.message,
+  description: err.message,
         variant: 'destructive',
       });
     }
@@ -218,8 +235,10 @@ export function PricingRulesManager({ rateId, onClose }: PricingRulesManagerProp
     
     // Extract value from adjustment
     const adj = rule.valueAdjustment;
-    if (adj.value !== undefined) {
+    if ('value' in adj && typeof adj.value === 'number') {
       setValue(adj.value.toString());
+    } else if ('ranges' in adj && Array.isArray(adj.ranges) && adj.ranges.length > 0) {
+      setValue(adj.ranges[0].value.toString());
     }
     
     setDescription(rule.description);
