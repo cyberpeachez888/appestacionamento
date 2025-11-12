@@ -72,6 +72,8 @@ const weekDayOptions = [
   { value: 6, label: 'Sábado' },
 ];
 
+const DEFAULT_EXTRA_RATE_OPTION = '__CURRENT_RATE__';
+
 function normalize(value?: string | null) {
   if (!value) return '';
   return value
@@ -658,16 +660,21 @@ export function RateAdvancedSettings({
                 <div>
                   <Label>Tarifa para hora extra (opcional)</Label>
                   <Select
-                    value={windowForm.extraRateId}
+                    value={windowForm.extraRateId || DEFAULT_EXTRA_RATE_OPTION}
                     onValueChange={(value) =>
-                      setWindowForm((prev) => ({ ...prev, extraRateId: value }))
+                      setWindowForm((prev) => ({
+                        ...prev,
+                        extraRateId: value === DEFAULT_EXTRA_RATE_OPTION ? '' : value,
+                      }))
                     }
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Selecione uma tarifa de hora/fração" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Padrão (hora/fração atual)</SelectItem>
+                      <SelectItem value={DEFAULT_EXTRA_RATE_OPTION}>
+                        Padrão (hora/fração atual)
+                      </SelectItem>
                       {hourlyRates.map((r) => (
                         <SelectItem key={r.id} value={r.id}>
                           {r.vehicleType} - {r.rateType} (R$ {r.value.toFixed(2)}/{r.unit})
