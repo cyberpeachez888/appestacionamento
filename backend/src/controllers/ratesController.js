@@ -13,6 +13,7 @@ function toFrontendFormat(rate) {
     value: rate.value,
     unit: rate.unit,
     courtesyMinutes: rate.courtesy_minutes || 0,
+    config: rate.config || {},
   };
 }
 
@@ -33,6 +34,7 @@ export default {
       value: req.body.value,
       unit: req.body.unit,
       courtesy_minutes: req.body.courtesyMinutes || req.body.courtesy_minutes || 0,
+      config: req.body.config || {},
     };
     const { data, error } = await supabase.from(table).insert(payload).select().single();
     if (error) return res.status(500).json({ error });
@@ -55,6 +57,7 @@ export default {
     if (req.body.value !== undefined) payload.value = req.body.value;
     if (req.body.unit) payload.unit = req.body.unit;
     if (req.body.courtesyMinutes !== undefined) payload.courtesy_minutes = req.body.courtesyMinutes;
+    if (req.body.config !== undefined) payload.config = req.body.config;
 
     const { data, error } = await supabase
       .from(table)

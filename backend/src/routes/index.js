@@ -8,6 +8,8 @@ import monthlyReportsController from '../controllers/monthlyReportsController.js
 import vehiclesController from '../controllers/vehiclesController.js';
 import receiptsController from '../controllers/receiptsController.js';
 import * as vehicleTypesController from '../controllers/vehicleTypesController.js';
+import rateTimeWindowsController from '../controllers/rateTimeWindowsController.js';
+import rateThresholdsController from '../controllers/rateThresholdsController.js';
 import maintenanceController, { seedAdmin } from '../controllers/maintenanceController.js';
 import authController from '../controllers/authController.js';
 import auditController from '../controllers/auditController.js';
@@ -46,6 +48,48 @@ router.get('/rates', ratesController.list);
 router.post('/rates', requireAuth, requirePermission('manageRates'), ratesController.create);
 router.put('/rates/:id', requireAuth, requirePermission('manageRates'), ratesController.update);
 router.delete('/rates/:id', requireAuth, requirePermission('manageRates'), ratesController.remove);
+
+// Advanced rate windows (diária, pernoite, semanal, etc.)
+router.get('/rates/:rateId/windows', requireAuth, rateTimeWindowsController.list);
+router.post(
+  '/rates/:rateId/windows',
+  requireAuth,
+  requirePermission('manageRates'),
+  rateTimeWindowsController.create
+);
+router.put(
+  '/rate-windows/:id',
+  requireAuth,
+  requirePermission('manageRates'),
+  rateTimeWindowsController.update
+);
+router.delete(
+  '/rate-windows/:id',
+  requireAuth,
+  requirePermission('manageRates'),
+  rateTimeWindowsController.remove
+);
+
+// Rate thresholds / caps (ex.: sugerir diária)
+router.get('/rates/:rateId/thresholds', requireAuth, rateThresholdsController.list);
+router.post(
+  '/rates/:rateId/thresholds',
+  requireAuth,
+  requirePermission('manageRates'),
+  rateThresholdsController.create
+);
+router.put(
+  '/rate-thresholds/:id',
+  requireAuth,
+  requirePermission('manageRates'),
+  rateThresholdsController.update
+);
+router.delete(
+  '/rate-thresholds/:id',
+  requireAuth,
+  requirePermission('manageRates'),
+  rateThresholdsController.remove
+);
 
 // Vehicles (Entrada/Saída) - gated by openCloseCash for create/update/delete
 router.get('/vehicles', vehiclesController.list);
