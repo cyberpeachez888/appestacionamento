@@ -40,6 +40,7 @@ interface ReceiptTemplate {
   description: string;
   isDefault: boolean;
   isActive: boolean;
+  layout?: any;
 
   // Header
   showLogo: boolean;
@@ -88,9 +89,518 @@ interface ReceiptTemplate {
   // Email/WhatsApp
   emailSubject?: string;
   emailBodyHtml?: string;
+  emailBodyText?: string;
   whatsappMessage?: string;
 
   availableVariables: string[];
+}
+
+const FALLBACK_COMPANY = {
+  name: 'Estacionamento Modelo',
+  legalName: 'Estacionamento Modelo LTDA',
+  cnpj: '12.345.678/0001-90',
+  address: 'Av. Central, 123 - Centro - São Paulo/SP',
+  phone: '(11) 3333-0000',
+};
+
+const MONTH_NAMES = [
+  'Janeiro',
+  'Fevereiro',
+  'Março',
+  'Abril',
+  'Maio',
+  'Junho',
+  'Julho',
+  'Agosto',
+  'Setembro',
+  'Outubro',
+  'Novembro',
+  'Dezembro',
+];
+
+function formatCurrencyBR(value: number | undefined | null) {
+  if (value === undefined || value === null || Number.isNaN(Number(value))) {
+    return 'R$ 0,00';
+  }
+  return Number(value).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+}
+
+function toDate(value: Date | string | undefined | null) {
+  if (!value) return new Date();
+  if (value instanceof Date) return value;
+  return new Date(value);
+}
+
+function formatDateBR(value: Date | string | undefined | null) {
+  return toDate(value).toLocaleDateString('pt-BR');
+}
+
+function formatTimeBR(value: Date | string | undefined | null) {
+  return toDate(value).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+}
+
+function wrapText(text: string, width: number) {
+  if (!text) return [];
+  const words = text.split(/\s+/);
+  const lines: string[] = [];
+  let line = '';
+  words.forEach((word) => {
+    if (!word) return;
+    const tentative = line ? `${line} ${word}` : word;
+    if (tentative.length > width) {
+      if (line) lines.push(line);
+      line = word.length > width ? word.slice(0, width) : word;
+    } else {
+      line = tentative;
+    }
+  });
+  if (line) lines.push(line);
+  return lines;
+}
+
+function getReferenceLabel(date: Date) {
+  return `${MONTH_NAMES[date.getMonth()]}/${date.getFullYear()}`;
+}
+
+function buildSampleData(
+  templateType: string,
+  template: ReceiptTemplate,
+  companyConfig: any | null
+) {
+  const company = companyConfig || FALLBACK_COMPANY;
+  const now = new Date();
+
+  if (templateType === 'monthly_payment') {
+    const dueDate = new Date(now);
+    dueDate.setDate(dueDate.getDate() + 20);
+    const contractStart = new Date(now);
+    contractStart.setMonth(contractStart.getMonth() - 1);
+    const contractEnd = new Date(contractStart);
+    contractEnd.setMonth(contractEnd.getMonth() + 1);
+
+    const sample = {
+      receiptNumber: '000321',
+      issuedAt: now,
+      customer: {
+        name: 'João Henrique Souza',
+        document: 'CPF 123.456.789-00',
+        phone: '(11) 91234-5678',
+        email: 'joao.souza@email.com',
+      },
+      vehicle: {
+        plate: 'ABC-1D23',
+        model: 'SUV',
+        color: 'Prata',
+      },
+      plan: {
+        name: 'Mensalidade Premium 24h',
+        description: 'Acesso 24h, vaga coberta, 1 veículo cadastrado',
+        reference: getReferenceLabel(now),
+      },
+      payment: {
+        method: 'Pix',
+        amount: 420.5,
+        dueDate,
+        paidAt: now,
+        status: 'Pago',
+        transactionId: 'PIX-9F3A2',
+        receivedBy: 'Maria Operadora',
+      },
+      contract: {
+        start: contractStart,
+        end: contractEnd,
+        number: 'CN-2025-083',
+      },
+      slot: 'Vaga 12 - Setor B',
+      notes: 'Tag 0152 liberada. Vaga exclusiva na área coberta.',
+      company,
+      customFieldValues: {
+        referenceMonth: getReferenceLabel(now),
+        contractNumber: 'CN-2025-083',
+        contractStart: formatDateBR(contractStart),
+        contractEnd: formatDateBR(contractEnd),
+        contractPeriod: `${formatDateBR(contractStart)} a ${formatDateBR(contractEnd)}`,
+        parkingSlot: 'Vaga 12 - Setor B',
+        customerName: 'João Henrique Souza',
+        customerDocument: 'CPF 123.456.789-00',
+        customerPhone: '(11) 91234-5678',
+        customerEmail: 'joao.souza@email.com',
+        description: 'Mensalidade do plano premium com vaga coberta e tag de acesso.',
+      },
+    };
+
+    if (Array.isArray(template.customFields)) {
+      template.customFields.forEach((field, index) => {
+        if (!sample.customFieldValues[field.name]) {
+          sample.customFieldValues[field.name] =
+            field.defaultValue || `Valor de exemplo ${index + 1}`;
+        }
+      });
+    }
+
+    return sample;
+  }
+
+  const sample = {
+    receiptNumber: '000145',
+    issuedAt: now,
+    customer: {
+      name: 'Cliente Exemplo',
+      document: 'CPF 000.000.000-00',
+    },
+    vehicle: {
+      plate: 'XYZ-9A88',
+    },
+    payment: {
+      method: 'Dinheiro',
+      amount: 35.9,
+      paidAt: now,
+    },
+    notes: 'Recibo gerado para demonstração.',
+    company,
+    customFieldValues: {},
+  };
+
+  if (Array.isArray(template.customFields)) {
+    template.customFields.forEach((field, index) => {
+      sample.customFieldValues[field.name] =
+        field.defaultValue || `Valor de exemplo ${index + 1}`;
+    });
+  }
+
+  return sample;
+}
+
+function resolveCustomFieldValue(
+  field: ReceiptTemplate['customFields'][number],
+  sample: any
+) {
+  if (!field) return null;
+  const map = sample?.customFieldValues || {};
+  if (map[field.name]) return map[field.name];
+  if (field.defaultValue) return field.defaultValue;
+  return '';
+}
+
+function generateThermalPreview(
+  template: ReceiptTemplate,
+  sample: any,
+  companyConfig: any | null
+) {
+  const width = 32;
+  const company = companyConfig || FALLBACK_COMPANY;
+  const lines: string[] = [];
+  const separator = '-'.repeat(width);
+  const push = (value: string = '') => lines.push(value);
+  const center = (value: string) => {
+    if (!value) return;
+    const trimmed = value.slice(0, width);
+    const padding = Math.floor((width - trimmed.length) / 2);
+    push(`${' '.repeat(Math.max(padding, 0))}${trimmed}`);
+  };
+
+  if (template.showLogo) {
+    center('[ LOGO ]');
+  }
+  if (template.showCompanyName && company?.name) {
+    center(company.name);
+  }
+  if (template.showCompanyDetails) {
+    if (company?.legalName) center(company.legalName);
+    if (company?.cnpj) center(`CNPJ: ${company.cnpj}`);
+    if (company?.address) center(company.address);
+    if (company?.phone) center(`Tel: ${company.phone}`);
+  }
+  if (template.headerText) {
+    wrapText(template.headerText, width).forEach(center);
+  }
+
+  push(separator);
+
+  if (template.showReceiptNumber && sample.receiptNumber) {
+    push(`RECIBO: ${sample.receiptNumber}`);
+  }
+  const baseDate = sample.payment?.paidAt || sample.issuedAt;
+  if (template.showDate) {
+    push(`Data: ${formatDateBR(baseDate)}`);
+  }
+  if (template.showTime) {
+    push(`Hora: ${formatTimeBR(baseDate)}`);
+  }
+  if (template.showPlate && sample.vehicle?.plate) {
+    push(`Placa: ${sample.vehicle.plate}`);
+  }
+  if (template.showVehicleType && sample.vehicle?.model) {
+    push(`Veículo: ${sample.vehicle.model}`);
+  }
+
+  if (template.templateType === 'monthly_payment') {
+    if (sample.plan?.name) {
+      push(`Plano: ${sample.plan.name}`);
+    }
+    if (sample.plan?.reference) {
+      push(`Referência: ${sample.plan.reference}`);
+    }
+    if (sample.contract?.number) {
+      push(`Contrato: ${sample.contract.number}`);
+    }
+    if (sample.payment?.dueDate) {
+      push(`Venc.: ${formatDateBR(sample.payment.dueDate)}`);
+    }
+    if (sample.slot) {
+      push(`Vaga: ${sample.slot}`);
+    }
+  }
+
+  if (template.showValue) {
+    push(`Valor: ${formatCurrencyBR(sample.payment?.amount)}`);
+  }
+  if (template.showPaymentMethod && sample.payment?.method) {
+    push(`Pagamento: ${sample.payment.method}`);
+  }
+  if (template.showOperator && sample.payment?.receivedBy) {
+    push(`Operador: ${sample.payment.receivedBy}`);
+  }
+
+  if (template.customFields?.length) {
+    push(separator);
+    template.customFields.forEach((field) => {
+      const value = resolveCustomFieldValue(field, sample);
+      if (value) {
+        wrapText(`${field.label || field.name}: ${value}`, width).forEach(push);
+      }
+    });
+  }
+
+  if (sample.notes) {
+    push(separator);
+    wrapText(sample.notes, width).forEach(push);
+  }
+
+  if (template.termsAndConditions) {
+    push(separator);
+    wrapText(template.termsAndConditions, width).forEach(push);
+  }
+
+  if (template.footerText) {
+    push(separator);
+    wrapText(template.footerText, width).forEach(center);
+  }
+
+  if (template.showSignatureLine) {
+    push('');
+    push('____________________________');
+    push('Assinatura do Responsável');
+  }
+
+  push('');
+  return lines.join('\n');
+}
+
+function PdfPreview({
+  template,
+  sample,
+  company,
+}: {
+  template: ReceiptTemplate;
+  sample: any;
+  company: any;
+}) {
+  const primaryColor = template.primaryColor || '#000000';
+  const secondaryColor = template.secondaryColor || '#666666';
+  const fontFamily = template.fontFamily || 'Arial, sans-serif';
+  const companyInfo = company || FALLBACK_COMPANY;
+  const customFields = (template.customFields || [])
+    .map((field) => ({
+      label: field.label || field.name,
+      value: resolveCustomFieldValue(field, sample),
+    }))
+    .filter((field) => field.value);
+
+  return (
+    <div className="flex flex-col gap-4">
+      <div
+        className="mx-auto w-full max-w-[480px] rounded-lg border bg-white shadow"
+        style={{ fontFamily }}
+      >
+        <div
+          className="border-b p-6 text-center"
+          style={{ borderColor: `${secondaryColor}55` }}
+        >
+          {template.showLogo && (
+            <div className="mb-3 flex justify-center">
+              <div className="flex h-14 w-14 items-center justify-center rounded-full border border-dashed border-muted-foreground/60 text-[10px] text-muted-foreground">
+                LOGO
+              </div>
+            </div>
+          )}
+
+          {template.showCompanyName && (
+            <h2 className="text-xl font-bold" style={{ color: primaryColor }}>
+              {companyInfo?.name || FALLBACK_COMPANY.name}
+            </h2>
+          )}
+
+          {template.showCompanyDetails && (
+            <div className="mt-2 text-xs text-muted-foreground">
+              {companyInfo?.legalName && <p>{companyInfo.legalName}</p>}
+              {companyInfo?.cnpj && <p>CNPJ: {companyInfo.cnpj}</p>}
+              {companyInfo?.address && <p>{companyInfo.address}</p>}
+              {companyInfo?.phone && <p>Tel: {companyInfo.phone}</p>}
+            </div>
+          )}
+
+          {template.headerText && (
+            <p className="mt-3 text-sm text-muted-foreground">{template.headerText}</p>
+          )}
+        </div>
+
+        <div className="space-y-6 p-6 text-sm text-slate-700">
+          <section className="grid grid-cols-2 gap-4">
+            {template.showReceiptNumber && sample.receiptNumber && (
+              <div>
+                <p className="text-xs uppercase text-muted-foreground">Recibo</p>
+                <p className="font-medium">#{sample.receiptNumber}</p>
+              </div>
+            )}
+            <div>
+              <p className="text-xs uppercase text-muted-foreground">Data de Emissão</p>
+              <p className="font-medium">
+                {formatDateBR(sample.payment?.paidAt || sample.issuedAt)}
+              </p>
+              {template.showTime && (
+                <p className="text-xs text-muted-foreground">
+                  {formatTimeBR(sample.payment?.paidAt || sample.issuedAt)}
+                </p>
+              )}
+            </div>
+            {template.templateType === 'monthly_payment' && sample.payment?.dueDate && (
+              <div>
+                <p className="text-xs uppercase text-muted-foreground">Vencimento</p>
+                <p className="font-medium">{formatDateBR(sample.payment.dueDate)}</p>
+              </div>
+            )}
+            {template.showPaymentMethod && (
+              <div>
+                <p className="text-xs uppercase text-muted-foreground">Pagamento</p>
+                <p className="font-medium">{sample.payment?.method}</p>
+              </div>
+            )}
+            {template.showPlate && sample.vehicle?.plate && (
+              <div>
+                <p className="text-xs uppercase text-muted-foreground">Placa</p>
+                <p className="font-medium">{sample.vehicle.plate}</p>
+              </div>
+            )}
+            {template.templateType === 'monthly_payment' && sample.slot && (
+              <div>
+                <p className="text-xs uppercase text-muted-foreground">Vaga</p>
+                <p className="font-medium">{sample.slot}</p>
+              </div>
+            )}
+          </section>
+
+          <section className="rounded-lg border border-dashed border-muted-foreground/40 p-4">
+            <p className="text-xs uppercase text-muted-foreground">Resumo do Pagamento</p>
+            <p className="text-2xl font-semibold" style={{ color: primaryColor }}>
+              {formatCurrencyBR(sample.payment?.amount)}
+            </p>
+            {template.templateType === 'monthly_payment' && sample.plan?.reference && (
+              <p className="text-xs text-muted-foreground">
+                Referência: {sample.plan.reference}
+              </p>
+            )}
+            {template.templateType === 'monthly_payment' && sample.plan?.name && (
+              <p className="text-sm text-muted-foreground">{sample.plan.name}</p>
+            )}
+            {template.showOperator && sample.payment?.receivedBy && (
+              <p className="text-xs text-muted-foreground">
+                Recebido por: {sample.payment.receivedBy}
+              </p>
+            )}
+            {sample.payment?.transactionId && (
+              <p className="text-xs text-muted-foreground">
+                Transação: {sample.payment.transactionId}
+              </p>
+            )}
+          </section>
+
+          <section className="grid gap-3">
+            <div>
+              <p className="text-xs uppercase text-muted-foreground">Cliente</p>
+              <p className="font-medium">{sample.customer?.name}</p>
+              {sample.customer?.document && (
+                <p className="text-xs text-muted-foreground">{sample.customer.document}</p>
+              )}
+              {sample.customer?.phone && (
+                <p className="text-xs text-muted-foreground">{sample.customer.phone}</p>
+              )}
+            </div>
+
+            {template.customFields?.length > 0 && customFields.length > 0 && (
+              <div>
+                <p className="mb-2 text-xs uppercase text-muted-foreground">Informações</p>
+                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                  {customFields.map((field) => (
+                    <div key={field.label} className="rounded bg-muted px-3 py-2 text-xs">
+                      <p className="font-medium text-muted-foreground">{field.label}</p>
+                      <p className="text-slate-700">{field.value}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </section>
+
+          {sample.notes && (
+            <section className="rounded-lg bg-muted/60 p-3 text-xs text-muted-foreground">
+              <p className="font-medium text-slate-600">Observações</p>
+              <p>{sample.notes}</p>
+            </section>
+          )}
+
+          {template.termsAndConditions && (
+            <section className="rounded-lg border border-dashed border-muted-foreground/60 p-3 text-xs text-muted-foreground">
+              <p className="font-medium text-slate-600">Termos e Condições</p>
+              <p>{template.termsAndConditions}</p>
+            </section>
+          )}
+
+          {(template.showQrCode || template.showBarcode) && (
+            <section className="flex flex-col items-center gap-4">
+              {template.showQrCode && (
+                <div className="flex h-28 w-28 items-center justify-center rounded border border-dashed border-muted-foreground/70 text-[10px] text-muted-foreground">
+                  QR CODE
+                </div>
+              )}
+              {template.showBarcode && (
+                <div className="flex h-16 w-full max-w-[320px] items-center justify-center rounded border border-dashed border-muted-foreground/70 text-[10px] text-muted-foreground">
+                  BARRAS ({template.barcodeType || 'CODE128'})
+                </div>
+              )}
+            </section>
+          )}
+
+          {template.showSignatureLine && (
+            <section className="pt-6">
+              <div className="border-t border-dashed border-muted-foreground/60 pt-3 text-center text-xs text-muted-foreground">
+                Assinatura do Responsável
+              </div>
+            </section>
+          )}
+        </div>
+
+        {template.footerText && (
+          <div className="px-6 pb-6 text-center text-xs text-muted-foreground">
+            {template.footerText}
+          </div>
+        )}
+      </div>
+      <p className="text-center text-xs text-muted-foreground">
+        Este preview representa o modelo em PDF enviado por e-mail/WhatsApp ao cliente.
+      </p>
+    </div>
+  );
 }
 
 export default function ModelosRecibos() {
