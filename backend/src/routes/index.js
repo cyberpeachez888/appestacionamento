@@ -25,6 +25,8 @@ import setupController from '../controllers/setupController.js';
 import pricingRulesRoutes from './pricingRules.js';
 import { requireAuth, requireAdmin, requirePermission } from '../middleware/auth.js';
 import { loginLimiter, apiLimiter, strictLimiter } from '../middleware/rateLimiter.js';
+import printerJobsController from '../controllers/printerJobsController.js';
+import { requirePrinterAgent } from '../middleware/printerAgentAuth.js';
 
 const router = express.Router();
 
@@ -309,6 +311,50 @@ router.post(
   requirePermission('manageBackups'),
   backupController.triggerAutoBackup
 );
+
+// Printer jobs queue (Print Agent integration)
+router.get(
+  '/printer-jobs',
+  requireAuth,
+  requirePermission('viewReports'),
+  printerJobsController.list
+);
+router.get(
+  '/printer-jobs/statuses',
+  requireAuth,
+  printerJobsController.statuses
+);
+router.get(
+  '/printer-jobs/:id',
+  requireAuth,
+  requirePermission('viewReports'),
+  printerJobsController.get
+);
+router.post(
+  '/printer-jobs',
+  requireAuth,
+  requirePermission('openCloseCash'),
+  printerJobsController.enqueue
+);
+router.post(
+  '/printer-jobs/:id/cancel',
+  requireAuth,
+  requirePermission('manageCompanyConfig'),
+  printerJobsController.cancel
+);
+
+router.post('/printer-agent/claim', requirePrinterAgent, printerJobsController.claim);
+router.post(
+  '/printer-agent/jobs/:id/printing',
+  requirePrinterAgent,
+  printerJobsController.markPrinting
+);
+router.post(
+  '/printer-agent/jobs/:id/complete',
+  requirePrinterAgent,
+  printerJobsController.complete
+);
+router.post('/printer-agent/jobs/:id/fail', requirePrinterAgent, printerJobsController.fail);
 
 // Pricing Rules (Advanced Time-Based Pricing)
 router.use('/pricing-rules', pricingRulesRoutes);
