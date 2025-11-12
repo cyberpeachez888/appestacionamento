@@ -22,6 +22,18 @@ Your parking management system is feature-complete and ready for production depl
 node -e "console.log(require('crypto').randomBytes(64).toString('hex'))"
 ```
 
+
+### 1.1 Verificação automática das variáveis
+
+Antes de qualquer deploy, rode o comando abaixo na pasta `backend` para garantir que todas as variáveis críticas estão definidas (via `.env` ou variáveis do sistema):
+
+```bash
+cd backend
+npm run verify-env
+```
+
+Se alguma estiver ausente, o script lista o nome; configure na Render antes de continuar.
+
 #### Update backend/.env for production:
 ```env
 NODE_ENV=production

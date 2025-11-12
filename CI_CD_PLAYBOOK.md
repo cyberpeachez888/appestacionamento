@@ -98,3 +98,5 @@ Sempre que um novo deploy entrar em produção:
 
 Esse ciclo garante que o app está operando corretamente e que o rollback será acionado rapidamente se algo der errado.
 
+> Consulte também `OPERATIONS_CHECKLIST.md` para uma lista pronta de validação pós-deploy.
+
