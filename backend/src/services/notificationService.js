@@ -47,15 +47,21 @@ export async function sendEmail({ to, subject, html, text, templateName, templat
   try {
     // Get SMTP configuration
     const config = await getEmailConfig();
-    const { host, port, secure, from_email, from_name } = config.config;
-    const { user, pass } = config.credentials || {};
+    const smtpConfig = config?.config || {};
+    const credentials = config?.credentials || {};
+    const { host, port, secure, from_email, from_name } = smtpConfig;
+    const { user, pass } = credentials;
+    
+    if (!host || !from_email) {
+      throw new Error('Configuração SMTP incompleta');
+    }
     
     if (!user || !pass) {
       throw new Error('SMTP credentials not configured');
     }
     
     // Create transporter
-    const transporter = nodemailer.createTransporter({
+    const transporter = nodemailer.createTransport({
       host,
       port,
       secure,
@@ -353,22 +359,33 @@ export async function queueNotification({ type, recipient, message, subject, tem
 
 export async function processNotificationQueue() {
   // Get pending notifications scheduled for now or earlier
+  const now = new Date().toISOString();
   const { data: notifications, error } = await supabase
     .from('notification_queue')
     .select('*')
     .eq('status', 'pending')
-    .lte('scheduled_for', new Date().toISOString())
-    .lt('retry_count', supabase.raw('max_retries'))
+    .lte('scheduled_for', now)
     .limit(100);
   
-  if (error || !notifications || notifications.length === 0) {
+  if (error) {
+    console.error('Notification queue fetch error:', error);
+    return { processed: 0, succeeded: 0, failed: 0 };
+  }
+
+  const queue = (notifications || []).filter(item => {
+    const maxRetries = Number(item.max_retries) || 3;
+    const retryCount = Number(item.retry_count) || 0;
+    return retryCount < maxRetries;
+  });
+
+  if (queue.length === 0) {
     return { processed: 0, succeeded: 0, failed: 0 };
   }
   
   let succeeded = 0;
   let failed = 0;
   
-  for (const notification of notifications) {
+  for (const notification of queue) {
     // Mark as processing
     await supabase
       .from('notification_queue')
@@ -416,8 +433,10 @@ export async function processNotificationQueue() {
       console.error(`Notification ${notification.id} failed:`, error);
       
       // Increment retry count or mark as failed
-      const newRetryCount = notification.retry_count + 1;
-      const newStatus = newRetryCount >= notification.max_retries ? 'failed' : 'pending';
+      const previousRetryCount = Number(notification.retry_count) || 0;
+      const newRetryCount = previousRetryCount + 1;
+      const maxRetries = Number(notification.max_retries) || 3;
+      const newStatus = newRetryCount >= maxRetries ? 'failed' : 'pending';
       
       await supabase
         .from('notification_queue')
@@ -433,7 +452,7 @@ export async function processNotificationQueue() {
     }
   }
   
-  return { processed: notifications.length, succeeded, failed };
+  return { processed: queue.length, succeeded, failed };
 }
 
 // ===== LOGGING =====
@@ -469,7 +488,7 @@ export async function sendReceipt({ email, phone, receiptData, companyData }) {
   // Send email if configured and email provided
   if (email) {
     try {
-      const emailConfig = await getSMTPConfig();
+      const emailConfig = await getEmailConfig();
       if (emailConfig?.is_enabled) {
         await sendEmail({
           to: email,

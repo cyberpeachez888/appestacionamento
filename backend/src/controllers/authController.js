@@ -316,14 +316,11 @@ export default {
         console.error('Erro ao enviar email:', emailError);
       }
       
-      console.log(`📧 Token de recuperação gerado para: ${email}`);
-      console.log(`🔗 Link: ${resetUrl}`);
+      console.log(`📧 Solicitação de recuperação de senha registrada para: ${email}`);
       
       res.json({ 
         message: 'Se o email existir, você receberá instruções para redefinir sua senha.',
-        success: true,
-        // ⚠️ REMOVER DEPOIS DO TESTE
-        _dev: { resetUrl, token: resetToken }
+        success: true
       });
       
     } catch (err) {

@@ -97,7 +97,9 @@ router.delete('/vehicleTypes/:id', requireAuth, requirePermission('manageVehicle
 
 // Maintenance (development tools) - keep unprotected or protect with admin depending on environment
 router.post('/maintenance/backfill-ticket-payments', requireAuth, requireAdmin, maintenanceController.backfillTicketPayments);
-router.post('/maintenance/seed-admin', seedAdmin); // intentionally open for initial bootstrap
+if (process.env.SEED_ADMIN_SECRET) {
+  router.post('/maintenance/seed-admin', seedAdmin);
+}
 
 // Auth - with rate limiting for security
 router.post('/auth/login', loginLimiter, authController.login);
@@ -141,6 +143,7 @@ router.get('/business-hours', requireAuth, businessHoursController.list);
 router.get('/business-hours/status/current', requireAuth, businessHoursController.getCurrentStatus);
 router.get('/business-hours/:id', requireAuth, businessHoursController.getById);
 router.put('/business-hours/:id', requireAuth, requirePermission('manageCompanyConfig'), businessHoursController.update);
+router.get('/operational-status', requireAuth, businessHoursController.getCurrentStatus);
 
 router.get('/holidays', requireAuth, holidaysController.list);
 router.get('/holidays/upcoming', requireAuth, holidaysController.getUpcoming);
@@ -197,7 +200,7 @@ router.post('/report-schedules/:id/test', requireAuth, requirePermission('manage
 router.get('/integrations/configs', requireAuth, requireAdmin, integrationsController.getConfigs);
 router.get('/integrations/configs/:name', requireAuth, requireAdmin, integrationsController.getConfig);
 router.put('/integrations/configs/:name', requireAuth, requireAdmin, integrationsController.updateConfig);
-router.post('/integrations/test', requireAuth, requireAdmin, integrationsController.testIntegration);
+router.post('/integrations/test-:type', requireAuth, requireAdmin, integrationsController.testIntegration);
 
 // Email templates
 router.get('/integrations/email-templates', requireAuth, requireAdmin, integrationsController.getEmailTemplates);
@@ -219,29 +222,6 @@ router.put('/integrations/webhooks/:id', requireAuth, requireAdmin, integrations
 router.delete('/integrations/webhooks/:id', requireAuth, requireAdmin, integrationsController.deleteWebhook);
 router.post('/integrations/webhooks/:id/test', requireAuth, requireAdmin, integrationsController.testWebhook);
 router.get('/integrations/webhook-logs', requireAuth, requireAdmin, integrationsController.getWebhookLogs);
-
-// Analytics Dashboard Settings
-router.get('/dashboard-settings', requireAuth, dashboardSettingsController.getSettings);
-router.put('/dashboard-settings', requireAuth, requirePermission('viewReports'), dashboardSettingsController.updateSettings);
-
-// Dashboard Widgets
-router.get('/dashboard-widgets', requireAuth, dashboardSettingsController.listWidgets);
-router.post('/dashboard-widgets', requireAuth, requirePermission('viewReports'), dashboardSettingsController.createWidget);
-router.put('/dashboard-widgets/:id', requireAuth, requirePermission('viewReports'), dashboardSettingsController.updateWidget);
-router.delete('/dashboard-widgets/:id', requireAuth, requirePermission('viewReports'), dashboardSettingsController.deleteWidget);
-router.post('/dashboard-widgets/reorder', requireAuth, requirePermission('viewReports'), dashboardSettingsController.reorderWidgets);
-
-// KPI Thresholds
-router.get('/kpi-thresholds', requireAuth, dashboardSettingsController.listThresholds);
-router.post('/kpi-thresholds', requireAuth, requirePermission('viewReports'), dashboardSettingsController.createThreshold);
-router.put('/kpi-thresholds/:id', requireAuth, requirePermission('viewReports'), dashboardSettingsController.updateThreshold);
-router.delete('/kpi-thresholds/:id', requireAuth, requirePermission('viewReports'), dashboardSettingsController.deleteThreshold);
-
-// Report Schedules
-router.get('/report-schedules', requireAuth, dashboardSettingsController.listSchedules);
-router.post('/report-schedules', requireAuth, requirePermission('viewReports'), dashboardSettingsController.createSchedule);
-router.put('/report-schedules/:id', requireAuth, requirePermission('viewReports'), dashboardSettingsController.updateSchedule);
-router.delete('/report-schedules/:id', requireAuth, requirePermission('viewReports'), dashboardSettingsController.deleteSchedule);
 
 // KPI Alert History
 router.get('/kpi-alerts', requireAuth, dashboardSettingsController.listAlerts);

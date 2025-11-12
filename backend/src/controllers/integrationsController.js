@@ -94,27 +94,30 @@ export default {
   async testIntegration(req, res) {
     try {
       const { type } = req.params;
-      const { recipient } = req.body;
+      const body = req.body || {};
+      const recipient = body.recipient || body.to;
       
       if (!recipient) {
         return res.status(400).json({ error: 'Recipient is required for testing' });
       }
       
       let result;
+      const normalizedType = (type || '').toLowerCase();
+      const effectiveType = normalizedType === 'email' ? 'smtp' : normalizedType;
       
-      if (type === 'smtp') {
+      if (effectiveType === 'smtp') {
         result = await sendEmail({
           to: recipient,
           subject: 'Test Email - AppEstacionamento',
           html: '<h1>Test Email</h1><p>This is a test email from AppEstacionamento.</p>',
           text: 'Test Email - This is a test email from AppEstacionamento.'
         });
-      } else if (type === 'sms') {
+      } else if (effectiveType === 'sms') {
         result = await sendSMS({
           to: recipient,
           message: 'Test SMS from AppEstacionamento'
         });
-      } else if (type === 'whatsapp') {
+      } else if (effectiveType === 'whatsapp') {
         result = await sendWhatsApp({
           to: recipient,
           message: 'Test WhatsApp message from AppEstacionamento'

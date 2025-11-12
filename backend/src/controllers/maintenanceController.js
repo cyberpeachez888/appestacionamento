@@ -1,5 +1,7 @@
 import { supabase } from '../config/supabase.js';
 import { v4 as uuid } from 'uuid';
+import bcrypt from 'bcryptjs';
+import { validatePassword } from '../services/securityService.js';
 
 // Maintenance utilities (non-production endpoints) for data backfill
 export default {
@@ -42,34 +44,56 @@ export default {
 // Non-default export for seeding admin in development fallback
 export async function seedAdmin(req, res) {
   try {
-    const ADMIN_LOGIN = 'admin';
-    const ADMIN_PASSWORD = 'admin123';
-    // Check exists
-    const { data: existing } = await supabase.from('users').select('*').eq('login', ADMIN_LOGIN).limit(1);
+    const envSecret = process.env.SEED_ADMIN_SECRET;
+    if (!envSecret) {
+      return res.status(404).json({ error: 'Função indisponível' });
+    }
+
+    const { secret, login, password, name, email, permissions } = req.body || {};
+    const requestSecret = secret || req.headers['x-seed-secret'];
+
+    if (requestSecret !== envSecret) {
+      return res.status(403).json({ error: 'Acesso negado' });
+    }
+
+    if (!password) {
+      return res.status(400).json({ error: 'Senha obrigatória' });
+    }
+
+    const passwordCheck = validatePassword(password);
+    if (!passwordCheck.valid) {
+      return res.status(400).json({ error: 'Senha não atende aos requisitos de segurança', errors: passwordCheck.errors });
+    }
+
+    const adminLogin = (login || 'admin').trim();
+    if (!adminLogin) {
+      return res.status(400).json({ error: 'Login obrigatório' });
+    }
+
+    const { data: existing } = await supabase.from('users').select('*').eq('login', adminLogin).limit(1);
     if (existing && existing.length) {
-      return res.json({ status: 'exists', login: ADMIN_LOGIN });
+      return res.json({ status: 'exists', login: adminLogin });
     }
-    // Hash password (fallback environment may not have bcrypt here; use pre-hash if bcrypt missing)
-    let password_hash;
-    try {
-      const bcrypt = await import('bcryptjs');
-      password_hash = await bcrypt.default.hash(ADMIN_PASSWORD, 10);
-    } catch {
-      // Extremely simplified fallback (DO NOT use in production)
-      password_hash = `plain:${ADMIN_PASSWORD}`;
-    }
+
+    const password_hash = await bcrypt.hash(password, 12);
+    const now = new Date().toISOString();
+
     const adminUser = {
       id: 'admin-seed-' + Date.now(),
-      name: 'Administrador',
-      email: 'admin@example.com',
-      login: ADMIN_LOGIN,
+      name: name || 'Administrador',
+      email: email || 'admin@example.com',
+      login: adminLogin,
       password_hash,
       role: 'admin',
-      permissions: {},
-      created_at: new Date().toISOString()
+      permissions: permissions && typeof permissions === 'object' ? permissions : {},
+      must_change_password: true,
+      is_first_login: true,
+      created_at: now,
+      password_changed_at: now,
+      password_expires_at: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString()
     };
     await supabase.from('users').insert(adminUser);
-    res.json({ status: 'created', login: ADMIN_LOGIN, password: ADMIN_PASSWORD });
+    res.json({ status: 'created', login: adminLogin });
   } catch (err) {
     res.status(500).json({ error: err.message || err });
   }

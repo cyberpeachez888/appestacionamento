@@ -97,9 +97,16 @@ export function listBackups() {
 }
 
 export function getBackupPath(id) {
-  const p = path.join(BACKUP_DIR, id);
-  if (!fs.existsSync(p)) return null;
-  return p;
+  if (!id) return null;
+  const dir = path.resolve(BACKUP_DIR);
+  const filename = path.basename(id);
+  if (filename !== id) return null;
+  if (!filename.endsWith('.json')) return null;
+  const resolved = path.resolve(dir, filename);
+  const relative = path.relative(dir, resolved);
+  if (relative.startsWith('..') || path.isAbsolute(relative)) return null;
+  if (!fs.existsSync(resolved)) return null;
+  return resolved;
 }
 
 export function deleteBackup(id) {
