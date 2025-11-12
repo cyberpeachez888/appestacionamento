@@ -2,6 +2,8 @@
 
 Use esta lista sempre que fizer um deploy em produção para garantir que o sistema está estável.
 
+> Para um lembrete rápido no terminal, execute `npm run postdeploy-checklist`.
+
 ---
 
 ## 1. Smoke test geral

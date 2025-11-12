@@ -18,41 +18,121 @@ TheProParkingApp é um sistema profissional de gestão de estacionamento desenvo
 
 ---
 
-## Project info
+## Estrutura do projeto
 
-**URL**: https://lovable.dev/projects/21c797df-ffb2-41a2-8f2b-0897f99d7ffb
+- `src/` – aplicativo React/Vite (frontend)
+- `backend/` – API Express + Supabase
+- `backend/tests/` – suíte Jest (controllers, serviços e rotas críticas)
+- `scripts/` – utilitários de automação (verificação de ambiente, checklist pós-deploy)
+- Documentação operacional em arquivos `.md` na raiz (`CI_CD_PLAYBOOK.md`, `OPERATIONS_CHECKLIST.md`, etc.)
 
-## How can I edit this code?
+---
 
-There are several ways of editing your application.
+## Como rodar localmente
 
-**Use Lovable**
+### Pré-requisitos
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/21c797df-ffb2-41a2-8f2b-0897f99d7ffb) and start prompting.
+- Node.js 20+
+- npm
 
-Changes made via Lovable will be committed automatically to this repo.
+### Passo-a-passo
 
-**Use your preferred IDE**
+- Instale dependências do frontend (root) e backend:
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
-
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
-
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
+```bash
+npm install         # frontend + scripts
+cd backend && npm install
 ```
+
+- Crie o arquivo `backend/.env` usando como referência `backend/scripts/check-env.js`.
+- Inicie os servidores:
+  - Frontend: `npm run dev`
+  - Backend: `npm start --prefix backend`
+- Abra `http://localhost:5173`.
+
+> **Dica:** use `npm run verify-env --prefix backend` antes de subir o backend para checar variáveis obrigatórias.
+
+---
+
+## Scripts úteis
+
+| Comando                                 | Descrição                                                 |
+| --------------------------------------- | --------------------------------------------------------- |
+| `npm run dev`                           | Inicia o frontend em modo desenvolvimento                 |
+| `npm run lint`                          | Executa ESLint em todo o código (frontend)                |
+| `npm run lint --prefix backend`         | Executa ESLint no backend                                 |
+| `npm run format` / `npm run format:fix` | Verifica/aplica formatação Prettier (front + back + docs) |
+| `npm test --prefix backend`             | Roda a suíte Jest do backend                              |
+| `npm run verify-env --prefix backend`   | Garante que variáveis críticas estão definidas            |
+| `npm run postdeploy-checklist`          | Lembra o checklist rápido pós-deploy                      |
+| `npm run build` / `npm run preview`     | Build e preview do frontend                               |
+| `npm start --prefix backend`            | Sobe a API em produção                                    |
+
+---
+
+## Variáveis de ambiente (backend)
+
+Use o script `npm run verify-env --prefix backend` para garantir que itens abaixo estão presentes:
+
+| Variável                       | Descrição                                                    |
+| ------------------------------ | ------------------------------------------------------------ |
+| `SUPABASE_URL`, `SUPABASE_KEY` | Projeto Supabase                                             |
+| `JWT_SECRET`                   | Chave para assinar tokens                                    |
+| `FRONTEND_URL`                 | URL do frontend (para links de recuperação)                  |
+| `SEED_ADMIN_SECRET`            | Token para seed protegido (`maintenance/seed-admin`)         |
+| `SMTP_*`                       | Credenciais para envio de e-mail (opcional, mas recomendado) |
+
+Outros parâmetros (SMS/WhatsApp, backups automáticos) também são lidos do Supabase (`integration_configs`).
+
+---
+
+## Testes
+
+- `npm test --prefix backend` – cobre autenticação, backup, fila de notificações e health.
+- Expanda criando novos testes em `backend/tests/`.
+- Planeje testes end-to-end para o frontend conforme necessidade (ex.: Playwright ou Cypress).
+
+---
+
+## CI/CD e Deploy
+
+- GitHub Actions (`.github/workflows/backend-ci.yml`) roda `npm ci`, `npm run lint` e `npm test --prefix backend` a cada push/PR nos branches `main`/`develop`.
+- Defina os secrets do workflow (Supabase, JWT, SMTP, etc.) para que o pipeline execute sem falhas.
+- Deploy automático sugerido:
+  - **Backend**: Render (Node 20) – Start `npm start --prefix backend`.
+  - **Frontend**: Vercel – Build `npm run build`.
+- Consulte `CI_CD_PLAYBOOK.md` para configurar pipeline, secrets, deploy e rollback.
+
+---
+
+## Operação e monitoramento
+
+- Execute `npm run postdeploy-checklist` após cada deploy para lembrar validações essenciais.
+- Checklist detalhado em `OPERATIONS_CHECKLIST.md`.
+- Configure monitoramento/uptime: endpoint `/health`.
+- Mantenha logs do backend (Render/PM2) e métricas de notificações/backups.
+
+---
+
+## Referências adicionais
+
+- `PRODUCTION_DEPLOYMENT_GUIDE.md` – passo-a-passo completo de implantação.
+- `CI_CD_PLAYBOOK.md` – integrações GitHub Actions, Render, Vercel.
+- `OPERATIONS_CHECKLIST.md` – rotina pós-deploy.
+- `SECURITY_*`, `PRICING_*`, `BACKUP_*` – históricos de ajustes e playbooks específicos.
+
+---
+
+## Integração com Lovable (opcional)
+
+O projeto foi originalmente criado no Lovable. Você ainda pode:
+
+- Abrir o [Lovable Project](https://lovable.dev/projects/21c797df-ffb2-41a2-8f2b-0897f99d7ffb) e trabalhar por prompts.
+- Editar arquivos diretamente no GitHub ou em qualquer IDE local.
+
+Commits feitos em qualquer uma das plataformas serão refletidos no repositório principal.
+
+````
 
 **Edit a file directly in GitHub**
 
@@ -105,7 +185,7 @@ VALUES (
 	'admin',
 	'{}'::jsonb
 );
-```
+````
 
 Alternatively, you can use the `/users` endpoint once you have any admin available.
 

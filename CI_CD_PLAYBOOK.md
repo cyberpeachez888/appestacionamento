@@ -10,7 +10,7 @@ Siga as seções na ordem apresentada.
 ### 1.1. Workflow do GitHub Actions
 
 - Arquivo: `.github/workflows/backend-ci.yml`
-- Inspira a executar `npm test` dentro da pasta `backend` em cada `push` ou `pull_request` nos branches `main` e `develop`.
+- Executa `npm ci`, `npm run lint --prefix backend` e `npm test --prefix backend` para cada `push`/`pull_request` nos branches `main` e `develop`.
 
 ### 1.2. Variáveis de Ambiente (Secrets)
 
@@ -102,12 +102,13 @@ Crie cada segredo no repositório GitHub (`Settings` → `Secrets and variables`
 
 Sempre que um novo deploy entrar em produção:
 
-1. Validar login e troca de senha.
-2. Gerar um backup manual e baixar o arquivo.
-3. Criar/fechar ticket de veículo e gerar recibo.
-4. Enviar uma notificação (e-mail/SMS) para confirmar credenciais.
-5. Conferir painel de logs e serviço de uptime.
+1. Rodar `npm run postdeploy-checklist` para lembrar as etapas rápidas.
+2. Validar login e troca de senha.
+3. Gerar um backup manual e baixar o arquivo.
+4. Criar/fechar ticket de veículo e gerar recibo.
+5. Enviar uma notificação (e-mail/SMS) para confirmar credenciais.
+6. Conferir painel de logs e serviço de uptime.
 
 Esse ciclo garante que o app está operando corretamente e que o rollback será acionado rapidamente se algo der errado.
 
-> Consulte também `OPERATIONS_CHECKLIST.md` para uma lista pronta de validação pós-deploy.
+> Consulte também `OPERATIONS_CHECKLIST.md` para uma lista detalhada de validação pós-deploy.

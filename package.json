@@ -10,7 +10,8 @@
     "lint": "eslint .",
     "format": "prettier --check \"src/**/*.{ts,tsx,js,jsx,css,pcss,json,md}\" \"backend/src/**/*.js\" \"*.md\"",
     "format:fix": "prettier --write \"src/**/*.{ts,tsx,js,jsx,css,pcss,json,md}\" \"backend/src/**/*.js\" \"*.md\"",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "postdeploy-checklist": "node scripts/postdeploy-reminder.js"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
