@@ -17,7 +17,6 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -37,10 +36,7 @@ interface Rate {
 }
 
 interface ReceiptData {
-  receiptType: 'individual_reembolso' | 'simple';
-  clientName?: string | null;
-  clientCpf?: string | null;
-  notes?: string | null;
+  receiptType: 'simple';
 }
 
 interface CompanyConfig {
@@ -58,6 +54,7 @@ interface ExitConfirmationDialogProps {
   onConfirm: (paymentMethod: PaymentMethod, receiptData?: ReceiptData | null) => void;
   companyConfig?: CompanyConfig;
   operatorName?: string;
+  isMonthlyVehicle?: boolean;
 }
 
 export const ExitConfirmationDialog = ({
@@ -69,6 +66,7 @@ export const ExitConfirmationDialog = ({
   onConfirm,
   companyConfig,
   operatorName = 'Operador',
+  isMonthlyVehicle = false,
 }: ExitConfirmationDialogProps) => {
   const { toast } = useToast();
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('Dinheiro');
@@ -77,10 +75,7 @@ export const ExitConfirmationDialog = ({
   const [showReceipt, setShowReceipt] = useState(false);
 
   // Receipt options
-  const [receiptType, setReceiptType] = useState<'none' | 'simple' | 'reimbursement'>('simple');
-  const [clientName, setClientName] = useState('');
-  const [clientCpf, setClientCpf] = useState('');
-  const [notes, setNotes] = useState('');
+  const [receiptType, setReceiptType] = useState<'none' | 'simple'>('simple');
 
   // Edição da hora de entrada
   const [isEditingEntryTime, setIsEditingEntryTime] = useState(false);
@@ -97,12 +92,9 @@ export const ExitConfirmationDialog = ({
       setAmountPaid('');
       setChange(0);
       setShowReceipt(false);
-      setReceiptType('simple');
-      setClientName('');
-      setClientCpf('');
-      setNotes('');
+      setReceiptType(isMonthlyVehicle ? 'none' : 'simple');
     }
-  }, [open]);
+  }, [open, isMonthlyVehicle]);
 
   useEffect(() => {
     // Calculate change for cash payments
@@ -133,33 +125,25 @@ export const ExitConfirmationDialog = ({
     }
 
     // Validate reimbursement receipt fields
-    if (receiptType === 'reimbursement') {
-      if (!clientName.trim()) {
-        toast({
-          title: 'Nome obrigatório',
-          description: 'Por favor, informe o nome do solicitante',
-          variant: 'destructive',
-        });
-        return;
-      }
+    if (isMonthlyVehicle || receiptType === 'none') {
+      onConfirm(paymentMethod, null);
+      onOpenChange(false);
+      return;
     }
 
     setShowReceipt(true);
   };
 
   const handlePrint = async () => {
-    const receiptData: ReceiptData | null =
-      receiptType !== 'none'
-        ? {
-            receiptType: receiptType === 'reimbursement' ? 'individual_reembolso' : 'simple',
-            clientName: receiptType === 'reimbursement' ? clientName : null,
-            clientCpf: receiptType === 'reimbursement' ? clientCpf : null,
-            notes: receiptType === 'reimbursement' ? notes : null,
-          }
-        : null;
-
-    window.print();
-    onConfirm(paymentMethod, receiptData);
+    if (receiptType === 'simple') {
+      const receiptData: ReceiptData = {
+        receiptType: 'simple',
+      };
+      window.print();
+      onConfirm(paymentMethod, receiptData);
+    } else {
+      onConfirm(paymentMethod, null);
+    }
     onOpenChange(false);
   };
 
@@ -186,9 +170,7 @@ export const ExitConfirmationDialog = ({
               {companyConfig?.address && (
                 <p className="text-xs text-muted-foreground">{companyConfig.address}</p>
               )}
-              <p className="text-lg font-semibold mt-2">
-                {receiptType === 'reimbursement' ? 'RECIBO DE REEMBOLSO' : 'COMPROVANTE DE SAÍDA'}
-              </p>
+              <p className="text-lg font-semibold mt-2">COMPROVANTE DE SAÍDA</p>
             </div>
 
             {/* Vehicle Info */}
@@ -251,29 +233,6 @@ export const ExitConfirmationDialog = ({
               )}
             </div>
 
-            {/* Reimbursement Info */}
-            {receiptType === 'reimbursement' && (
-              <div className="space-y-2 border-t pt-3 bg-muted/30 p-3 rounded">
-                <h3 className="font-semibold text-sm">DADOS PARA REEMBOLSO</h3>
-                <div className="flex justify-between">
-                  <span className="font-medium">Solicitante:</span>
-                  <span>{clientName}</span>
-                </div>
-                {clientCpf && (
-                  <div className="flex justify-between">
-                    <span className="font-medium">CPF:</span>
-                    <span>{clientCpf}</span>
-                  </div>
-                )}
-                {notes && (
-                  <div className="mt-2">
-                    <span className="font-medium">Observações:</span>
-                    <p className="text-sm mt-1">{notes}</p>
-                  </div>
-                )}
-              </div>
-            )}
-
             {/* Footer */}
             <div className="text-center text-sm text-muted-foreground border-t pt-3">
               <p>Operador: {operatorName}</p>
@@ -289,14 +248,10 @@ export const ExitConfirmationDialog = ({
               Voltar
             </Button>
             <Button onClick={handlePrint}>
-              {receiptType === 'none' ? (
-                'Confirmar'
-              ) : (
-                <>
-                  <Printer className="h-4 w-4 mr-2" />
-                  Imprimir e Confirmar
-                </>
-              )}
+              <>
+                <Printer className="h-4 w-4 mr-2" />
+                Imprimir e Confirmar
+              </>
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -358,119 +313,83 @@ export const ExitConfirmationDialog = ({
             </div>
           </div>
 
-          {/* Payment Method */}
-          <div>
-            <Label htmlFor="paymentMethod">Forma de Pagamento *</Label>
-            <Select
-              value={paymentMethod}
-              onValueChange={(v) => setPaymentMethod(v as PaymentMethod)}
-            >
-              <SelectTrigger id="paymentMethod">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="Dinheiro">Dinheiro</SelectItem>
-                <SelectItem value="Pix">Pix</SelectItem>
-                <SelectItem value="Cartão Débito">Cartão Débito</SelectItem>
-                <SelectItem value="Cartão Crédito">Cartão Crédito</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Cash Payment Calculator */}
-          {paymentMethod === 'Dinheiro' && (
-            <div className="space-y-3 p-4 border rounded-lg bg-background">
-              <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-                <Calculator className="h-4 w-4" />
-                Calculadora de Troco
-              </div>
+          {!isMonthlyVehicle && (
+            <>
+              {/* Payment Method */}
               <div>
-                <Label htmlFor="amountPaid">Valor Recebido *</Label>
-                <Input
-                  id="amountPaid"
-                  type="number"
-                  step="0.01"
-                  placeholder="0.00"
-                  value={amountPaid}
-                  onChange={(e) => setAmountPaid(e.target.value)}
-                  className="text-lg"
-                />
+                <Label htmlFor="paymentMethod">Forma de Pagamento *</Label>
+                <Select
+                  value={paymentMethod}
+                  onValueChange={(v) => setPaymentMethod(v as PaymentMethod)}
+                >
+                  <SelectTrigger id="paymentMethod">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Dinheiro">Dinheiro</SelectItem>
+                    <SelectItem value="Pix">Pix</SelectItem>
+                    <SelectItem value="Cartão Débito">Cartão Débito</SelectItem>
+                    <SelectItem value="Cartão Crédito">Cartão Crédito</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
-              {amountPaid && (
-                <div className="flex justify-between items-center p-3 bg-muted/50 rounded">
-                  <span className="font-medium">Troco:</span>
-                  <span className="text-xl font-bold text-success">R$ {change.toFixed(2)}</span>
+
+              {/* Cash Payment Calculator */}
+              {paymentMethod === 'Dinheiro' && (
+                <div className="space-y-3 p-4 border rounded-lg bg-background">
+                  <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+                    <Calculator className="h-4 w-4" />
+                    Calculadora de Troco
+                  </div>
+                  <div>
+                    <Label htmlFor="amountPaid">Valor Recebido *</Label>
+                    <Input
+                      id="amountPaid"
+                      type="number"
+                      step="0.01"
+                      placeholder="0.00"
+                      value={amountPaid}
+                      onChange={(e) => setAmountPaid(e.target.value)}
+                      className="text-lg"
+                    />
+                  </div>
+                  {amountPaid && (
+                    <div className="flex justify-between items-center p-3 bg-muted/50 rounded">
+                      <span className="font-medium">Troco:</span>
+                      <span className="text-xl font-bold text-success">R$ {change.toFixed(2)}</span>
+                    </div>
+                  )}
                 </div>
               )}
-            </div>
+            </>
           )}
 
           {/* Receipt Options */}
           <div className="space-y-3 p-4 border rounded-lg bg-muted/20">
-            <Label className="text-base font-semibold">Emitir recibo:</Label>
-            <RadioGroup
-              value={receiptType}
-              onValueChange={(v) => setReceiptType(v as 'none' | 'simple' | 'reimbursement')}
-            >
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="none" id="none" />
-                <Label htmlFor="none" className="font-normal cursor-pointer">
-                  Não emitir
-                </Label>
+            <Label className="text-base font-semibold">Emitir ticket de saída:</Label>
+            {isMonthlyVehicle ? (
+              <div className="rounded bg-muted px-3 py-2 text-sm text-muted-foreground">
+                Clientes mensalistas não necessitam de ticket na saída. Um recibo será emitido no dia
+                do pagamento.
               </div>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="simple" id="simple" />
-                <Label htmlFor="simple" className="font-normal cursor-pointer">
-                  Recibo simples (padrão)
-                </Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="reimbursement" id="reimbursement" />
-                <Label htmlFor="reimbursement" className="font-normal cursor-pointer">
-                  Recibo de reembolso
-                </Label>
-              </div>
-            </RadioGroup>
-
-            {/* Reimbursement Fields */}
-            {receiptType === 'reimbursement' && (
-              <div className="space-y-3 mt-4 pt-4 border-t">
-                <div>
-                  <Label htmlFor="clientName">
-                    Nome do Solicitante <span className="text-destructive">*</span>
+            ) : (
+              <RadioGroup
+                value={receiptType}
+                onValueChange={(v) => setReceiptType(v as 'none' | 'simple')}
+              >
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="none" id="none" />
+                  <Label htmlFor="none" className="font-normal cursor-pointer">
+                    Não emitir
                   </Label>
-                  <Input
-                    id="clientName"
-                    value={clientName}
-                    onChange={(e) => setClientName(e.target.value)}
-                    placeholder="Nome completo"
-                    required
-                  />
                 </div>
-                <div>
-                  <Label htmlFor="clientCpf">CPF (opcional)</Label>
-                  <Input
-                    id="clientCpf"
-                    value={clientCpf}
-                    onChange={(e) => setClientCpf(e.target.value)}
-                    placeholder="000.000.000-00"
-                    maxLength={14}
-                  />
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="simple" id="simple" />
+                  <Label htmlFor="simple" className="font-normal cursor-pointer">
+                    Imprimir ticket de saída
+                  </Label>
                 </div>
-                <div>
-                  <Label htmlFor="notes">Observações</Label>
-                  <Textarea
-                    id="notes"
-                    value={notes}
-                    onChange={(e) => setNotes(e.target.value)}
-                    placeholder="Ex: Viagem a trabalho, Entrega de mercadorias..."
-                    rows={3}
-                  />
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Informações adicionais para fins de reembolso corporativo
-                  </p>
-                </div>
-              </div>
+              </RadioGroup>
             )}
           </div>
         </div>
@@ -480,12 +399,12 @@ export const ExitConfirmationDialog = ({
             Cancelar
           </Button>
           <Button onClick={handleConfirmAndPrint}>
-            {receiptType === 'none' ? (
+            {isMonthlyVehicle || receiptType === 'none' ? (
               'Confirmar'
             ) : (
               <>
                 <Printer className="h-4 w-4 mr-2" />
-                Confirmar & Imprimir
+                Gerar pré-visualização
               </>
             )}
           </Button>

@@ -12,11 +12,11 @@ import {
 } from 'lucide-react';
 import { VehicleDialog } from '@/components/VehicleDialog';
 import { ExitConfirmationDialog } from '@/components/ExitConfirmationDialog';
+import { ReimbursementReceiptDialog } from '@/components/ReimbursementReceiptDialog';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useToast } from '@/hooks/use-toast';
 import { PaymentMethod } from '@/contexts/ParkingContext';
-import { useNavigate } from 'react-router-dom';
 import { useParking } from '@/contexts/ParkingContext';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -53,8 +53,7 @@ export default function Operacional() {
     }
   };
   const { toast } = useToast();
-  const navigate = useNavigate();
-  const { cashIsOpen, cashSession, companyConfig } = useParking();
+  const { cashIsOpen, cashSession, companyConfig, monthlyCustomers } = useParking();
   const { user, hasPermission, token } = useAuth();
   const [vehicles, setVehicles] = useState<any[]>([]);
   const [rates, setRates] = useState<any[]>([]);
@@ -63,6 +62,9 @@ export default function Operacional() {
   const [exitDialogOpen, setExitDialogOpen] = useState(false);
   const [selectedVehicle, setSelectedVehicle] = useState<any>();
   const [exitingVehicle, setExitingVehicle] = useState<any>();
+  const [exitingVehicleIsMonthly, setExitingVehicleIsMonthly] = useState(false);
+  const [reimbursementDialogOpen, setReimbursementDialogOpen] = useState(false);
+  const [reimbursementVehicle, setReimbursementVehicle] = useState<any>();
   // companyConfig vem do contexto
   const [currentTime, setCurrentTime] = useState(new Date());
 
@@ -141,7 +143,11 @@ export default function Operacional() {
   const handleFinishExit = (vehicle: any) => {
     console.log('Clicou em finalizar saída', vehicle);
     if (!hasPermission('openCloseCash')) return;
+    const isMonthly = monthlyCustomers.some((customer) =>
+      customer.plates.some((plate) => plate.toUpperCase() === vehicle.plate.toUpperCase())
+    );
     setExitingVehicle(vehicle);
+    setExitingVehicleIsMonthly(isMonthly);
     setExitDialogOpen(true);
   };
 
@@ -156,7 +162,8 @@ export default function Operacional() {
     const rate = rates.find((r) => r.id === exitingVehicle.rateId);
     if (!rate) return;
 
-    const totalValue = calculateRateValue(exitingVehicle, rate, now);
+    const baseValue = calculateRateValue(exitingVehicle, rate, now);
+    const totalValue = exitingVehicleIsMonthly ? 0 : baseValue;
 
     // Log do token para diagnóstico
     console.log('Token usado na saída:', token);
@@ -203,6 +210,45 @@ export default function Operacional() {
       toast({
         title: 'Erro ao registrar saída',
         description: 'Tente novamente',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleOpenReimbursement = (vehicle: any) => {
+    setReimbursementVehicle(vehicle);
+    setReimbursementDialogOpen(true);
+  };
+
+  const handleReimbursementSubmit = async (payload: {
+    clientName: string;
+    clientCpf?: string;
+    notes?: string;
+  }) => {
+    if (!reimbursementVehicle) return;
+
+    try {
+      await fetch(`${API_URL}/receipts`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ticketId: reimbursementVehicle.id,
+          receiptType: 'individual_reembolso',
+          clientName: payload.clientName,
+          clientCpf: payload.clientCpf,
+          notes: payload.notes,
+        }),
+      });
+
+      toast({
+        title: 'Recibo de reembolso gerado',
+        description: `Solicitante: ${payload.clientName}`,
+      });
+    } catch (err) {
+      console.error(err);
+      toast({
+        title: 'Erro ao gerar recibo',
+        description: 'Não foi possível registrar o recibo de reembolso.',
         variant: 'destructive',
       });
     }
@@ -358,8 +404,23 @@ export default function Operacional() {
                     <tr
                       key={vehicle.id}
                       className={index % 2 === 0 ? 'bg-background' : 'bg-muted/20'}
+                      onDoubleClick={() => handleOpenReimbursement(vehicle)}
+                      title="Clique duas vezes para acessar opções de reembolso"
                     >
-                      <td className="px-4 py-3 font-medium">{vehicle.plate}</td>
+                      <td className="px-4 py-3 font-medium">
+                        <div className="flex items-center gap-2">
+                          <span>{vehicle.plate}</span>
+                          {monthlyCustomers.some((customer) =>
+                            customer.plates.some(
+                              (plate) => plate.toUpperCase() === vehicle.plate.toUpperCase()
+                            )
+                          ) && (
+                            <span className="text-[11px] font-semibold uppercase tracking-wide bg-primary/10 text-primary px-2 py-0.5 rounded-full">
+                              Mensalista
+                            </span>
+                          )}
+                        </div>
+                      </td>
                       <td className="px-4 py-3">{vehicle.vehicleType}</td>
                       <td className="px-4 py-3 text-sm">
                         {format(new Date(vehicle.entryDate), 'dd/MM/yyyy', { locale: ptBR })}{' '}
@@ -430,16 +491,33 @@ export default function Operacional() {
         rate={exitingVehicle ? rates.find((r) => r.id === exitingVehicle.rateId) : undefined}
         calculatedValue={
           exitingVehicle && rates.find((r) => r.id === exitingVehicle.rateId)
-            ? calculateRateValue(
-                exitingVehicle,
-                rates.find((r) => r.id === exitingVehicle.rateId),
-                new Date()
-              )
+            ? exitingVehicleIsMonthly
+              ? 0
+              : calculateRateValue(
+                  exitingVehicle,
+                  rates.find((r) => r.id === exitingVehicle.rateId),
+                  new Date()
+                )
             : 0
         }
         onConfirm={handleConfirmExit}
         companyConfig={companyConfig}
         operatorName="Operador do Sistema"
+        isMonthlyVehicle={exitingVehicleIsMonthly}
+      />
+
+      <ReimbursementReceiptDialog
+        open={reimbursementDialogOpen}
+        onOpenChange={(open) => {
+          setReimbursementDialogOpen(open);
+          if (!open) {
+            setReimbursementVehicle(undefined);
+          }
+        }}
+        vehicle={reimbursementVehicle}
+        companyConfig={companyConfig}
+        operatorName="Operador do Sistema"
+        onSubmit={handleReimbursementSubmit}
       />
     </div>
   );
