@@ -32,6 +32,16 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import {
+  FALLBACK_COMPANY,
+  formatCurrencyBR,
+  formatDateBR,
+  formatTimeBR,
+  wrapText,
+  resolveCustomFieldValue,
+  generateThermalPreview,
+  toDate,
+} from '@/lib/receiptPreview';
 
 interface ReceiptTemplate {
   id: string;
@@ -95,14 +105,6 @@ interface ReceiptTemplate {
   availableVariables: string[];
 }
 
-const FALLBACK_COMPANY = {
-  name: 'Estacionamento Modelo',
-  legalName: 'Estacionamento Modelo LTDA',
-  cnpj: '12.345.678/0001-90',
-  address: 'Av. Central, 123 - Centro - São Paulo/SP',
-  phone: '(11) 3333-0000',
-};
-
 const MONTH_NAMES = [
   'Janeiro',
   'Fevereiro',
@@ -117,46 +119,6 @@ const MONTH_NAMES = [
   'Novembro',
   'Dezembro',
 ];
-
-function formatCurrencyBR(value: number | undefined | null) {
-  if (value === undefined || value === null || Number.isNaN(Number(value))) {
-    return 'R$ 0,00';
-  }
-  return Number(value).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-}
-
-function toDate(value: Date | string | undefined | null) {
-  if (!value) return new Date();
-  if (value instanceof Date) return value;
-  return new Date(value);
-}
-
-function formatDateBR(value: Date | string | undefined | null) {
-  return toDate(value).toLocaleDateString('pt-BR');
-}
-
-function formatTimeBR(value: Date | string | undefined | null) {
-  return toDate(value).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-}
-
-function wrapText(text: string, width: number) {
-  if (!text) return [];
-  const words = text.split(/\s+/);
-  const lines: string[] = [];
-  let line = '';
-  words.forEach((word) => {
-    if (!word) return;
-    const tentative = line ? `${line} ${word}` : word;
-    if (tentative.length > width) {
-      if (line) lines.push(line);
-      line = word.length > width ? word.slice(0, width) : word;
-    } else {
-      line = tentative;
-    }
-  });
-  if (line) lines.push(line);
-  return lines;
-}
 
 function getReferenceLabel(date: Date) {
   return `${MONTH_NAMES[date.getMonth()]}/${date.getFullYear()}`;
@@ -269,132 +231,6 @@ function buildSampleData(
   }
 
   return sample;
-}
-
-function resolveCustomFieldValue(
-  field: ReceiptTemplate['customFields'][number],
-  sample: any
-) {
-  if (!field) return null;
-  const map = sample?.customFieldValues || {};
-  if (map[field.name]) return map[field.name];
-  if (field.defaultValue) return field.defaultValue;
-  return '';
-}
-
-function generateThermalPreview(
-  template: ReceiptTemplate,
-  sample: any,
-  companyConfig: any | null
-) {
-  const width = 32;
-  const company = companyConfig || FALLBACK_COMPANY;
-  const lines: string[] = [];
-  const separator = '-'.repeat(width);
-  const push = (value: string = '') => lines.push(value);
-  const center = (value: string) => {
-    if (!value) return;
-    const trimmed = value.slice(0, width);
-    const padding = Math.floor((width - trimmed.length) / 2);
-    push(`${' '.repeat(Math.max(padding, 0))}${trimmed}`);
-  };
-
-  if (template.showLogo) {
-    center('[ LOGO ]');
-  }
-  if (template.showCompanyName && company?.name) {
-    center(company.name);
-  }
-  if (template.showCompanyDetails) {
-    if (company?.legalName) center(company.legalName);
-    if (company?.cnpj) center(`CNPJ: ${company.cnpj}`);
-    if (company?.address) center(company.address);
-    if (company?.phone) center(`Tel: ${company.phone}`);
-  }
-  if (template.headerText) {
-    wrapText(template.headerText, width).forEach(center);
-  }
-
-  push(separator);
-
-  if (template.showReceiptNumber && sample.receiptNumber) {
-    push(`RECIBO: ${sample.receiptNumber}`);
-  }
-  const baseDate = sample.payment?.paidAt || sample.issuedAt;
-  if (template.showDate) {
-    push(`Data: ${formatDateBR(baseDate)}`);
-  }
-  if (template.showTime) {
-    push(`Hora: ${formatTimeBR(baseDate)}`);
-  }
-  if (template.showPlate && sample.vehicle?.plate) {
-    push(`Placa: ${sample.vehicle.plate}`);
-  }
-  if (template.showVehicleType && sample.vehicle?.model) {
-    push(`Veículo: ${sample.vehicle.model}`);
-  }
-
-  if (template.templateType === 'monthly_payment') {
-    if (sample.plan?.name) {
-      push(`Plano: ${sample.plan.name}`);
-    }
-    if (sample.plan?.reference) {
-      push(`Referência: ${sample.plan.reference}`);
-    }
-    if (sample.contract?.number) {
-      push(`Contrato: ${sample.contract.number}`);
-    }
-    if (sample.payment?.dueDate) {
-      push(`Venc.: ${formatDateBR(sample.payment.dueDate)}`);
-    }
-    if (sample.slot) {
-      push(`Vaga: ${sample.slot}`);
-    }
-  }
-
-  if (template.showValue) {
-    push(`Valor: ${formatCurrencyBR(sample.payment?.amount)}`);
-  }
-  if (template.showPaymentMethod && sample.payment?.method) {
-    push(`Pagamento: ${sample.payment.method}`);
-  }
-  if (template.showOperator && sample.payment?.receivedBy) {
-    push(`Operador: ${sample.payment.receivedBy}`);
-  }
-
-  if (template.customFields?.length) {
-    push(separator);
-    template.customFields.forEach((field) => {
-      const value = resolveCustomFieldValue(field, sample);
-      if (value) {
-        wrapText(`${field.label || field.name}: ${value}`, width).forEach(push);
-      }
-    });
-  }
-
-  if (sample.notes) {
-    push(separator);
-    wrapText(sample.notes, width).forEach(push);
-  }
-
-  if (template.termsAndConditions) {
-    push(separator);
-    wrapText(template.termsAndConditions, width).forEach(push);
-  }
-
-  if (template.footerText) {
-    push(separator);
-    wrapText(template.footerText, width).forEach(center);
-  }
-
-  if (template.showSignatureLine) {
-    push('');
-    push('____________________________');
-    push('Assinatura do Responsável');
-  }
-
-  push('');
-  return lines.join('\n');
 }
 
 function PdfPreview({

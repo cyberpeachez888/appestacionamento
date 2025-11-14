@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -22,6 +22,15 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { PaymentMethod } from '@/contexts/ParkingContext';
 import { Printer, Calculator } from 'lucide-react';
+import {
+  generateThermalPreview,
+  FALLBACK_COMPANY,
+  ThermalReceiptTemplate,
+  ThermalSampleData,
+  formatCurrencyBR,
+} from '@/lib/receiptPreview';
+
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
 // Professional: Define explicit types for vehicle, rate, and receiptData
 interface Vehicle {
@@ -43,6 +52,8 @@ interface CompanyConfig {
   name: string;
   cnpj: string;
   address?: string;
+  legalName?: string;
+  phone?: string;
 }
 
 interface ExitConfirmationDialogProps {
@@ -80,6 +91,9 @@ export const ExitConfirmationDialog = ({
   // Edição da hora de entrada
   const [isEditingEntryTime, setIsEditingEntryTime] = useState(false);
   const [editedEntryTime, setEditedEntryTime] = useState(vehicle?.entryTime || '');
+  const [ticketTemplate, setTicketTemplate] = useState<ThermalReceiptTemplate | null>(null);
+  const [thermalPreview, setThermalPreview] = useState('');
+  const [isTemplateLoading, setIsTemplateLoading] = useState(false);
 
   useEffect(() => {
     if (vehicle?.entryTime) setEditedEntryTime(vehicle.entryTime);
@@ -97,8 +111,49 @@ export const ExitConfirmationDialog = ({
   }, [open, isMonthlyVehicle]);
 
   useEffect(() => {
+    if (!open || isMonthlyVehicle) {
+      return;
+    }
+
+    let ignore = false;
+
+    const loadTemplate = async () => {
+      setIsTemplateLoading(true);
+      try {
+        const token = localStorage.getItem('token');
+        const response = await fetch(`${API_URL}/receipt-templates/default/parking_ticket`, {
+          headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+        });
+        if (!ignore) {
+          if (response.ok) {
+            const data = await response.json();
+            setTicketTemplate(data);
+          } else {
+            setTicketTemplate(null);
+          }
+        }
+      } catch (error) {
+        if (!ignore) {
+          console.error('Erro ao carregar template de ticket:', error);
+          setTicketTemplate(null);
+        }
+      } finally {
+        if (!ignore) {
+          setIsTemplateLoading(false);
+        }
+      }
+    };
+
+    loadTemplate();
+
+    return () => {
+      ignore = true;
+    };
+  }, [open, isMonthlyVehicle, API_URL]);
+
+  useEffect(() => {
     // Calculate change for cash payments
-    if (paymentMethod === 'Dinheiro' && amountPaid) {
+    if (!isMonthlyVehicle && paymentMethod === 'Dinheiro' && amountPaid) {
       const paid = parseFloat(amountPaid);
       if (!isNaN(paid)) {
         const changeValue = paid - calculatedValue;
@@ -109,10 +164,102 @@ export const ExitConfirmationDialog = ({
     } else {
       setChange(0);
     }
-  }, [amountPaid, calculatedValue, paymentMethod]);
+  }, [amountPaid, calculatedValue, paymentMethod, isMonthlyVehicle]);
+
+  const ticketSampleData = useMemo<ThermalSampleData | null>(() => {
+    if (!ticketTemplate || !vehicle || isMonthlyVehicle) return null;
+    const now = new Date();
+    const entryDateTimeValue =
+      vehicle.entryDate && (isEditingEntryTime ? editedEntryTime : vehicle.entryTime)
+        ? new Date(
+            `${vehicle.entryDate}T${
+              isEditingEntryTime ? editedEntryTime : vehicle.entryTime
+            }`
+          )
+        : null;
+    const exitDateTimeValue = now;
+    const durationMinutes =
+      entryDateTimeValue !== null
+        ? Math.max(Math.floor((exitDateTimeValue.getTime() - entryDateTimeValue.getTime()) / 60000), 0)
+        : 0;
+    const durationHours = Math.floor(durationMinutes / 60);
+    const durationRest = durationMinutes % 60;
+
+    const entryDateStr = entryDateTimeValue
+      ? format(entryDateTimeValue, 'dd/MM/yyyy', { locale: ptBR })
+      : '';
+    const entryTimeStr = entryDateTimeValue
+      ? format(entryDateTimeValue, 'HH:mm', { locale: ptBR })
+      : '';
+    const exitDateStr = format(exitDateTimeValue, 'dd/MM/yyyy', { locale: ptBR });
+    const exitTimeStr = format(exitDateTimeValue, 'HH:mm', { locale: ptBR });
+    const durationLabel = `${durationHours}h ${durationRest}min`;
+
+    const derivedValues: Record<string, string> = {
+      entrydate: entryDateStr,
+      entrytime: entryTimeStr,
+      exitdate: exitDateStr,
+      exittime: exitTimeStr,
+      duration: durationLabel,
+      plate: vehicle.plate,
+      paymentmethod: paymentMethod,
+      value: formatCurrencyBR(calculatedValue),
+      operator: operatorName,
+    };
+
+    const customFieldValues: Record<string, string> = {};
+    ticketTemplate.customFields?.forEach((field) => {
+      const normalized = field.name.replace(/[^a-zA-Z]/g, '').toLowerCase();
+      if (normalized && derivedValues[normalized]) {
+        customFieldValues[field.name] = derivedValues[normalized];
+      } else if (field.defaultValue && !customFieldValues[field.name]) {
+        customFieldValues[field.name] = field.defaultValue;
+      }
+    });
+
+    return {
+      receiptNumber: (vehicle.id || '').toString().slice(-6).padStart(6, '0'),
+      issuedAt: now,
+      vehicle: {
+        plate: vehicle.plate,
+        model: vehicle.vehicleType,
+      },
+      rate: rate?.rateType ? { name: rate.rateType } : undefined,
+      payment: {
+        amount: calculatedValue,
+        method: paymentMethod,
+        paidAt: now,
+        receivedBy: operatorName,
+      },
+      customFieldValues,
+    };
+  }, [
+    ticketTemplate,
+    vehicle,
+    rate,
+    calculatedValue,
+    paymentMethod,
+    operatorName,
+    isMonthlyVehicle,
+    editedEntryTime,
+    isEditingEntryTime,
+  ]);
+
+  useEffect(() => {
+    if (!ticketTemplate || !ticketSampleData || isMonthlyVehicle) {
+      setThermalPreview('');
+      return;
+    }
+    const preview = generateThermalPreview(
+      ticketTemplate,
+      ticketSampleData,
+      companyConfig || FALLBACK_COMPANY
+    );
+    setThermalPreview(preview);
+  }, [ticketTemplate, ticketSampleData, companyConfig, isMonthlyVehicle]);
 
   const handleConfirmAndPrint = () => {
-    if (paymentMethod === 'Dinheiro') {
+    if (!isMonthlyVehicle && paymentMethod === 'Dinheiro') {
       const paid = parseFloat(amountPaid);
       if (isNaN(paid) || paid < calculatedValue) {
         toast({
@@ -159,99 +306,34 @@ export const ExitConfirmationDialog = ({
   if (showReceipt) {
     return (
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-md print:shadow-none">
-          <div className="receipt-content space-y-4 p-4">
-            {/* Header */}
-            <div className="text-center border-b pb-4">
-              <h2 className="text-xl font-bold">{companyConfig?.name || 'Estacionamento'}</h2>
-              {companyConfig?.cnpj && (
-                <p className="text-sm text-muted-foreground">CNPJ: {companyConfig.cnpj}</p>
-              )}
-              {companyConfig?.address && (
-                <p className="text-xs text-muted-foreground">{companyConfig.address}</p>
-              )}
-              <p className="text-lg font-semibold mt-2">COMPROVANTE DE SAÍDA</p>
-            </div>
+        <DialogContent className="max-w-lg print:shadow-none space-y-4">
+          <DialogHeader>
+            <DialogTitle>Pré-visualização do Ticket</DialogTitle>
+          </DialogHeader>
 
-            {/* Vehicle Info */}
-            <div className="space-y-2">
-              <div className="flex justify-between">
-                <span className="font-medium">Placa:</span>
-                <span className="font-bold">{vehicle?.plate}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="font-medium">Tipo:</span>
-                <span>{vehicle?.vehicleType}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="font-medium">Tarifa:</span>
-                <span>{rate?.rateType}</span>
-              </div>
+          {isTemplateLoading ? (
+            <div className="rounded border bg-muted/50 p-4 text-sm text-muted-foreground">
+              Carregando template configurado...
             </div>
-
-            {/* Date & Time Info */}
-            <div className="space-y-2 border-t pt-3">
-              <div className="flex justify-between">
-                <span className="font-medium">Entrada:</span>
-                <span>
-                  {vehicle && format(entryDateTime, "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
-                </span>
+          ) : (
+            <div className="space-y-3">
+              <div className="rounded border bg-muted/50 p-4 font-mono text-xs whitespace-pre-wrap leading-relaxed max-h-[520px] overflow-auto">
+                {thermalPreview || 'Preview indisponível para este template.'}
               </div>
-              <div className="flex justify-between">
-                <span className="font-medium">Saída:</span>
-                <span>{format(exitDate, "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="font-medium">Permanência:</span>
-                <span>
-                  {hours}h {minutes}min
-                </span>
-              </div>
-            </div>
-
-            {/* Payment Info */}
-            <div className="space-y-2 border-t pt-3">
-              <div className="flex justify-between text-lg">
-                <span className="font-bold">VALOR TOTAL:</span>
-                <span className="font-bold">R$ {calculatedValue.toFixed(2)}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="font-medium">Forma de Pagamento:</span>
-                <span>{paymentMethod}</span>
-              </div>
-              {paymentMethod === 'Dinheiro' && (
-                <>
-                  <div className="flex justify-between">
-                    <span className="font-medium">Valor Pago:</span>
-                    <span>R$ {parseFloat(amountPaid).toFixed(2)}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="font-medium">Troco:</span>
-                    <span>R$ {change.toFixed(2)}</span>
-                  </div>
-                </>
-              )}
-            </div>
-
-            {/* Footer */}
-            <div className="text-center text-sm text-muted-foreground border-t pt-3">
-              <p>Operador: {operatorName}</p>
-              <p className="mt-2">Obrigado pela preferência!</p>
-              <p className="text-xs mt-2">
-                {format(exitDate, "dd/MM/yyyy 'às' HH:mm:ss", { locale: ptBR })}
+              <p className="text-xs text-muted-foreground">
+                Visualização baseada no template de impressora térmica configurado em Modelos de
+                Recibos.
               </p>
             </div>
-          </div>
+          )}
 
           <DialogFooter className="print:hidden">
             <Button variant="outline" onClick={() => setShowReceipt(false)}>
               Voltar
             </Button>
-            <Button onClick={handlePrint}>
-              <>
-                <Printer className="h-4 w-4 mr-2" />
-                Imprimir e Confirmar
-              </>
+            <Button onClick={handlePrint} disabled={isTemplateLoading || !thermalPreview}>
+              <Printer className="h-4 w-4 mr-2" />
+              Imprimir e Confirmar
             </Button>
           </DialogFooter>
         </DialogContent>
