@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Plus, Eye, Copy, Pencil, Trash2, Star } from 'lucide-react';
+import { Plus, Eye, Copy, Pencil, Trash2, Star, Maximize2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import api from '@/lib/api';
 import {
@@ -682,10 +682,27 @@ export default function ModelosRecibos() {
   const fetchTemplates = async () => {
     try {
       const data = await api.getReceiptTemplates(selectedType);
-      setTemplates(Array.isArray(data) ? data : []);
+      const normalized = Array.isArray(data) ? data : [];
+      setTemplates(normalized);
+      setPreviewTemplate((current) => {
+        if (!normalized.length) {
+          return null;
+        }
+        if (current) {
+          const existing = normalized.find((template) => template.id === current.id);
+          if (existing) {
+            return existing;
+          }
+        }
+        const preferred =
+          normalized.find((template) => template.templateType !== 'parking_ticket') ||
+          normalized[0];
+        return preferred;
+      });
     } catch (err) {
       console.error('Error fetching templates:', err);
       setTemplates([]); // Set empty array on error
+      setPreviewTemplate(null);
       toast({
         variant: 'destructive',
         title: 'Erro',
@@ -698,6 +715,16 @@ export default function ModelosRecibos() {
     setPreviewTemplate(template);
     setPreviewTab('thermal');
     setPreviewDialogOpen(true);
+  };
+
+  const handleInlinePreviewSelection = (templateId: string) => {
+    if (!templateId) {
+      setPreviewTemplate(null);
+      return;
+    }
+    const collection = Array.isArray(templates) ? templates : [];
+    const template = collection.find((item) => item.id === templateId) || null;
+    setPreviewTemplate(template);
   };
 
   const handleCreate = () => {
@@ -895,7 +922,11 @@ export default function ModelosRecibos() {
               <div
                 key={template.id}
                 className={`bg-card border rounded-lg p-6 hover:shadow-md transition-shadow ${
-                  template.isDefault ? 'border-primary' : ''
+                  template.id === previewTemplate?.id
+                    ? 'border-primary ring-1 ring-primary/30'
+                    : template.isDefault
+                      ? 'border-primary'
+                      : ''
                 }`}
               >
                 <div className="flex items-start justify-between mb-4">
@@ -980,6 +1011,76 @@ export default function ModelosRecibos() {
             ))
           )}
         </div>
+
+        {filteredTemplates.length > 0 && (
+          <section className="mt-12 space-y-6">
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              <div>
+                <h2 className="text-2xl font-semibold">Pré-visualização Rápida</h2>
+                <p className="text-sm text-muted-foreground">
+                  Veja como o comprovante é renderizado antes de aplicar alterações nos modelos.
+                </p>
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                <Select
+                  value={previewTemplate?.id}
+                  onValueChange={handleInlinePreviewSelection}
+                >
+                  <SelectTrigger className="min-w-[240px]">
+                    <SelectValue placeholder="Selecione um template" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {filteredTemplates.map((template) => (
+                      <SelectItem key={template.id} value={template.id}>
+                        {template.templateName} • {getTypeLabel(template.templateType)}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Button
+                  variant="outline"
+                  onClick={() => previewTemplate && handlePreview(previewTemplate)}
+                  disabled={!previewTemplate}
+                >
+                  <Maximize2 className="h-4 w-4 mr-2" />
+                  Abrir em modal
+                </Button>
+              </div>
+            </div>
+
+            {previewTemplate && previewSampleData ? (
+              <Tabs
+                value={previewTab}
+                onValueChange={(value) => setPreviewTab(value as 'thermal' | 'pdf')}
+                className="space-y-4"
+              >
+                <TabsList className="grid w-full max-w-[320px] grid-cols-2">
+                  <TabsTrigger value="thermal">Impressora Térmica</TabsTrigger>
+                  <TabsTrigger value="pdf">Modelo PDF (completo)</TabsTrigger>
+                </TabsList>
+                <TabsContent value="thermal" className="space-y-3">
+                  <div className="rounded border bg-muted/50 p-4 font-mono text-xs whitespace-pre-wrap leading-relaxed max-h-[520px] overflow-auto">
+                    {thermalPreview || 'Preview indisponível para este template.'}
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Simulação textual de um cupom de 58 mm com dados fictícios.
+                  </p>
+                </TabsContent>
+                <TabsContent value="pdf" className="pt-4">
+                  <PdfPreview
+                    template={previewTemplate}
+                    sample={previewSampleData}
+                    company={companyConfig}
+                  />
+                </TabsContent>
+              </Tabs>
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                Selecione um template para visualizar o recibo em tempo real.
+              </p>
+            )}
+          </section>
+        )}
 
         {/* Create/Edit Dialog */}
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
@@ -1390,17 +1491,7 @@ export default function ModelosRecibos() {
           </DialogContent>
         </Dialog>
 
-        <Dialog
-          open={previewDialogOpen}
-          onOpenChange={(open) => {
-            setPreviewDialogOpen(open);
-            if (!open) {
-              setPreviewTemplate(null);
-              setPreviewSampleData(null);
-              setThermalPreview('');
-            }
-          }}
-        >
+        <Dialog open={previewDialogOpen} onOpenChange={setPreviewDialogOpen}>
           <DialogContent className="max-w-5xl w-full max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Preview do Template</DialogTitle>
