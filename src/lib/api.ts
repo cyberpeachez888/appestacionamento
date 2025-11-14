@@ -19,7 +19,14 @@ export interface AuthUser {
 }
 
 // Default to Vite proxy path so browser calls are forwarded to the backend even in Codespaces
-const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
+let apiBase = import.meta.env.VITE_API_URL || '/api';
+if (apiBase.endsWith('/')) {
+  apiBase = apiBase.slice(0, -1);
+}
+if (!apiBase.endsWith('/api')) {
+  apiBase = `${apiBase}/api`;
+}
+const API_BASE_URL = apiBase;
 
 class ApiClient {
   private baseUrl: string;
