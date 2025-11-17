@@ -20,7 +20,7 @@ export default {
       
       // Also fetch completed tickets to ensure we capture all revenue
       // This handles cases where tickets were closed but payments weren't created
-      // Fetch tickets that are either closed OR have an exit_time (completed)
+      // Fetch tickets that have an exit_time (completed), regardless of status
       let ticketsQuery = supabase
         .from('tickets')
         .select('id, exit_time, amount, metadata, status')
@@ -34,56 +34,62 @@ export default {
       const ticketsResp = await ticketsQuery;
       
       if (!ticketsResp.error && ticketsResp.data) {
-        // For each closed ticket, ensure there's a payment record
-        // If not, create one (or include it in the response)
+        // Get all existing payment IDs for tickets to avoid duplicates
+        const existingPaymentIds = new Set(
+          payments
+            .filter((p) => p.target_type === 'ticket')
+            .map((p) => p.target_id)
+        );
+        
+        // For each completed ticket, ensure there's a payment record
         for (const ticket of ticketsResp.data) {
           if (!ticket.amount || ticket.amount <= 0) continue;
           
-          // Check if payment already exists
-          const existingPayment = payments.find(
-            (p) => p.target_type === 'ticket' && p.target_id === ticket.id
-          );
+          // Skip if payment already exists
+          if (existingPaymentIds.has(ticket.id)) continue;
           
-          if (!existingPayment) {
-            // Create payment record for this ticket
-            const paymentDate = ticket.exit_time || new Date().toISOString();
-            const paymentValue = Number(ticket.amount) || 0;
-            const paymentMethod = ticket.metadata?.paymentMethod || 'cash';
-            
-            // Only create if within date range (if specified)
-            if (start || end) {
-              const ticketDate = new Date(paymentDate);
-              if (start && ticketDate < new Date(start)) continue;
-              if (end) {
-                const endDate = new Date(end);
-                endDate.setHours(23, 59, 59, 999);
-                if (ticketDate > endDate) continue;
-              }
+          // Create payment record for this ticket
+          const paymentDate = ticket.exit_time || new Date().toISOString();
+          const paymentValue = Number(ticket.amount) || 0;
+          const paymentMethod = ticket.metadata?.paymentMethod || 'cash';
+          
+          // Only process if within date range (if specified)
+          if (start || end) {
+            const ticketDate = new Date(paymentDate);
+            if (start && ticketDate < new Date(start)) continue;
+            if (end) {
+              const endDate = new Date(end);
+              endDate.setHours(23, 59, 59, 999);
+              if (ticketDate > endDate) continue;
             }
+          }
+          
+          try {
+            // Try to create the payment record in database
+            const newPaymentId = uuid();
+            const insertResult = await supabase.from('payments').insert({
+              id: newPaymentId,
+              target_type: 'ticket',
+              target_id: ticket.id,
+              date: paymentDate,
+              value: paymentValue,
+              method: paymentMethod,
+            });
             
-            try {
-              // Try to create the payment record
-              await supabase.from('payments').insert({
-                id: uuid(),
-                target_type: 'ticket',
-                target_id: ticket.id,
-                date: paymentDate,
-                value: paymentValue,
-                method: paymentMethod,
-              });
-              
-              // Add to payments array for this response
+            // If successful, add to payments array for this response
+            if (!insertResult.error) {
               payments.push({
-                id: uuid(),
+                id: newPaymentId,
                 target_type: 'ticket',
                 target_id: ticket.id,
                 date: paymentDate,
                 value: paymentValue,
                 method: paymentMethod,
               });
-            } catch (paymentErr) {
-              // If creation fails, still include in response for this request
-              console.warn('Failed to create payment for ticket', ticket.id, paymentErr);
+              existingPaymentIds.add(ticket.id); // Mark as added to avoid duplicates
+            } else {
+              // If insert fails (e.g., duplicate), still include in response
+              console.warn('Failed to create payment for ticket', ticket.id, insertResult.error);
               payments.push({
                 id: `temp-${ticket.id}`,
                 target_type: 'ticket',
@@ -93,6 +99,17 @@ export default {
                 method: paymentMethod,
               });
             }
+          } catch (paymentErr) {
+            // If creation fails, still include in response for this request
+            console.warn('Failed to create payment for ticket', ticket.id, paymentErr);
+            payments.push({
+              id: `temp-${ticket.id}`,
+              target_type: 'ticket',
+              target_id: ticket.id,
+              date: paymentDate,
+              value: paymentValue,
+              method: paymentMethod,
+            });
           }
         }
       }
