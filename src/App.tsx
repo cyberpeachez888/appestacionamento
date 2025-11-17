@@ -97,10 +97,13 @@ const SetupGuard: React.FC<{ children: React.ReactNode }> = ({ children }) => {
         
         // If it's an abort error (timeout), log it specifically
         if (error.name === 'AbortError') {
-          console.warn('Setup check request timed out - proceeding without setup check');
+          console.warn('[SetupGuard] Request timed out - proceeding without setup check');
+        } else if (error.message?.includes('CORS') || error.message?.includes('NetworkError')) {
+          console.warn('[SetupGuard] CORS or network error - backend may be hibernating. Proceeding without setup check.');
         }
         
         // Assume setup is not needed if check fails (fail open)
+        // This allows the app to continue even if backend is unavailable
         setNeedsSetup(false);
       } finally {
         setLoading(false);

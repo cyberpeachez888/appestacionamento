@@ -25,12 +25,41 @@ const allowedOrigins = [
   'http://localhost:3000',
   'http://127.0.0.1:5173',
   'http://127.0.0.1:3000',
-  // Vercel deployments
+  // Vercel deployments (production and previews)
+  'https://appestacionamento.vercel.app',
   'https://appestacionamento-f1pr-a3mk2fpyq-cyberpeachezs-projects.vercel.app',
   'https://appestacionamento-v1-4537vs52d-cyberpeachezs-projects.vercel.app',
   // Render backend
   'https://theproparking-backend-1rxk.onrender.com',
 ];
+
+// Middleware to always set CORS headers (even for errors/503)
+app.use((req, res, next) => {
+  const origin = req.headers.origin;
+  
+  // Set CORS headers for all requests
+  if (origin) {
+    // Check if origin should be allowed
+    const isAllowed = 
+      allowedOrigins.includes(origin) ||
+      origin.match(/^https:\/\/appestacionamento.*\.vercel\.app$/) ||
+      origin.match(/^https:\/\/appestacionamento\.vercel\.app$/);
+    
+    if (isAllowed) {
+      res.header('Access-Control-Allow-Origin', origin);
+      res.header('Access-Control-Allow-Credentials', 'true');
+      res.header('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS');
+      res.header('Access-Control-Allow-Headers', 'Content-Type,Authorization');
+    }
+  }
+  
+  // Handle preflight requests
+  if (req.method === 'OPTIONS') {
+    return res.sendStatus(204);
+  }
+  
+  next();
+});
 
 app.use(
   cors({
@@ -43,8 +72,9 @@ app.use(
         return callback(null, true);
       }
 
-      // Allow any Vercel preview deployment
-      if (origin.match(/^https:\/\/appestacionamento.*\.vercel\.app$/)) {
+      // Allow any Vercel deployment (production or preview)
+      if (origin.match(/^https:\/\/appestacionamento.*\.vercel\.app$/) ||
+          origin.match(/^https:\/\/appestacionamento\.vercel\.app$/)) {
         return callback(null, true);
       }
 
