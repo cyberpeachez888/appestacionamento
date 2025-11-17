@@ -25,26 +25,23 @@ export default {
         .from('tickets')
         .select('id, exit_time, amount, metadata, status');
       
-      // Filter for tickets with exit_time (completed tickets)
-      // Use gte with a very old date to effectively get all tickets, then filter in code
-      // Or better: fetch all and filter for exit_time not null
+      // Apply date filters if provided (this helps reduce data fetched)
+      if (start) {
+        ticketsQuery = ticketsQuery.gte('exit_time', start);
+      }
+      if (end) {
+        const endDate = new Date(end);
+        endDate.setHours(23, 59, 59, 999);
+        ticketsQuery = ticketsQuery.lte('exit_time', endDate.toISOString());
+      }
+      
       const allTicketsResp = await ticketsQuery;
       
-      // Filter tickets that have exit_time and match date range
+      // Filter tickets that have exit_time (completed tickets)
+      // This ensures we only process tickets that were actually completed
       let completedTickets = [];
       if (!allTicketsResp.error && allTicketsResp.data) {
-        completedTickets = allTicketsResp.data.filter((ticket) => {
-          if (!ticket.exit_time) return false;
-          
-          const exitDate = new Date(ticket.exit_time);
-          if (start && exitDate < new Date(start)) return false;
-          if (end) {
-            const endDate = new Date(end);
-            endDate.setHours(23, 59, 59, 999);
-            if (exitDate > endDate) return false;
-          }
-          return true;
-        });
+        completedTickets = allTicketsResp.data.filter((ticket) => ticket.exit_time != null);
       }
       
       const ticketsResp = { data: completedTickets, error: null };
