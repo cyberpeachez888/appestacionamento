@@ -72,30 +72,21 @@ const SetupGuard: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     }
 
     const checkSetup = async () => {
-      console.log('[SetupGuard] Starting setup check...', { API_URL });
-      
       // Add timeout to prevent infinite loading
       const timeoutId = setTimeout(() => {
-        console.warn('[SetupGuard] Setup check timeout - assuming setup is not needed');
+        // Silently proceed if timeout - backend may be hibernating
         setNeedsSetup(false);
         setLoading(false);
-      }, 10000); // 10 second timeout
+      }, 15000); // 15 second timeout (gives Render more time to wake up)
 
       try {
         const controller = new AbortController();
-        const timeoutSignal = setTimeout(() => controller.abort(), 8000); // 8 second abort
+        const timeoutSignal = setTimeout(() => controller.abort(), 12000); // 12 second abort
 
         const url = `${API_URL}/setup/check-first-run`;
-        console.log('[SetupGuard] Fetching:', url);
         
         const response = await fetch(url, {
           signal: controller.signal,
-        });
-        
-        console.log('[SetupGuard] Response received:', {
-          status: response.status,
-          statusText: response.statusText,
-          contentType: response.headers.get('content-type'),
         });
         
         clearTimeout(timeoutSignal);
@@ -105,7 +96,7 @@ const SetupGuard: React.FC<{ children: React.ReactNode }> = ({ children }) => {
         const contentType = response.headers.get('content-type');
         if (!contentType || !contentType.includes('application/json')) {
           const text = await response.text();
-          console.error('Non-JSON response received:', text.substring(0, 200));
+          console.warn('[SetupGuard] Non-JSON response - backend may be hibernating');
           throw new Error('Server returned non-JSON response');
         }
         
@@ -113,13 +104,18 @@ const SetupGuard: React.FC<{ children: React.ReactNode }> = ({ children }) => {
         setNeedsSetup(data.needsSetup || false);
       } catch (error: any) {
         clearTimeout(timeoutId);
-        console.error('Error checking setup status:', error);
         
-        // If it's an abort error (timeout), log it specifically
-        if (error.name === 'AbortError') {
-          console.warn('[SetupGuard] Request timed out - proceeding without setup check');
-        } else if (error.message?.includes('CORS') || error.message?.includes('NetworkError')) {
-          console.warn('[SetupGuard] CORS or network error - backend may be hibernating. Proceeding without setup check.');
+        // Silently handle errors - fail open to allow app to continue
+        // This is expected when Render is hibernating or network is slow
+        if (error.name === 'AbortError' || error.message?.includes('aborted')) {
+          // Request was aborted due to timeout - this is normal for hibernating services
+          // No need to log as error, just proceed
+        } else if (error.message?.includes('CORS') || error.message?.includes('NetworkError') || error.message?.includes('Failed to fetch')) {
+          // Network/CORS errors are expected when backend is hibernating
+          // No need to log as error
+        } else {
+          // Only log unexpected errors
+          console.warn('[SetupGuard] Setup check failed, proceeding anyway:', error.message || error);
         }
         
         // Assume setup is not needed if check fails (fail open)
