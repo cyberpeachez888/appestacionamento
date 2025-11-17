@@ -203,6 +203,62 @@ function buildSampleData(
     return sample;
   }
 
+  // For parking_ticket, create separate samples for entry and exit
+  if (templateType === 'parking_ticket') {
+    const entryTime = new Date(now);
+    entryTime.setHours(entryTime.getHours() - 2);
+    const exitTime = new Date(now);
+
+    const entrySample = {
+      receiptNumber: 'ENT-001',
+      issuedAt: entryTime,
+      vehicle: {
+        plate: 'ABC-1234',
+        vehicleType: 'Carro',
+        entryTime: entryTime,
+      },
+      payment: {
+        method: 'Não aplicável',
+        amount: 0,
+        paidAt: entryTime,
+      },
+      operator: 'Operador Exemplo',
+      company,
+      customFieldValues: {},
+    };
+
+    const exitSample = {
+      receiptNumber: 'SAI-001',
+      issuedAt: exitTime,
+      vehicle: {
+        plate: 'ABC-1234',
+        vehicleType: 'Carro',
+        entryTime: entryTime,
+        exitTime: exitTime,
+        duration: '2h 15min',
+      },
+      payment: {
+        method: 'Dinheiro',
+        amount: 15.0,
+        paidAt: exitTime,
+      },
+      operator: 'Operador Exemplo',
+      company,
+      customFieldValues: {},
+    };
+
+    if (Array.isArray(template.customFields)) {
+      template.customFields.forEach((field, index) => {
+        entrySample.customFieldValues[field.name] =
+          field.defaultValue || `Valor de exemplo ${index + 1}`;
+        exitSample.customFieldValues[field.name] =
+          field.defaultValue || `Valor de exemplo ${index + 1}`;
+      });
+    }
+
+    return { entry: entrySample, exit: exitSample };
+  }
+
   const sample = {
     receiptNumber: '000145',
     issuedAt: now,
@@ -452,6 +508,8 @@ export default function ModelosRecibos() {
   const [previewTemplate, setPreviewTemplate] = useState<ReceiptTemplate | null>(null);
   const [previewSampleData, setPreviewSampleData] = useState<any | null>(null);
   const [thermalPreview, setThermalPreview] = useState('');
+  const [thermalPreviewEntry, setThermalPreviewEntry] = useState('');
+  const [thermalPreviewExit, setThermalPreviewExit] = useState('');
   const [companyConfig, setCompanyConfig] = useState<any | null>(null);
   const [previewTab, setPreviewTab] = useState<'thermal' | 'pdf'>('thermal');
 
@@ -507,12 +565,24 @@ export default function ModelosRecibos() {
     if (!previewTemplate) {
       setPreviewSampleData(null);
       setThermalPreview('');
+      setThermalPreviewEntry('');
+      setThermalPreviewExit('');
       return;
     }
 
     const sample = buildSampleData(previewTemplate.templateType, previewTemplate, companyConfig);
     setPreviewSampleData(sample);
-    setThermalPreview(generateThermalPreview(previewTemplate, sample, companyConfig));
+
+    // For parking_ticket, generate separate previews for entry and exit
+    if (previewTemplate.templateType === 'parking_ticket' && sample && typeof sample === 'object' && 'entry' in sample && 'exit' in sample) {
+      setThermalPreviewEntry(generateThermalPreview(previewTemplate, sample.entry, companyConfig));
+      setThermalPreviewExit(generateThermalPreview(previewTemplate, sample.exit, companyConfig));
+      setThermalPreview(''); // Clear single preview
+    } else {
+      setThermalPreview(generateThermalPreview(previewTemplate, sample, companyConfig));
+      setThermalPreviewEntry('');
+      setThermalPreviewExit('');
+    }
   }, [previewTemplate, companyConfig]);
 
   const fetchTemplates = async () => {
@@ -895,12 +965,33 @@ export default function ModelosRecibos() {
                   <TabsTrigger value="pdf">Modelo PDF (completo)</TabsTrigger>
                 </TabsList>
                 <TabsContent value="thermal" className="space-y-3">
-                  <div className="rounded border bg-muted/50 p-4 font-mono text-xs whitespace-pre-wrap leading-relaxed max-h-[520px] overflow-auto">
-                    {thermalPreview || 'Preview indisponível para este template.'}
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    Simulação textual de um cupom de 58 mm com dados fictícios.
-                  </p>
+                  {previewTemplate.templateType === 'parking_ticket' ? (
+                    <div className="space-y-6">
+                      {/* Ticket de Entrada */}
+                      <div className="space-y-2">
+                        <h4 className="text-sm font-semibold text-foreground">Ticket de Entrada</h4>
+                        <div className="rounded border bg-muted/50 p-4 font-mono text-xs whitespace-pre-wrap leading-relaxed max-h-[400px] overflow-auto">
+                          {thermalPreviewEntry || 'Preview indisponível para este template.'}
+                        </div>
+                      </div>
+                      {/* Ticket de Saída */}
+                      <div className="space-y-2">
+                        <h4 className="text-sm font-semibold text-foreground">Ticket de Saída</h4>
+                        <div className="rounded border bg-muted/50 p-4 font-mono text-xs whitespace-pre-wrap leading-relaxed max-h-[400px] overflow-auto">
+                          {thermalPreviewExit || 'Preview indisponível para este template.'}
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="rounded border bg-muted/50 p-4 font-mono text-xs whitespace-pre-wrap leading-relaxed max-h-[520px] overflow-auto">
+                        {thermalPreview || 'Preview indisponível para este template.'}
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        Simulação textual de um cupom de 58 mm com dados fictícios.
+                      </p>
+                    </>
+                  )}
                 </TabsContent>
                 <TabsContent value="pdf" className="pt-4">
                   <PdfPreview
@@ -1029,6 +1120,14 @@ export default function ModelosRecibos() {
               {/* Fields Tab */}
               <TabsContent value="fields" className="space-y-4">
                 <h4 className="font-medium">Campos do Recibo</h4>
+                {formData.templateType === 'parking_ticket' && (
+                  <div className="mb-4 p-3 bg-muted/50 rounded border-l-4 border-primary">
+                    <p className="text-sm text-muted-foreground">
+                      <strong>Nota:</strong> Este template será usado tanto para tickets de entrada quanto de saída. 
+                      Os campos abaixo se aplicam a ambos os tipos de ticket.
+                    </p>
+                  </div>
+                )}
                 <div className="grid grid-cols-2 gap-4">
                   <div className="flex items-center justify-between">
                     <Label className="text-sm">Número do Recibo</Label>
@@ -1349,21 +1448,63 @@ export default function ModelosRecibos() {
                 </TabsList>
 
                 <TabsContent value="thermal" className="space-y-3">
-                  <div className="rounded border bg-muted/50 p-4 font-mono text-xs whitespace-pre-wrap leading-relaxed max-h-[520px] overflow-auto">
-                    {thermalPreview || 'Preview indisponível para este template.'}
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    Simulação em texto monoespaçado de um cupom de 58 mm com dados fictícios de
-                    mensalista.
-                  </p>
+                  {previewTemplate.templateType === 'parking_ticket' ? (
+                    <div className="space-y-6">
+                      {/* Ticket de Entrada */}
+                      <div className="space-y-2">
+                        <h4 className="text-sm font-semibold text-foreground">Ticket de Entrada</h4>
+                        <div className="rounded border bg-muted/50 p-4 font-mono text-xs whitespace-pre-wrap leading-relaxed max-h-[400px] overflow-auto">
+                          {thermalPreviewEntry || 'Preview indisponível para este template.'}
+                        </div>
+                      </div>
+                      {/* Ticket de Saída */}
+                      <div className="space-y-2">
+                        <h4 className="text-sm font-semibold text-foreground">Ticket de Saída</h4>
+                        <div className="rounded border bg-muted/50 p-4 font-mono text-xs whitespace-pre-wrap leading-relaxed max-h-[400px] overflow-auto">
+                          {thermalPreviewExit || 'Preview indisponível para este template.'}
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="rounded border bg-muted/50 p-4 font-mono text-xs whitespace-pre-wrap leading-relaxed max-h-[520px] overflow-auto">
+                        {thermalPreview || 'Preview indisponível para este template.'}
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        Simulação em texto monoespaçado de um cupom de 58 mm com dados fictícios de
+                        mensalista.
+                      </p>
+                    </>
+                  )}
                 </TabsContent>
 
                 <TabsContent value="pdf" className="pt-4">
-                  <PdfPreview
-                    template={previewTemplate}
-                    sample={previewSampleData}
-                    company={companyConfig}
-                  />
+                  {previewTemplate.templateType === 'parking_ticket' && previewSampleData && typeof previewSampleData === 'object' && 'entry' in previewSampleData && 'exit' in previewSampleData ? (
+                    <div className="space-y-6">
+                      <div className="space-y-2">
+                        <h4 className="text-sm font-semibold text-foreground">Ticket de Entrada</h4>
+                        <PdfPreview
+                          template={previewTemplate}
+                          sample={previewSampleData.entry}
+                          company={companyConfig}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <h4 className="text-sm font-semibold text-foreground">Ticket de Saída</h4>
+                        <PdfPreview
+                          template={previewTemplate}
+                          sample={previewSampleData.exit}
+                          company={companyConfig}
+                        />
+                      </div>
+                    </div>
+                  ) : (
+                    <PdfPreview
+                      template={previewTemplate}
+                      sample={previewSampleData}
+                      company={companyConfig}
+                    />
+                  )}
                 </TabsContent>
               </Tabs>
             ) : (
