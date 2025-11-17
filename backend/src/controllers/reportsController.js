@@ -20,10 +20,11 @@ export default {
       
       // Also fetch completed tickets to ensure we capture all revenue
       // This handles cases where tickets were closed but payments weren't created
+      // Fetch tickets that are either closed OR have an exit_time (completed)
       let ticketsQuery = supabase
         .from('tickets')
-        .select('id, exit_time, amount, metadata')
-        .eq('status', 'closed');
+        .select('id, exit_time, amount, metadata, status')
+        .not('exit_time', 'is', null); // Has exit_time means ticket was completed
       if (start) ticketsQuery = ticketsQuery.gte('exit_time', start);
       if (end) {
         const endDate = new Date(end);
