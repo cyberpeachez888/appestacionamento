@@ -20,15 +20,20 @@ type Props = {
 export const OpenCashRegisterDialog: React.FC<Props> = ({ open, onOpenChange }) => {
   const { openCashRegister, lastClosingAmount } = useParking();
   const { user: authUser } = useAuth();
-  const [amount, setAmount] = useState<number>(lastClosingAmount || 0);
+  const [amount, setAmount] = useState<string>('');
 
   useEffect(() => {
-    if (open) setAmount(lastClosingAmount || 0);
+    if (open) {
+      // Always suggest the last closing amount, but allow editing
+      const suggestedAmount = lastClosingAmount || 0;
+      setAmount(suggestedAmount > 0 ? suggestedAmount.toString() : '');
+    }
   }, [open, lastClosingAmount]);
 
   const handleOpen = () => {
     const operator = authUser?.name || '';
-    openCashRegister(amount || 0, operator);
+    const numericAmount = amount ? Number(amount) : (lastClosingAmount || 0);
+    openCashRegister(numericAmount, operator);
     onOpenChange(false);
   };
 
@@ -54,11 +59,15 @@ export const OpenCashRegisterDialog: React.FC<Props> = ({ open, onOpenChange }) 
               id="openingAmount"
               type="number"
               min={0}
+              step="0.01"
               value={amount}
-              onChange={(e) => setAmount(Number(e.target.value))}
+              onChange={(e) => setAmount(e.target.value)}
+              placeholder={lastClosingAmount > 0 ? lastClosingAmount.toFixed(2) : '0.00'}
             />
             <p className="text-xs text-muted-foreground">
-              Pré-preenchido com o último valor de fechamento.
+              {lastClosingAmount > 0
+                ? `Sugerido: R$ ${lastClosingAmount.toFixed(2)} (último fechamento). Você pode editar este valor.`
+                : 'Nenhum fechamento anterior encontrado. Informe o valor inicial.'}
             </p>
           </div>
         </div>

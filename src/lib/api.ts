@@ -832,6 +832,105 @@ class ApiClient {
   async getPrinterJobStatuses() {
     return this.request<{ statuses: Record<string, string> }>('/printer-jobs/statuses');
   }
+
+  // Expenses endpoints
+  async getExpenses(filters?: { start?: string; end?: string; category?: string; status?: string }) {
+    const query = new URLSearchParams();
+    if (filters?.start) query.set('start', filters.start);
+    if (filters?.end) query.set('end', filters.end);
+    if (filters?.category) query.set('category', filters.category);
+    if (filters?.status) query.set('status', filters.status);
+    const queryString = query.toString();
+    return this.request<any[]>(`/expenses${queryString ? `?${queryString}` : ''}`);
+  }
+
+  async getExpense(id: string) {
+    return this.request<any>(`/expenses/${id}`);
+  }
+
+  async createExpense(expense: {
+    name: string;
+    value: number;
+    dueDate: string;
+    paymentDate?: string | null;
+    category: 'Contas' | 'Manutenção' | 'Pró-labore' | 'Impostos';
+    isRecurring?: boolean;
+    recurringFrequency?: 'monthly' | 'weekly' | 'yearly' | null;
+    notes?: string | null;
+  }) {
+    return this.request<any>('/expenses', {
+      method: 'POST',
+      body: JSON.stringify(expense),
+    });
+  }
+
+  async updateExpense(id: string, expense: Partial<{
+    name: string;
+    value: number;
+    dueDate: string;
+    paymentDate: string | null;
+    category: 'Contas' | 'Manutenção' | 'Pró-labore' | 'Impostos';
+    isRecurring: boolean;
+    recurringFrequency: 'monthly' | 'weekly' | 'yearly' | null;
+    notes: string | null;
+  }>) {
+    return this.request<any>(`/expenses/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(expense),
+    });
+  }
+
+  async deleteExpense(id: string) {
+    return this.request<void>(`/expenses/${id}`, {
+      method: 'DELETE',
+    });
+  }
+
+  // Manual Revenues endpoints
+  async getManualRevenues(filters?: { start?: string; end?: string; category?: string }) {
+    const query = new URLSearchParams();
+    if (filters?.start) query.set('start', filters.start);
+    if (filters?.end) query.set('end', filters.end);
+    if (filters?.category) query.set('category', filters.category);
+    const queryString = query.toString();
+    return this.request<any[]>(`/manual-revenues${queryString ? `?${queryString}` : ''}`);
+  }
+
+  async getManualRevenue(id: string) {
+    return this.request<any>(`/manual-revenues/${id}`);
+  }
+
+  async createManualRevenue(revenue: {
+    description: string;
+    value: number;
+    date: string;
+    category: 'Sublocação' | 'Outros';
+    notes?: string | null;
+  }) {
+    return this.request<any>('/manual-revenues', {
+      method: 'POST',
+      body: JSON.stringify(revenue),
+    });
+  }
+
+  async updateManualRevenue(id: string, revenue: Partial<{
+    description: string;
+    value: number;
+    date: string;
+    category: 'Sublocação' | 'Outros';
+    notes: string | null;
+  }>) {
+    return this.request<any>(`/manual-revenues/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(revenue),
+    });
+  }
+
+  async deleteManualRevenue(id: string) {
+    return this.request<void>(`/manual-revenues/${id}`, {
+      method: 'DELETE',
+    });
+  }
 }
 
 export const api = new ApiClient(API_BASE_URL);

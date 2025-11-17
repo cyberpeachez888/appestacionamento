@@ -22,6 +22,8 @@ import holidaysController from '../controllers/holidaysController.js';
 import specialEventsController from '../controllers/specialEventsController.js';
 import dashboardSettingsController from '../controllers/dashboardSettingsController.js';
 import setupController from '../controllers/setupController.js';
+import expensesController from '../controllers/expensesController.js';
+import manualRevenuesController from '../controllers/manualRevenuesController.js';
 import pricingRulesRoutes from './pricingRules.js';
 import { requireAuth, requireAdmin, requirePermission } from '../middleware/auth.js';
 import { loginLimiter, apiLimiter, strictLimiter } from '../middleware/rateLimiter.js';
@@ -647,5 +649,59 @@ router.get(
 router.get('/kpi-alerts', requireAuth, dashboardSettingsController.listAlerts);
 router.put('/kpi-alerts/:id/read', requireAuth, dashboardSettingsController.markAlertRead);
 router.put('/kpi-alerts/:id/dismiss', requireAuth, dashboardSettingsController.dismissAlert);
+
+// Expenses (Financial Management)
+router.get('/expenses', requireAuth, requirePermission('viewReports'), expensesController.list);
+router.get('/expenses/:id', requireAuth, requirePermission('viewReports'), expensesController.getById);
+router.post(
+  '/expenses',
+  requireAuth,
+  requirePermission('viewReports'),
+  expensesController.create
+);
+router.put(
+  '/expenses/:id',
+  requireAuth,
+  requirePermission('viewReports'),
+  expensesController.update
+);
+router.delete(
+  '/expenses/:id',
+  requireAuth,
+  requirePermission('viewReports'),
+  expensesController.delete
+);
+
+// Manual Revenues (Sublocação and other manual income)
+router.get(
+  '/manual-revenues',
+  requireAuth,
+  requirePermission('viewReports'),
+  manualRevenuesController.list
+);
+router.get(
+  '/manual-revenues/:id',
+  requireAuth,
+  requirePermission('viewReports'),
+  manualRevenuesController.getById
+);
+router.post(
+  '/manual-revenues',
+  requireAuth,
+  requirePermission('viewReports'),
+  manualRevenuesController.create
+);
+router.put(
+  '/manual-revenues/:id',
+  requireAuth,
+  requirePermission('viewReports'),
+  manualRevenuesController.update
+);
+router.delete(
+  '/manual-revenues/:id',
+  requireAuth,
+  requirePermission('viewReports'),
+  manualRevenuesController.delete
+);
 
 export default router;
