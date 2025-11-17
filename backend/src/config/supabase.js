@@ -31,6 +31,8 @@ if (!SUPABASE_URL || !SUPABASE_KEY) {
     company_config: [],
     users: [], // added for auth fallback
     user_events: [], // audit log fallback table
+    expenses: [], // expenses table for financial management
+    manual_revenues: [], // manual revenues table (sublocação and others)
   };
 
   function clone(v) {
