@@ -339,7 +339,7 @@ export const ExitConfirmationDialog = ({
       const receiptData: ReceiptData = {
         receiptType: 'simple',
       };
-      window.print();
+      // Removed window.print() - no external print dialog
       onConfirm(paymentMethod, receiptData);
     } else {
       onConfirm(paymentMethod, null);
