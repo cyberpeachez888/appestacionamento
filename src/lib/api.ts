@@ -57,9 +57,33 @@ class ApiClient {
     try {
       const response = await fetch(url, config);
 
+      // Check if response is actually JSON before parsing
+      const contentType = response.headers.get('content-type') || '';
+      const isJson = contentType.includes('application/json');
+
       if (!response.ok) {
+        // If not JSON, read as text to see what we got
+        if (!isJson) {
+          const text = await response.text();
+          console.error(`Non-JSON error response from ${url}:`, text.substring(0, 300));
+          throw new Error(
+            `Server returned non-JSON response (${response.status}): ${response.statusText}`
+          );
+        }
+
         // Attempt to parse JSON error payload
-        const payload = await response.json().catch(() => ({ error: 'Unknown error' }));
+        // Clone response first in case parsing fails
+        const clonedResponse = response.clone();
+        let payload: any;
+        try {
+          payload = await response.json();
+        } catch (parseError) {
+          // If JSON parsing fails, read cloned response as text for debugging
+          const text = await clonedResponse.text().catch(() => 'Unable to read response');
+          console.error(`Failed to parse error JSON from ${url}:`, text.substring(0, 300));
+          payload = { error: 'Unknown error' };
+        }
+
         const errField = (payload && (payload.error ?? payload.message)) as any;
         let message: string;
         if (typeof errField === 'string') {
@@ -88,6 +112,13 @@ class ApiClient {
 
       if (response.status === 204) {
         return null as T;
+      }
+
+      // Verify response is JSON before parsing
+      if (!isJson) {
+        const text = await response.text();
+        console.error(`Non-JSON response from ${url}:`, text.substring(0, 300));
+        throw new Error('Server returned non-JSON response');
       }
 
       return await response.json();

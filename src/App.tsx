@@ -27,7 +27,16 @@ import CashRegisterClosedDialog from './components/CashRegisterClosedDialog';
 import { useEffect, useState } from 'react';
 
 const queryClient = new QueryClient();
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+
+// Normalize API URL to always include /api (same logic as api.ts)
+let apiBase = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+if (apiBase.endsWith('/')) {
+  apiBase = apiBase.slice(0, -1);
+}
+if (!apiBase.endsWith('/api')) {
+  apiBase = `${apiBase}/api`;
+}
+const API_URL = apiBase;
 
 // Component to check if setup is needed
 const SetupGuard: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -45,6 +54,15 @@ const SetupGuard: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const checkSetup = async () => {
       try {
         const response = await fetch(`${API_URL}/setup/check-first-run`);
+        
+        // Check if response is actually JSON
+        const contentType = response.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
+          const text = await response.text();
+          console.error('Non-JSON response received:', text.substring(0, 200));
+          throw new Error('Server returned non-JSON response');
+        }
+        
         const data = await response.json();
         setNeedsSetup(data.needsSetup || false);
       } catch (error) {
