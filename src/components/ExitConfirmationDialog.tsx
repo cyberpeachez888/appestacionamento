@@ -30,7 +30,15 @@ import {
   formatCurrencyBR,
 } from '@/lib/receiptPreview';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+// Normalize API URL to always include /api (same logic as api.ts and App.tsx)
+let apiBase = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+if (apiBase.endsWith('/')) {
+  apiBase = apiBase.slice(0, -1);
+}
+if (!apiBase.endsWith('/api')) {
+  apiBase = `${apiBase}/api`;
+}
+const API_URL = apiBase;
 
 // Professional: Define explicit types for vehicle, rate, and receiptData
 interface Vehicle {
@@ -121,20 +129,37 @@ export const ExitConfirmationDialog = ({
       setIsTemplateLoading(true);
       try {
         const token = localStorage.getItem('token');
-        const response = await fetch(`${API_URL}/receipt-templates/default/parking_ticket`, {
+        const url = `${API_URL}/receipt-templates/default/parking_ticket`;
+        console.log('[ExitConfirmationDialog] Loading template from:', url);
+        
+        const response = await fetch(url, {
           headers: token ? { Authorization: `Bearer ${token}` } : undefined,
         });
+        
+        console.log('[ExitConfirmationDialog] Template response:', {
+          status: response.status,
+          ok: response.ok,
+          contentType: response.headers.get('content-type'),
+        });
+        
         if (!ignore) {
           if (response.ok) {
             const data = await response.json();
+            console.log('[ExitConfirmationDialog] Template loaded:', data);
             setTicketTemplate(data);
           } else {
+            const errorText = await response.text().catch(() => 'Unable to read error');
+            console.error('[ExitConfirmationDialog] Failed to load template:', {
+              status: response.status,
+              statusText: response.statusText,
+              error: errorText.substring(0, 200),
+            });
             setTicketTemplate(null);
           }
         }
       } catch (error) {
         if (!ignore) {
-          console.error('Erro ao carregar template de ticket:', error);
+          console.error('[ExitConfirmationDialog] Error loading template:', error);
           setTicketTemplate(null);
         }
       } finally {
@@ -247,14 +272,21 @@ export const ExitConfirmationDialog = ({
 
   useEffect(() => {
     if (!ticketTemplate || !ticketSampleData || isMonthlyVehicle) {
+      console.log('[ExitConfirmationDialog] Cannot generate preview:', {
+        hasTemplate: !!ticketTemplate,
+        hasSampleData: !!ticketSampleData,
+        isMonthlyVehicle,
+      });
       setThermalPreview('');
       return;
     }
+    console.log('[ExitConfirmationDialog] Generating thermal preview...');
     const preview = generateThermalPreview(
       ticketTemplate,
       ticketSampleData,
       companyConfig || FALLBACK_COMPANY
     );
+    console.log('[ExitConfirmationDialog] Preview generated, length:', preview.length);
     setThermalPreview(preview);
   }, [ticketTemplate, ticketSampleData, companyConfig, isMonthlyVehicle]);
 
@@ -331,7 +363,11 @@ export const ExitConfirmationDialog = ({
             <Button variant="outline" onClick={() => setShowReceipt(false)}>
               Voltar
             </Button>
-            <Button onClick={handlePrint} disabled={isTemplateLoading || !thermalPreview}>
+            <Button 
+              onClick={handlePrint} 
+              disabled={isTemplateLoading}
+              title={isTemplateLoading ? 'Carregando template...' : thermalPreview ? 'Imprimir e confirmar saída' : 'Template não disponível, mas você pode continuar'}
+            >
               <Printer className="h-4 w-4 mr-2" />
               Imprimir e Confirmar
             </Button>
