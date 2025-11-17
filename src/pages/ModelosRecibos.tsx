@@ -994,11 +994,32 @@ export default function ModelosRecibos() {
                   )}
                 </TabsContent>
                 <TabsContent value="pdf" className="pt-4">
-                  <PdfPreview
-                    template={previewTemplate}
-                    sample={previewSampleData}
-                    company={companyConfig}
-                  />
+                  {previewTemplate.templateType === 'parking_ticket' && previewSampleData && typeof previewSampleData === 'object' && 'entry' in previewSampleData && 'exit' in previewSampleData ? (
+                    <div className="space-y-6">
+                      <div className="space-y-2">
+                        <h4 className="text-sm font-semibold text-foreground">Ticket de Entrada</h4>
+                        <PdfPreview
+                          template={previewTemplate}
+                          sample={previewSampleData.entry}
+                          company={companyConfig}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <h4 className="text-sm font-semibold text-foreground">Ticket de Saída</h4>
+                        <PdfPreview
+                          template={previewTemplate}
+                          sample={previewSampleData.exit}
+                          company={companyConfig}
+                        />
+                      </div>
+                    </div>
+                  ) : (
+                    <PdfPreview
+                      template={previewTemplate}
+                      sample={previewSampleData}
+                      company={companyConfig}
+                    />
+                  )}
                 </TabsContent>
               </Tabs>
             ) : (
