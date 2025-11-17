@@ -33,12 +33,32 @@ import {
 
 // Normalize API URL to always include /api (same logic as api.ts and App.tsx)
 let apiBase = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+
+// Normalize: remove trailing slash, extract base URL (remove any existing paths), then add /api
 if (apiBase.endsWith('/')) {
   apiBase = apiBase.slice(0, -1);
 }
+
+// If it's a full URL (starts with http:// or https://), extract just the origin
+// This handles cases where VITE_API_URL might include paths like /health
+if (apiBase.startsWith('http://') || apiBase.startsWith('https://')) {
+  try {
+    const url = new URL(apiBase);
+    apiBase = `${url.protocol}//${url.host}`;
+  } catch (e) {
+    // If URL parsing fails, try to extract origin manually
+    const match = apiBase.match(/^(https?:\/\/[^\/]+)/);
+    if (match) {
+      apiBase = match[1];
+    }
+  }
+}
+
+// Ensure it ends with /api
 if (!apiBase.endsWith('/api')) {
   apiBase = `${apiBase}/api`;
 }
+
 const API_URL = apiBase;
 
 // Professional: Define explicit types for vehicle, rate, and receiptData
