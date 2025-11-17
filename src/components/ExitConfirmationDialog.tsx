@@ -21,6 +21,7 @@ import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { PaymentMethod } from '@/contexts/ParkingContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { Printer, Calculator } from 'lucide-react';
 import {
   generateThermalPreview,
@@ -88,6 +89,7 @@ export const ExitConfirmationDialog = ({
   isMonthlyVehicle = false,
 }: ExitConfirmationDialogProps) => {
   const { toast } = useToast();
+  const { token } = useAuth();
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('Dinheiro');
   const [amountPaid, setAmountPaid] = useState('');
   const [change, setChange] = useState(0);
@@ -128,9 +130,8 @@ export const ExitConfirmationDialog = ({
     const loadTemplate = async () => {
       setIsTemplateLoading(true);
       try {
-        const token = localStorage.getItem('token');
         const url = `${API_URL}/receipt-templates/default/parking_ticket`;
-        console.log('[ExitConfirmationDialog] Loading template from:', url);
+        console.log('[ExitConfirmationDialog] Loading template from:', url, { hasToken: !!token });
         
         const response = await fetch(url, {
           headers: token ? { Authorization: `Bearer ${token}` } : undefined,
@@ -174,7 +175,7 @@ export const ExitConfirmationDialog = ({
     return () => {
       ignore = true;
     };
-  }, [open, isMonthlyVehicle, API_URL]);
+  }, [open, isMonthlyVehicle, API_URL, token]);
 
   useEffect(() => {
     // Calculate change for cash payments
