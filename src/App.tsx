@@ -52,8 +52,34 @@ const SetupGuard: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     }
 
     const checkSetup = async () => {
+      console.log('[SetupGuard] Starting setup check...', { API_URL });
+      
+      // Add timeout to prevent infinite loading
+      const timeoutId = setTimeout(() => {
+        console.warn('[SetupGuard] Setup check timeout - assuming setup is not needed');
+        setNeedsSetup(false);
+        setLoading(false);
+      }, 10000); // 10 second timeout
+
       try {
-        const response = await fetch(`${API_URL}/setup/check-first-run`);
+        const controller = new AbortController();
+        const timeoutSignal = setTimeout(() => controller.abort(), 8000); // 8 second abort
+
+        const url = `${API_URL}/setup/check-first-run`;
+        console.log('[SetupGuard] Fetching:', url);
+        
+        const response = await fetch(url, {
+          signal: controller.signal,
+        });
+        
+        console.log('[SetupGuard] Response received:', {
+          status: response.status,
+          statusText: response.statusText,
+          contentType: response.headers.get('content-type'),
+        });
+        
+        clearTimeout(timeoutSignal);
+        clearTimeout(timeoutId);
         
         // Check if response is actually JSON
         const contentType = response.headers.get('content-type');
@@ -65,8 +91,16 @@ const SetupGuard: React.FC<{ children: React.ReactNode }> = ({ children }) => {
         
         const data = await response.json();
         setNeedsSetup(data.needsSetup || false);
-      } catch (error) {
+      } catch (error: any) {
+        clearTimeout(timeoutId);
         console.error('Error checking setup status:', error);
+        
+        // If it's an abort error (timeout), log it specifically
+        if (error.name === 'AbortError') {
+          console.warn('Setup check request timed out - proceeding without setup check');
+        }
+        
+        // Assume setup is not needed if check fails (fail open)
         setNeedsSetup(false);
       } finally {
         setLoading(false);
