@@ -23,15 +23,31 @@ export default {
       // Fetch tickets that have an exit_time (completed), regardless of status
       let ticketsQuery = supabase
         .from('tickets')
-        .select('id, exit_time, amount, metadata, status')
-        .not('exit_time', 'is', null); // Has exit_time means ticket was completed
-      if (start) ticketsQuery = ticketsQuery.gte('exit_time', start);
-      if (end) {
-        const endDate = new Date(end);
-        endDate.setHours(23, 59, 59, 999);
-        ticketsQuery = ticketsQuery.lte('exit_time', endDate.toISOString());
+        .select('id, exit_time, amount, metadata, status');
+      
+      // Filter for tickets with exit_time (completed tickets)
+      // Use gte with a very old date to effectively get all tickets, then filter in code
+      // Or better: fetch all and filter for exit_time not null
+      const allTicketsResp = await ticketsQuery;
+      
+      // Filter tickets that have exit_time and match date range
+      let completedTickets = [];
+      if (!allTicketsResp.error && allTicketsResp.data) {
+        completedTickets = allTicketsResp.data.filter((ticket) => {
+          if (!ticket.exit_time) return false;
+          
+          const exitDate = new Date(ticket.exit_time);
+          if (start && exitDate < new Date(start)) return false;
+          if (end) {
+            const endDate = new Date(end);
+            endDate.setHours(23, 59, 59, 999);
+            if (exitDate > endDate) return false;
+          }
+          return true;
+        });
       }
-      const ticketsResp = await ticketsQuery;
+      
+      const ticketsResp = { data: completedTickets, error: null };
       
       if (!ticketsResp.error && ticketsResp.data) {
         // Get all existing payment IDs for tickets to avoid duplicates
