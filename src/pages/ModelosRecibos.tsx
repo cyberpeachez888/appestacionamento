@@ -1139,120 +1139,305 @@ export default function ModelosRecibos() {
               </TabsContent>
 
               {/* Fields Tab */}
-              <TabsContent value="fields" className="space-y-4">
-                <h4 className="font-medium">Campos do Recibo</h4>
-                {formData.templateType === 'parking_ticket' && (
-                  <div className="mb-4 p-3 bg-muted/50 rounded border-l-4 border-primary">
-                    <p className="text-sm text-muted-foreground">
-                      <strong>Nota:</strong> Este template será usado tanto para tickets de entrada quanto de saída. 
-                      Os campos abaixo se aplicam a ambos os tipos de ticket.
-                    </p>
-                  </div>
+              <TabsContent value="fields" className="space-y-6">
+                {formData.templateType === 'parking_ticket' ? (
+                  <>
+                    {/* Ticket de Entrada */}
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-2 pb-2 border-b">
+                        <div className="h-2 w-2 rounded-full bg-primary"></div>
+                        <h4 className="font-semibold text-lg">Ticket de Entrada</h4>
+                      </div>
+                      <p className="text-sm text-muted-foreground">
+                        Configure quais campos aparecerão no ticket impresso quando um veículo entra no estacionamento.
+                      </p>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="flex items-center justify-between">
+                          <Label className="text-sm">Número do Recibo</Label>
+                          <Switch
+                            checked={formData.showReceiptNumber}
+                            onCheckedChange={(checked) =>
+                              setFormData({ ...formData, showReceiptNumber: checked })
+                            }
+                          />
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <Label className="text-sm">Data</Label>
+                          <Switch
+                            checked={formData.showDate}
+                            onCheckedChange={(checked) => setFormData({ ...formData, showDate: checked })}
+                          />
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <Label className="text-sm">Horário</Label>
+                          <Switch
+                            checked={formData.showTime}
+                            onCheckedChange={(checked) => setFormData({ ...formData, showTime: checked })}
+                          />
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <Label className="text-sm">Placa</Label>
+                          <Switch
+                            checked={formData.showPlate}
+                            onCheckedChange={(checked) =>
+                              setFormData({ ...formData, showPlate: checked })
+                            }
+                          />
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <Label className="text-sm">Tipo de Veículo</Label>
+                          <Switch
+                            checked={formData.showVehicleType}
+                            onCheckedChange={(checked) =>
+                              setFormData({ ...formData, showVehicleType: checked })
+                            }
+                          />
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <Label className="text-sm">Horário de Entrada</Label>
+                          <Switch
+                            checked={formData.showEntryTime}
+                            onCheckedChange={(checked) =>
+                              setFormData({ ...formData, showEntryTime: checked })
+                            }
+                          />
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <Label className="text-sm">Operador</Label>
+                          <Switch
+                            checked={formData.showOperator}
+                            onCheckedChange={(checked) =>
+                              setFormData({ ...formData, showOperator: checked })
+                            }
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Ticket de Saída */}
+                    <div className="space-y-4 pt-4 border-t">
+                      <div className="flex items-center gap-2 pb-2 border-b">
+                        <div className="h-2 w-2 rounded-full bg-primary"></div>
+                        <h4 className="font-semibold text-lg">Ticket de Saída</h4>
+                      </div>
+                      <p className="text-sm text-muted-foreground">
+                        Configure quais campos aparecerão no ticket impresso quando um veículo sai do estacionamento.
+                      </p>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="flex items-center justify-between">
+                          <Label className="text-sm">Número do Recibo</Label>
+                          <Switch
+                            checked={formData.showReceiptNumber}
+                            onCheckedChange={(checked) =>
+                              setFormData({ ...formData, showReceiptNumber: checked })
+                            }
+                          />
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <Label className="text-sm">Data</Label>
+                          <Switch
+                            checked={formData.showDate}
+                            onCheckedChange={(checked) => setFormData({ ...formData, showDate: checked })}
+                          />
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <Label className="text-sm">Horário</Label>
+                          <Switch
+                            checked={formData.showTime}
+                            onCheckedChange={(checked) => setFormData({ ...formData, showTime: checked })}
+                          />
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <Label className="text-sm">Placa</Label>
+                          <Switch
+                            checked={formData.showPlate}
+                            onCheckedChange={(checked) =>
+                              setFormData({ ...formData, showPlate: checked })
+                            }
+                          />
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <Label className="text-sm">Tipo de Veículo</Label>
+                          <Switch
+                            checked={formData.showVehicleType}
+                            onCheckedChange={(checked) =>
+                              setFormData({ ...formData, showVehicleType: checked })
+                            }
+                          />
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <Label className="text-sm">Horário de Entrada</Label>
+                          <Switch
+                            checked={formData.showEntryTime}
+                            onCheckedChange={(checked) =>
+                              setFormData({ ...formData, showEntryTime: checked })
+                            }
+                          />
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <Label className="text-sm">Horário de Saída</Label>
+                          <Switch
+                            checked={formData.showExitTime}
+                            onCheckedChange={(checked) =>
+                              setFormData({ ...formData, showExitTime: checked })
+                            }
+                          />
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <Label className="text-sm">Duração</Label>
+                          <Switch
+                            checked={formData.showDuration}
+                            onCheckedChange={(checked) =>
+                              setFormData({ ...formData, showDuration: checked })
+                            }
+                          />
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <Label className="text-sm">Tarifa</Label>
+                          <Switch
+                            checked={formData.showRate}
+                            onCheckedChange={(checked) => setFormData({ ...formData, showRate: checked })}
+                          />
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <Label className="text-sm">Valor</Label>
+                          <Switch
+                            checked={formData.showValue}
+                            onCheckedChange={(checked) =>
+                              setFormData({ ...formData, showValue: checked })
+                            }
+                          />
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <Label className="text-sm">Forma de Pagamento</Label>
+                          <Switch
+                            checked={formData.showPaymentMethod}
+                            onCheckedChange={(checked) =>
+                              setFormData({ ...formData, showPaymentMethod: checked })
+                            }
+                          />
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <Label className="text-sm">Operador</Label>
+                          <Switch
+                            checked={formData.showOperator}
+                            onCheckedChange={(checked) =>
+                              setFormData({ ...formData, showOperator: checked })
+                            }
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <h4 className="font-medium">Campos do Recibo</h4>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="flex items-center justify-between">
+                        <Label className="text-sm">Número do Recibo</Label>
+                        <Switch
+                          checked={formData.showReceiptNumber}
+                          onCheckedChange={(checked) =>
+                            setFormData({ ...formData, showReceiptNumber: checked })
+                          }
+                        />
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <Label className="text-sm">Data</Label>
+                        <Switch
+                          checked={formData.showDate}
+                          onCheckedChange={(checked) => setFormData({ ...formData, showDate: checked })}
+                        />
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <Label className="text-sm">Horário</Label>
+                        <Switch
+                          checked={formData.showTime}
+                          onCheckedChange={(checked) => setFormData({ ...formData, showTime: checked })}
+                        />
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <Label className="text-sm">Placa</Label>
+                        <Switch
+                          checked={formData.showPlate}
+                          onCheckedChange={(checked) =>
+                            setFormData({ ...formData, showPlate: checked })
+                          }
+                        />
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <Label className="text-sm">Tipo de Veículo</Label>
+                        <Switch
+                          checked={formData.showVehicleType}
+                          onCheckedChange={(checked) =>
+                            setFormData({ ...formData, showVehicleType: checked })
+                          }
+                        />
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <Label className="text-sm">Horário de Entrada</Label>
+                        <Switch
+                          checked={formData.showEntryTime}
+                          onCheckedChange={(checked) =>
+                            setFormData({ ...formData, showEntryTime: checked })
+                          }
+                        />
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <Label className="text-sm">Horário de Saída</Label>
+                        <Switch
+                          checked={formData.showExitTime}
+                          onCheckedChange={(checked) =>
+                            setFormData({ ...formData, showExitTime: checked })
+                          }
+                        />
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <Label className="text-sm">Duração</Label>
+                        <Switch
+                          checked={formData.showDuration}
+                          onCheckedChange={(checked) =>
+                            setFormData({ ...formData, showDuration: checked })
+                          }
+                        />
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <Label className="text-sm">Tarifa</Label>
+                        <Switch
+                          checked={formData.showRate}
+                          onCheckedChange={(checked) => setFormData({ ...formData, showRate: checked })}
+                        />
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <Label className="text-sm">Valor</Label>
+                        <Switch
+                          checked={formData.showValue}
+                          onCheckedChange={(checked) =>
+                            setFormData({ ...formData, showValue: checked })
+                          }
+                        />
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <Label className="text-sm">Forma de Pagamento</Label>
+                        <Switch
+                          checked={formData.showPaymentMethod}
+                          onCheckedChange={(checked) =>
+                            setFormData({ ...formData, showPaymentMethod: checked })
+                          }
+                        />
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <Label className="text-sm">Operador</Label>
+                        <Switch
+                          checked={formData.showOperator}
+                          onCheckedChange={(checked) =>
+                            setFormData({ ...formData, showOperator: checked })
+                          }
+                        />
+                      </div>
+                    </div>
+                  </>
                 )}
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="flex items-center justify-between">
-                    <Label className="text-sm">Número do Recibo</Label>
-                    <Switch
-                      checked={formData.showReceiptNumber}
-                      onCheckedChange={(checked) =>
-                        setFormData({ ...formData, showReceiptNumber: checked })
-                      }
-                    />
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <Label className="text-sm">Data</Label>
-                    <Switch
-                      checked={formData.showDate}
-                      onCheckedChange={(checked) => setFormData({ ...formData, showDate: checked })}
-                    />
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <Label className="text-sm">Horário</Label>
-                    <Switch
-                      checked={formData.showTime}
-                      onCheckedChange={(checked) => setFormData({ ...formData, showTime: checked })}
-                    />
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <Label className="text-sm">Placa</Label>
-                    <Switch
-                      checked={formData.showPlate}
-                      onCheckedChange={(checked) =>
-                        setFormData({ ...formData, showPlate: checked })
-                      }
-                    />
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <Label className="text-sm">Tipo de Veículo</Label>
-                    <Switch
-                      checked={formData.showVehicleType}
-                      onCheckedChange={(checked) =>
-                        setFormData({ ...formData, showVehicleType: checked })
-                      }
-                    />
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <Label className="text-sm">Horário de Entrada</Label>
-                    <Switch
-                      checked={formData.showEntryTime}
-                      onCheckedChange={(checked) =>
-                        setFormData({ ...formData, showEntryTime: checked })
-                      }
-                    />
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <Label className="text-sm">Horário de Saída</Label>
-                    <Switch
-                      checked={formData.showExitTime}
-                      onCheckedChange={(checked) =>
-                        setFormData({ ...formData, showExitTime: checked })
-                      }
-                    />
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <Label className="text-sm">Duração</Label>
-                    <Switch
-                      checked={formData.showDuration}
-                      onCheckedChange={(checked) =>
-                        setFormData({ ...formData, showDuration: checked })
-                      }
-                    />
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <Label className="text-sm">Tarifa</Label>
-                    <Switch
-                      checked={formData.showRate}
-                      onCheckedChange={(checked) => setFormData({ ...formData, showRate: checked })}
-                    />
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <Label className="text-sm">Valor</Label>
-                    <Switch
-                      checked={formData.showValue}
-                      onCheckedChange={(checked) =>
-                        setFormData({ ...formData, showValue: checked })
-                      }
-                    />
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <Label className="text-sm">Forma de Pagamento</Label>
-                    <Switch
-                      checked={formData.showPaymentMethod}
-                      onCheckedChange={(checked) =>
-                        setFormData({ ...formData, showPaymentMethod: checked })
-                      }
-                    />
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <Label className="text-sm">Operador</Label>
-                    <Switch
-                      checked={formData.showOperator}
-                      onCheckedChange={(checked) =>
-                        setFormData({ ...formData, showOperator: checked })
-                      }
-                    />
-                  </div>
-                </div>
 
                 <div className="border-t pt-4">
                   <h4 className="font-medium mb-2">Estilo</h4>
