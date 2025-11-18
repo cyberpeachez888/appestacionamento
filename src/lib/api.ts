@@ -264,6 +264,13 @@ class ApiClient {
     });
   }
 
+  // Setup endpoints
+  async resetToFirstRun() {
+    return this.request<{ success: boolean; message: string }>('/setup/reset-to-first-run', {
+      method: 'POST',
+    });
+  }
+
   // Legacy vehicles endpoint (if backend still supports it)
   async getVehicles() {
     try {

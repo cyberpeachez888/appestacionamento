@@ -5,15 +5,31 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 import api from '@/lib/api';
 import PrinterConfigSection from '@/components/PrinterConfigSection';
 import PrintPreviewDialog from '@/components/PrintPreviewDialog';
 import BackupSettingsSection from '@/components/BackupSettingsSection';
+import { RotateCcw, AlertTriangle } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 export default function Configuracoes() {
   const { toast } = useToast();
-  const { hasPermission } = useAuth();
+  const { hasPermission, isAdmin } = useAuth();
+  const navigate = useNavigate();
   const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+  const [resetDialogOpen, setResetDialogOpen] = useState(false);
+  const [resetting, setResetting] = useState(false);
 
   const [config, setConfig] = useState<any>({
     name: '',
@@ -242,6 +258,87 @@ export default function Configuracoes() {
             <BackupSettingsSection />
           </TabsContent>
         </Tabs>
+
+        {/* Reset to First-Run Section (Admin Only) */}
+        {isAdmin && (
+          <div className="mt-8 bg-destructive/10 border border-destructive/20 rounded-lg p-6">
+            <div className="flex items-start gap-4">
+              <AlertTriangle className="h-5 w-5 text-destructive mt-0.5" />
+              <div className="flex-1">
+                <h3 className="text-lg font-semibold text-destructive mb-2">
+                  Área de Manutenção
+                </h3>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Esta ação irá resetar o sistema para o estado inicial (first-run). Todos os dados
+                  serão limpos e você precisará executar o wizard de configuração novamente.
+                </p>
+                <AlertDialog open={resetDialogOpen} onOpenChange={setResetDialogOpen}>
+                  <AlertDialogTrigger asChild>
+                    <Button variant="destructive" size="sm">
+                      <RotateCcw className="mr-2 h-4 w-4" />
+                      Resetar para First-Run
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Confirmar Reset do Sistema</AlertDialogTitle>
+                      <AlertDialogDescription className="space-y-3">
+                        <p>
+                          <strong>Esta ação é irreversível!</strong>
+                        </p>
+                        <p>O sistema será resetado para o estado inicial. Isso irá:</p>
+                        <ul className="list-disc list-inside space-y-1 text-sm">
+                          <li>Limpar todos os tickets, clientes mensalistas e pagamentos</li>
+                          <li>Remover todas as tarifas e tipos de veículos</li>
+                          <li>Deletar todos os usuários (exceto você, temporariamente)</li>
+                          <li>Resetar as configurações da empresa</li>
+                          <li>Marcar o setup como não concluído</li>
+                        </ul>
+                        <p className="pt-2">
+                          Após o reset, você será redirecionado para o wizard de configuração
+                          inicial.
+                        </p>
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel disabled={resetting}>Cancelar</AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={async () => {
+                          setResetting(true);
+                          try {
+                            await api.resetToFirstRun();
+                            toast({
+                              title: 'Sistema resetado',
+                              description:
+                                'O sistema foi resetado com sucesso. Redirecionando...',
+                            });
+                            setTimeout(() => {
+                              // Logout and redirect to setup
+                              window.location.href = '/setup';
+                            }, 1500);
+                          } catch (error: any) {
+                            toast({
+                              title: 'Erro ao resetar',
+                              description: error.message || 'Falha ao resetar o sistema',
+                              variant: 'destructive',
+                            });
+                            setResetDialogOpen(false);
+                          } finally {
+                            setResetting(false);
+                          }
+                        }}
+                        disabled={resetting}
+                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                      >
+                        {resetting ? 'Resetando...' : 'Confirmar Reset'}
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </div>
+            </div>
+          </div>
+        )}
 
         <PrintPreviewDialog
           open={previewOpen}

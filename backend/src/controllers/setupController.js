@@ -265,9 +265,85 @@ export const getCompanySettings = async (req, res) => {
   }
 };
 
+/**
+ * Reset setup to first-run state (admin only)
+ * This will:
+ * - Set setup_completed = false
+ * - Clean all data (tickets, customers, payments, etc.)
+ * - Remove all users except the current admin (if authenticated)
+ */
+export const resetToFirstRun = async (req, res) => {
+  try {
+    // Only allow admins to reset
+    if (req.user?.role !== 'admin') {
+      return res.status(403).json({ error: 'Apenas administradores podem resetar o sistema' });
+    }
+
+    // 1. Clean all test data
+    await cleanupTestDataInternal();
+
+    // 2. Reset company_settings
+    const { data: existingSettings } = await supabase
+      .from('company_settings')
+      .select('id')
+      .limit(1)
+      .single();
+
+    const resetData = {
+      company_name: null,
+      cnpj: null,
+      address: null,
+      city: null,
+      state: null,
+      zip_code: null,
+      phone: null,
+      email: null,
+      setup_completed: false,
+      setup_completed_at: null,
+    };
+
+    if (existingSettings?.id) {
+      await supabase
+        .from('company_settings')
+        .update(resetData)
+        .eq('id', existingSettings.id);
+    } else {
+      await supabase.from('company_settings').insert({
+        ...resetData,
+        setup_completed: false,
+      });
+    }
+
+    // 3. Delete all users (they will need to run setup again)
+    // Keep the current user logged in until they navigate away
+    const currentUserId = req.user?.id;
+    if (currentUserId) {
+      await supabase.from('users').delete().neq('id', currentUserId);
+    } else {
+      await supabase.from('users').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+    }
+
+    console.log('✅ Sistema resetado para first-run');
+    console.log('   Setup marcado como não concluído');
+    console.log('   Todos os dados foram limpos');
+
+    res.json({
+      success: true,
+      message: 'Sistema resetado com sucesso. O wizard de configuração aparecerá no próximo acesso.',
+    });
+  } catch (error) {
+    console.error('Error resetting to first run:', error);
+    res.status(500).json({
+      error: 'Falha ao resetar o sistema',
+      details: error.message,
+    });
+  }
+};
+
 export default {
   checkFirstRun,
   cleanupTestData,
   initialize,
   getCompanySettings,
+  resetToFirstRun,
 };

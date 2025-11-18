@@ -52,6 +52,8 @@ router.get('/setup/check-first-run', setupController.checkFirstRun);
 router.post('/setup/initialize', setupController.initialize);
 router.post('/setup/cleanup-test-data', setupController.cleanupTestData);
 router.get('/setup/company-settings', setupController.getCompanySettings);
+// Reset to first-run (admin only)
+router.post('/setup/reset-to-first-run', requireAuth, requireAdmin, setupController.resetToFirstRun);
 
 // Rates (view requires any auth? allow unauth? We'll protect modifications.)
 router.get('/rates', ratesController.list);
