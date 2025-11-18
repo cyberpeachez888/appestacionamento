@@ -891,7 +891,8 @@ export default function Financeiro() {
                             )}
                           </td>
                         </tr>
-                      ))
+                        );
+                      })
                     )}
                   </tbody>
                 </table>
