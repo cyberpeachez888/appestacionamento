@@ -102,6 +102,9 @@ interface ReceiptTemplate {
   emailBodyText?: string;
   whatsappMessage?: string;
 
+  // Custom Template Text (texto livre editável)
+  customTemplateText?: string;
+
   availableVariables: string[];
 }
 
@@ -122,6 +125,113 @@ const MONTH_NAMES = [
 
 function getReferenceLabel(date: Date) {
   return `${MONTH_NAMES[date.getMonth()]}/${date.getFullYear()}`;
+}
+
+// Função para gerar modelo padrão de template baseado no tipo
+function generateDefaultTemplateText(
+  templateType: 'parking_ticket' | 'monthly_payment' | 'general_receipt',
+  companyConfig: any | null
+): string {
+  const company = companyConfig || FALLBACK_COMPANY;
+  const separator = '--------------------------------';
+
+  if (templateType === 'parking_ticket') {
+    return `${separator}
+${company.name || 'Nome da Empresa'}
+${company.legalName || 'Razão Social'}
+CNPJ: ${company.cnpj || '00.000.000/0000-00'}
+${company.address || 'Endereço da Empresa'}
+Tel: ${company.phone || '(00) 0000-0000'}
+${separator}
+
+RECIBO: {{receiptNumber}}
+Data: {{date}}
+Hora: {{time}}
+Placa: {{plate}}
+Tipo: {{vehicleType}}
+
+Entrada: {{entryTime}}
+Saída: {{exitTime}}
+Duração: {{duration}}
+
+Tarifa: {{rate}}
+Valor: {{value}}
+Pagamento: {{paymentMethod}}
+Operador: {{operator}}
+
+${separator}
+Documento sem validade fiscal
+${separator}
+Obrigado pela preferência!
+`;
+  }
+
+  if (templateType === 'monthly_payment') {
+    return `${separator}
+${company.name || 'Nome da Empresa'}
+${company.legalName || 'Razão Social'}
+CNPJ: ${company.cnpj || '00.000.000/0000-00'}
+${company.address || 'Endereço da Empresa'}
+Tel: ${company.phone || '(00) 0000-0000'}
+${separator}
+
+RECIBO: {{receiptNumber}}
+Data: {{date}}
+Hora: {{time}}
+
+CLIENTE: {{customerName}}
+CPF/CNPJ: {{customerDocument}}
+Telefone: {{customerPhone}}
+Email: {{customerEmail}}
+
+PLANO: {{planName}}
+Referência: {{reference}}
+Contrato: {{contractNumber}}
+Período: {{contractPeriod}}
+Vaga: {{parkingSlot}}
+
+Vencimento: {{dueDate}}
+Valor: {{value}}
+Pagamento: {{paymentMethod}}
+Data Pagamento: {{paymentDate}}
+Operador: {{operator}}
+
+${separator}
+Documento sem validade fiscal
+${separator}
+Obrigado pela preferência!
+`;
+  }
+
+  // general_receipt
+  return `${separator}
+${company.name || 'Nome da Empresa'}
+${company.legalName || 'Razão Social'}
+CNPJ: ${company.cnpj || '00.000.000/0000-00'}
+${company.address || 'Endereço da Empresa'}
+Tel: ${company.phone || '(00) 0000-0000'}
+${separator}
+
+RECIBO: {{receiptNumber}}
+Data: {{date}}
+Hora: {{time}}
+
+CLIENTE: {{customerName}}
+CPF/CNPJ: {{customerDocument}}
+
+Placa: {{plate}}
+Valor: {{value}}
+Pagamento: {{paymentMethod}}
+Operador: {{operator}}
+
+Observações:
+{{notes}}
+
+${separator}
+Documento sem validade fiscal
+${separator}
+Obrigado pela preferência!
+`;
 }
 
 function buildSampleData(
@@ -635,9 +745,11 @@ export default function ModelosRecibos() {
 
   const handleCreate = () => {
     setEditingTemplate(null);
+    const defaultType = 'general_receipt';
+    const defaultTemplateText = generateDefaultTemplateText(defaultType, companyConfig);
     setFormData({
       templateName: '',
-      templateType: 'general_receipt',
+      templateType: defaultType,
       description: '',
       isActive: true,
       isDefault: false,
@@ -664,13 +776,22 @@ export default function ModelosRecibos() {
       secondaryColor: '#666666',
       fontFamily: 'Arial',
       customFields: [],
+      customTemplateText: defaultTemplateText,
     });
     setDialogOpen(true);
   };
 
   const handleEdit = (template: ReceiptTemplate) => {
     setEditingTemplate(template);
-    setFormData(template);
+    // Se não tiver customTemplateText, gerar o padrão baseado no tipo
+    const templateData = { ...template };
+    if (!templateData.customTemplateText) {
+      templateData.customTemplateText = generateDefaultTemplateText(
+        template.templateType,
+        companyConfig
+      );
+    }
+    setFormData(templateData);
     setDialogOpen(true);
   };
 
@@ -1039,10 +1160,11 @@ export default function ModelosRecibos() {
             </DialogHeader>
 
             <Tabs defaultValue="basic">
-              <TabsList className="grid w-full grid-cols-4">
+              <TabsList className="grid w-full grid-cols-5">
                 <TabsTrigger value="basic">Básico</TabsTrigger>
                 <TabsTrigger value="fields">Campos</TabsTrigger>
                 <TabsTrigger value="footer">Rodapé</TabsTrigger>
+                <TabsTrigger value="template">Template Livre</TabsTrigger>
                 <TabsTrigger value="email">Email/WhatsApp</TabsTrigger>
               </TabsList>
 
@@ -1061,7 +1183,20 @@ export default function ModelosRecibos() {
                   <Label>Tipo *</Label>
                   <Select
                     value={formData.templateType}
-                    onValueChange={(v: any) => setFormData({ ...formData, templateType: v })}
+                    onValueChange={(v: any) => {
+                      // Quando mudar o tipo, atualizar o template padrão se não houver texto customizado
+                      const newType = v as 'parking_ticket' | 'monthly_payment' | 'general_receipt';
+                      const shouldUpdateTemplate =
+                        !formData.customTemplateText || formData.customTemplateText.trim() === '';
+                      const newTemplateText = shouldUpdateTemplate
+                        ? generateDefaultTemplateText(newType, companyConfig)
+                        : formData.customTemplateText;
+                      setFormData({
+                        ...formData,
+                        templateType: newType,
+                        customTemplateText: newTemplateText,
+                      });
+                    }}
                   >
                     <SelectTrigger>
                       <SelectValue />
@@ -1575,6 +1710,62 @@ export default function ModelosRecibos() {
                       setFormData({ ...formData, showSignatureLine: checked })
                     }
                   />
+                </div>
+              </TabsContent>
+
+              {/* Template Livre Tab */}
+              <TabsContent value="template" className="space-y-4">
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <Label>Template de Impressão (Texto Livre)</Label>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        const defaultText = generateDefaultTemplateText(
+                          formData.templateType || 'general_receipt',
+                          companyConfig
+                        );
+                        setFormData({ ...formData, customTemplateText: defaultText });
+                      }}
+                    >
+                      Restaurar Padrão
+                    </Button>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Edite livremente o template de impressão. Use variáveis como{' '}
+                    {`{{receiptNumber}}, {{date}}, {{time}}, {{plate}}, {{value}}, etc.`}
+                  </p>
+                  <Textarea
+                    value={formData.customTemplateText || ''}
+                    onChange={(e) =>
+                      setFormData({ ...formData, customTemplateText: e.target.value })
+                    }
+                    placeholder="Digite ou edite o template de impressão..."
+                    rows={20}
+                    className="font-mono text-xs"
+                  />
+                  <div className="bg-muted p-3 rounded text-xs">
+                    <p className="font-medium mb-1">Variáveis disponíveis:</p>
+                    <p className="text-muted-foreground">
+                      {formData.templateType === 'parking_ticket' && (
+                        <>
+                          {`{{receiptNumber}}, {{date}}, {{time}}, {{plate}}, {{vehicleType}}, {{entryTime}}, {{exitTime}}, {{duration}}, {{rate}}, {{value}}, {{paymentMethod}}, {{operator}}`}
+                        </>
+                      )}
+                      {formData.templateType === 'monthly_payment' && (
+                        <>
+                          {`{{receiptNumber}}, {{date}}, {{time}}, {{customerName}}, {{customerDocument}}, {{customerPhone}}, {{customerEmail}}, {{planName}}, {{reference}}, {{contractNumber}}, {{contractPeriod}}, {{parkingSlot}}, {{dueDate}}, {{value}}, {{paymentMethod}}, {{paymentDate}}, {{operator}}`}
+                        </>
+                      )}
+                      {formData.templateType === 'general_receipt' && (
+                        <>
+                          {`{{receiptNumber}}, {{date}}, {{time}}, {{customerName}}, {{customerDocument}}, {{plate}}, {{value}}, {{paymentMethod}}, {{operator}}, {{notes}}`}
+                        </>
+                      )}
+                    </p>
+                  </div>
                 </div>
               </TabsContent>
 

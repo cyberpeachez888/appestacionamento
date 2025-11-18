@@ -58,6 +58,8 @@ function toFrontendFormat(template) {
     emailBodyText: template.email_body_text,
     whatsappMessage: template.whatsapp_message,
 
+    customTemplateText: template.custom_template_text,
+
     availableVariables: template.available_variables,
     isDefault: template.is_default,
     isActive: template.is_active,
@@ -111,6 +113,8 @@ function toDbFormat(template) {
     email_body_html: template.emailBodyHtml,
     email_body_text: template.emailBodyText,
     whatsapp_message: template.whatsappMessage,
+
+    custom_template_text: template.customTemplateText,
 
     available_variables: template.availableVariables,
     is_default: template.isDefault,
