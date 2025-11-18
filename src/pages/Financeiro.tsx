@@ -89,10 +89,18 @@ export default function Financeiro() {
           }),
           api.getExpenses(filters).catch((err) => {
             console.error('[Financeiro] Error fetching expenses:', err);
+            // Check if it's a table not found error
+            if (err.message?.includes('expenses') || err.message?.includes('table') || err.message?.includes('schema cache')) {
+              console.warn('[Financeiro] Expenses table not found. Please run CREATE-TABLES-FINANCEIRO.sql in Supabase.');
+            }
             return []; // Return empty array on error
           }),
           api.getManualRevenues(filters).catch((err) => {
             console.error('[Financeiro] Error fetching manual revenues:', err);
+            // Check if it's a table not found error
+            if (err.message?.includes('manual_revenues') || err.message?.includes('table') || err.message?.includes('schema cache')) {
+              console.warn('[Financeiro] Manual revenues table not found. Please run CREATE-TABLES-FINANCEIRO.sql in Supabase.');
+            }
             return []; // Return empty array on error
           }),
         ]);
@@ -118,9 +126,20 @@ export default function Financeiro() {
         setManualRevenues(revenuesData || []);
       } catch (err: any) {
         console.error('[Financeiro] Failed to load financial data:', err);
+        
+        // Check if it's a table not found error
+        const isTableError = err.message?.includes('table') || 
+                             err.message?.includes('schema cache') ||
+                             err.message?.includes('manual_revenues') ||
+                             err.message?.includes('expenses');
+        
+        const errorMessage = isTableError
+          ? 'Tabelas não encontradas. Execute o script CREATE-TABLES-FINANCEIRO.sql no Supabase SQL Editor.'
+          : err.message || String(err);
+        
         toast({ 
           title: 'Erro ao carregar dados', 
-          description: err.message || String(err),
+          description: errorMessage,
           variant: 'destructive',
         });
         // Set empty arrays on error to prevent UI from breaking
