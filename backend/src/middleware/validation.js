@@ -190,8 +190,14 @@ export const validatePasswordChange = [
   body('currentPassword')
     .optional()
     .notEmpty()
-    .withMessage('Senha atual é obrigatória'),
-  validators.password.withMessage('Nova senha não atende aos requisitos'),
+    .withMessage('Senha atual é obrigatória quando não for primeiro login'),
+  body('newPassword')
+    .isLength({ min: 8 })
+    .withMessage('Senha deve ter no mínimo 8 caracteres')
+    .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/)
+    .withMessage(
+      'Senha deve conter: maiúscula, minúscula, número e caractere especial'
+    ),
   handleValidationErrors,
 ];
 
