@@ -29,6 +29,11 @@ import { requireAuth, requireAdmin, requirePermission } from '../middleware/auth
 import { loginLimiter, apiLimiter, strictLimiter } from '../middleware/rateLimiter.js';
 import printerJobsController from '../controllers/printerJobsController.js';
 import { requirePrinterAgent } from '../middleware/printerAgentAuth.js';
+import {
+  validateLogin,
+  validatePasswordChange,
+  validateUserCreate,
+} from '../middleware/validation.js';
 
 const router = express.Router();
 
@@ -251,10 +256,16 @@ if (process.env.SEED_ADMIN_SECRET) {
 }
 
 // Auth - with rate limiting for security
-router.post('/auth/login', loginLimiter, authController.login);
+router.post('/auth/login', loginLimiter, validateLogin, authController.login);
 router.get('/auth/me', requireAuth, authController.me);
 router.post('/auth/validate-password', requireAuth, authController.validatePasswordStrength);
-router.post('/auth/change-password', requireAuth, strictLimiter, authController.changePassword);
+router.post(
+  '/auth/change-password',
+  requireAuth,
+  strictLimiter,
+  validatePasswordChange,
+  authController.changePassword
+);
 router.get('/auth/password-requirements', authController.getPasswordRequirements);
 router.post('/auth/forgot-password', loginLimiter, authController.forgotPassword);
 router.post('/auth/reset-password', loginLimiter, authController.resetPassword);
@@ -262,7 +273,13 @@ router.get('/auth/validate-reset-token/:token', authController.validateResetToke
 
 // Users (protected) - still admin-only for management
 router.get('/users', requireAuth, requirePermission('manageUsers'), usersController.list);
-router.post('/users', requireAuth, requirePermission('manageUsers'), usersController.create);
+router.post(
+  '/users',
+  requireAuth,
+  requirePermission('manageUsers'),
+  validateUserCreate,
+  usersController.create
+);
 router.put('/users/:id', requireAuth, requirePermission('manageUsers'), usersController.update);
 router.put('/users/:id/password', requireAuth, usersController.updatePassword); // self or admin logic handled controller
 router.delete('/users/:id', requireAuth, requirePermission('manageUsers'), usersController.remove);

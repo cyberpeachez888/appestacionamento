@@ -13,7 +13,21 @@ import {
   isPasswordReused,
 } from '../services/securityService.js';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-change-me';
+// JWT_SECRET deve ser obrigatório em produção
+const JWT_SECRET = process.env.JWT_SECRET;
+
+if (!JWT_SECRET) {
+  if (process.env.NODE_ENV === 'production') {
+    throw new Error(
+      '❌ JWT_SECRET é obrigatório em produção! Configure a variável de ambiente.'
+    );
+  }
+  console.warn(
+    '⚠️  AVISO: Usando JWT_SECRET padrão (apenas desenvolvimento). Configure JWT_SECRET no .env para produção!'
+  );
+}
+
+const SECRET = JWT_SECRET || 'dev-secret-change-me';
 const USERS_TABLE = 'users';
 const MAX_LOGIN_ATTEMPTS = 5;
 
@@ -131,7 +145,7 @@ export default {
       await updateLastLogin(user.id, ipAddress);
 
       const frontendUser = toFrontendUser(user);
-      const token = jwt.sign(frontendUser, JWT_SECRET, { expiresIn: '12h' });
+      const token = jwt.sign(frontendUser, SECRET, { expiresIn: '12h' });
 
       // Check if user must change password
       const mustChangePassword = user.must_change_password || user.is_first_login;

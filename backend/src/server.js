@@ -6,6 +6,14 @@ import routes from './routes/index.js';
 import scheduledBackupService from './services/scheduledBackupService.js';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
+// Security middlewares
+import {
+  securityHeaders,
+  globalRateLimiter,
+  forceHTTPS,
+  secureLogger,
+} from './middleware/security.js';
+import { sanitizeInput } from './middleware/validation.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -15,8 +23,14 @@ dotenv.config({ path: join(__dirname, '..', '.env') });
 
 const app = express();
 
-// ✅ ADICIONAR ESTA LINHA
-app.set('trust proxy', 1); // Trust first proxy (Render)
+// ✅ 1. Forçar HTTPS em produção (PRIMEIRO)
+app.use(forceHTTPS);
+
+// ✅ 2. Headers de segurança HTTP
+app.use(securityHeaders);
+
+// ✅ 3. Trust proxy (para funcionar atrás de proxy reverso)
+app.set('trust proxy', 1);
 
 // CORS configuration for production (Vercel + Render + Local)
 const allowedOrigins = [
@@ -106,6 +120,16 @@ app.use(
 
 app.use(bodyParser.json());
 
+// ✅ 4. Rate limiting global (proteção DDoS básica)
+app.use('/api', globalRateLimiter);
+
+// ✅ 5. Logger seguro (mascara dados sensíveis)
+app.use(secureLogger);
+
+// ✅ 6. Sanitização de entrada (proteção XSS)
+app.use('/api', sanitizeInput);
+
+// Rotas da aplicação
 app.use('/api', routes);
 
 // Legacy compatibility (some frontend may hit root endpoints)
@@ -117,10 +141,22 @@ app.use((err, req, res, next) => {
   res.header('Access-Control-Allow-Credentials', 'true');
   res.header('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS');
   res.header('Access-Control-Allow-Headers', 'Content-Type,Authorization');
-  console.error(err.stack);
+  
+  // Não expor stack trace em produção
+  const isDev = process.env.NODE_ENV !== 'production';
+  if (isDev) {
+    console.error(err.stack);
+  } else {
+    console.error('Error:', err.message);
+  }
+  
   // Se já foi enviada resposta, não tente enviar novamente
   if (res.headersSent) return next(err);
-  res.status(err.status || 500).json({ error: err.message || 'Internal Server Error' });
+  
+  res.status(err.status || 500).json({
+    error: err.message || 'Internal Server Error',
+    ...(isDev && { stack: err.stack }), // Apenas em desenvolvimento
+  });
 });
 
 const PORT = process.env.PORT || 3000;

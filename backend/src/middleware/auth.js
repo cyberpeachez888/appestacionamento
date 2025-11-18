@@ -1,13 +1,27 @@
 import jwt from 'jsonwebtoken';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-change-me';
+// JWT_SECRET deve ser obrigatório em produção
+const JWT_SECRET = process.env.JWT_SECRET;
+
+if (!JWT_SECRET) {
+  if (process.env.NODE_ENV === 'production') {
+    throw new Error(
+      '❌ JWT_SECRET é obrigatório em produção! Configure a variável de ambiente.'
+    );
+  }
+  console.warn(
+    '⚠️  AVISO: Usando JWT_SECRET padrão (apenas desenvolvimento). Configure JWT_SECRET no .env para produção!'
+  );
+}
+
+const SECRET = JWT_SECRET || 'dev-secret-change-me';
 
 export function requireAuth(req, res, next) {
   const header = req.headers['authorization'] || '';
   const token = header.startsWith('Bearer ') ? header.slice(7) : null;
   if (!token) return res.status(401).json({ error: 'Unauthorized' });
   try {
-    const payload = jwt.verify(token, JWT_SECRET);
+    const payload = jwt.verify(token, SECRET);
     req.user = payload; // { id, name, role, permissions }
     next();
   } catch (err) {
