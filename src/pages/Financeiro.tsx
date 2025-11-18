@@ -393,12 +393,26 @@ export default function Financeiro() {
     try {
       if (revenue.id.startsWith('new-')) {
         const { id, ...revenueData } = revenue;
-        const created = await api.createManualRevenue(revenueData);
+        const created = await api.createManualRevenue({
+          description: revenueData.description,
+          value: revenueData.value,
+          date: revenueData.date,
+          category: revenueData.category,
+          status: revenueData.status,
+          notes: revenueData.notes,
+        });
         setManualRevenues((prev) => prev.map((r) => (r.id === id ? created : r)));
         toast({ title: 'Receita criada', description: 'A receita foi registrada com sucesso' });
       } else {
         const { id, ...revenueData } = revenue;
-        const updated = await api.updateManualRevenue(id, revenueData);
+        const updated = await api.updateManualRevenue(id, {
+          description: revenueData.description,
+          value: revenueData.value,
+          date: revenueData.date,
+          category: revenueData.category,
+          status: revenueData.status,
+          notes: revenueData.notes,
+        });
         setManualRevenues((prev) => prev.map((r) => (r.id === id ? updated : r)));
         toast({ title: 'Receita atualizada', description: 'A receita foi atualizada com sucesso' });
       }
