@@ -79,13 +79,29 @@ export default function Financeiro() {
       try {
         setLoading(true);
         const filters = startDate && endDate ? { start: startDate, end: endDate } : undefined;
+        console.log('[Financeiro] Loading financial data with filters:', filters);
         
         // Load all financial data in parallel
         const [report, expensesData, revenuesData] = await Promise.all([
-          api.getFinancialReport(filters),
-          api.getExpenses(filters),
-          api.getManualRevenues(filters),
+          api.getFinancialReport(filters).catch((err) => {
+            console.error('[Financeiro] Error fetching financial report:', err);
+            throw err;
+          }),
+          api.getExpenses(filters).catch((err) => {
+            console.error('[Financeiro] Error fetching expenses:', err);
+            return []; // Return empty array on error
+          }),
+          api.getManualRevenues(filters).catch((err) => {
+            console.error('[Financeiro] Error fetching manual revenues:', err);
+            return []; // Return empty array on error
+          }),
         ]);
+        
+        console.log('[Financeiro] Report received:', {
+          hasReport: !!report,
+          paymentsCount: report?.payments?.length || 0,
+          total: report?.total || 0,
+        });
         
         const payments: ReportPayment[] = report?.payments || [];
         const mapType = (t?: string): 'Avulso' | 'Mensalista' =>
@@ -95,11 +111,22 @@ export default function Financeiro() {
           date: p.date,
           value: Number(p.value) || 0,
         }));
+        
+        console.log('[Financeiro] Mapped records:', mapped.length);
         setRecords(mapped);
         setExpenses(expensesData || []);
         setManualRevenues(revenuesData || []);
       } catch (err: any) {
-        toast({ title: 'Erro ao carregar dados', description: err.message || String(err) });
+        console.error('[Financeiro] Failed to load financial data:', err);
+        toast({ 
+          title: 'Erro ao carregar dados', 
+          description: err.message || String(err),
+          variant: 'destructive',
+        });
+        // Set empty arrays on error to prevent UI from breaking
+        setRecords([]);
+        setExpenses([]);
+        setManualRevenues([]);
       } finally {
         setLoading(false);
       }

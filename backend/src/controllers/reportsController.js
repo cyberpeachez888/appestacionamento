@@ -5,6 +5,7 @@ export default {
   async summary(req, res) {
     try {
       const { start, end } = req.query;
+      console.log('[Reports] Fetching financial report', { start, end });
       
       // Fetch payments from payments table
       let paymentsQuery = supabase
@@ -14,7 +15,11 @@ export default {
       if (start) paymentsQuery = paymentsQuery.gte('date', start);
       if (end) paymentsQuery = paymentsQuery.lte('date', end);
       const paymentsResp = await paymentsQuery;
-      if (paymentsResp.error) return res.status(500).json({ error: paymentsResp.error });
+      if (paymentsResp.error) {
+        console.error('[Reports] Error fetching payments:', paymentsResp.error);
+        return res.status(500).json({ error: paymentsResp.error });
+      }
+      console.log('[Reports] Found payments:', paymentsResp.data?.length || 0);
 
       let payments = paymentsResp.data || [];
       
@@ -26,6 +31,8 @@ export default {
         .select('id, exit_time, amount, metadata, status');
       
       // Apply date filters if provided (this helps reduce data fetched)
+      // Note: Only apply filters if both start and end are provided, or if we want all tickets
+      // If no filters, we'll fetch all and filter in code
       if (start) {
         ticketsQuery = ticketsQuery.gte('exit_time', start);
       }
@@ -37,11 +44,18 @@ export default {
       
       const allTicketsResp = await ticketsQuery;
       
+      if (allTicketsResp.error) {
+        console.warn('[Reports] Error fetching tickets (non-fatal):', allTicketsResp.error);
+      } else {
+        console.log('[Reports] Found tickets:', allTicketsResp.data?.length || 0);
+      }
+      
       // Filter tickets that have exit_time (completed tickets)
       // This ensures we only process tickets that were actually completed
       let completedTickets = [];
       if (!allTicketsResp.error && allTicketsResp.data) {
         completedTickets = allTicketsResp.data.filter((ticket) => ticket.exit_time != null);
+        console.log('[Reports] Completed tickets (with exit_time):', completedTickets.length);
       }
       
       const ticketsResp = { data: completedTickets, error: null };
@@ -140,8 +154,15 @@ export default {
         return acc;
       }, {});
 
+      console.log('[Reports] Final response:', {
+        total,
+        count: payments.length,
+        byMethodKeys: Object.keys(byMethod),
+      });
+
       res.json({ total, count: payments.length, byMethod, payments });
     } catch (err) {
+      console.error('[Reports] Error in summary:', err);
       res.status(500).json({ error: err.message || err });
     }
   },
