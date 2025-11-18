@@ -31,8 +31,8 @@ export default {
         .select('id, exit_time, amount, metadata, status');
       
       // Apply date filters if provided (this helps reduce data fetched)
-      // Note: Only apply filters if both start and end are provided, or if we want all tickets
-      // If no filters, we'll fetch all and filter in code
+      // Only apply exit_time filters if we have date constraints
+      // Otherwise, we'll fetch all tickets and filter in code (but this is less efficient)
       if (start) {
         ticketsQuery = ticketsQuery.gte('exit_time', start);
       }
@@ -40,6 +40,16 @@ export default {
         const endDate = new Date(end);
         endDate.setHours(23, 59, 59, 999);
         ticketsQuery = ticketsQuery.lte('exit_time', endDate.toISOString());
+      }
+      
+      // If no date filters, limit the query to avoid fetching too many tickets
+      // In production, you might want to add pagination or a reasonable date range
+      if (!start && !end) {
+        // Limit to last 365 days to avoid performance issues
+        const oneYearAgo = new Date();
+        oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+        ticketsQuery = ticketsQuery.gte('exit_time', oneYearAgo.toISOString());
+        console.log('[Reports] No date filters provided, limiting to last year');
       }
       
       const allTicketsResp = await ticketsQuery;
