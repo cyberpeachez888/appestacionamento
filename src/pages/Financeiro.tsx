@@ -124,7 +124,18 @@ export default function Financeiro() {
         console.log('[Financeiro] Mapped records:', mapped.length);
         setRecords(mapped);
         setExpenses(expensesData || []);
-        setManualRevenues(revenuesData || []);
+        // Ensure manual revenues have status field (default to 'Não Pago' if missing)
+        const revenuesWithStatus = (revenuesData || []).map((r: any) => {
+          const revenue = {
+            ...r,
+            status: r.status || 'Não Pago',
+            category: r.category || '',
+          };
+          console.log('[Financeiro] Manual revenue loaded:', { id: revenue.id, hasStatus: !!revenue.status, hasCategory: !!revenue.category });
+          return revenue;
+        });
+        console.log('[Financeiro] Manual revenues with status:', revenuesWithStatus.length);
+        setManualRevenues(revenuesWithStatus);
       } catch (err: any) {
         console.error('[Financeiro] Failed to load financial data:', err);
         
