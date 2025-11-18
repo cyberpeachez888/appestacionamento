@@ -18,7 +18,7 @@ export interface ReceiptTemplateCustomField {
 }
 
 export interface ThermalReceiptTemplate {
-  templateType: 'parking_ticket' | 'monthly_payment' | 'general_receipt';
+  templateType: 'parking_ticket' | 'monthly_payment' | 'general_receipt' | string; // Permite tipos customizados
   headerText?: string;
   footerText?: string;
   termsAndConditions?: string;

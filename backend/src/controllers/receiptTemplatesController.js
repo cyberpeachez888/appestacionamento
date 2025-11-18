@@ -220,6 +220,16 @@ export default {
   async create(req, res) {
     try {
       const payload = toDbFormat(req.body);
+      
+      // Validação básica
+      if (!payload.template_name || !payload.template_type) {
+        return res.status(400).json({ error: 'Nome e tipo do template são obrigatórios' });
+      }
+      
+      if (!payload.template_name.trim() || !payload.template_type.trim()) {
+        return res.status(400).json({ error: 'Nome e tipo do template não podem estar vazios' });
+      }
+      
       payload.id = uuid();
 
       // If setting as default, unset other defaults for this type
@@ -253,6 +263,16 @@ export default {
     try {
       const { id } = req.params;
       const payload = toDbFormat(req.body);
+      
+      // Validação básica
+      if (payload.template_name !== undefined && !payload.template_name.trim()) {
+        return res.status(400).json({ error: 'Nome do template não pode estar vazio' });
+      }
+      
+      if (payload.template_type !== undefined && !payload.template_type.trim()) {
+        return res.status(400).json({ error: 'Tipo do template não pode estar vazio' });
+      }
+      
       delete payload.id; // Don't update ID
       payload.updated_at = new Date().toISOString();
 

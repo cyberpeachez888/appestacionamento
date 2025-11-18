@@ -46,7 +46,7 @@ import {
 interface ReceiptTemplate {
   id: string;
   templateName: string;
-  templateType: 'parking_ticket' | 'monthly_payment' | 'general_receipt';
+  templateType: 'parking_ticket' | 'monthly_payment' | 'general_receipt' | string; // Permite tipos customizados
   description: string;
   isDefault: boolean;
   isActive: boolean;
@@ -132,11 +132,38 @@ function getReferenceLabel(date: Date) {
 
 // Função para gerar modelo padrão de template baseado no tipo
 function generateDefaultTemplateText(
-  templateType: 'parking_ticket' | 'monthly_payment' | 'general_receipt',
+  templateType: 'parking_ticket' | 'monthly_payment' | 'general_receipt' | string,
   companyConfig: any | null
 ): string {
   const company = companyConfig || FALLBACK_COMPANY;
   const separator = '--------------------------------';
+
+  // Tipos customizados não têm template padrão - retornar template básico
+  const isCustomType = !['parking_ticket', 'monthly_payment', 'general_receipt'].includes(templateType);
+  if (isCustomType) {
+    // Template básico para tipos customizados
+    return `${separator}
+🚗 PROPARKING APP - 2025
+Sistema de Gestão de Estacionamento
+${separator}
+${company.name || 'Nome da Empresa'}
+${company.legalName || 'Razão Social'}
+CNPJ: ${company.cnpj || '00.000.000/0000-00'}
+${company.address || 'Endereço da Empresa'}
+Tel: ${company.phone || '(00) 0000-0000'}
+${separator}
+
+RECIBO: {{receiptNumber}}
+Data: {{date}}
+Hora: {{time}}
+
+${separator}
+Documento sem validade fiscal
+${separator}
+Obrigado pela preferência!
+© 2025 ProParking App
+`;
+  }
 
   if (templateType === 'monthly_payment') {
     return `${separator}
@@ -677,6 +704,8 @@ export default function ModelosRecibos() {
   const [companyConfig, setCompanyConfig] = useState<any | null>(null);
   const [previewTab, setPreviewTab] = useState<'thermal' | 'pdf'>('thermal');
 
+  const [isCreatingCustomType, setIsCreatingCustomType] = useState(false);
+  const [customTypeName, setCustomTypeName] = useState('');
   const [formData, setFormData] = useState<Partial<ReceiptTemplate>>({
     templateName: '',
     templateType: 'general_receipt',
@@ -739,11 +768,14 @@ export default function ModelosRecibos() {
 
     // For parking_ticket, generate separate previews for entry and exit
     if (previewTemplate.templateType === 'parking_ticket' && sample && typeof sample === 'object' && 'entry' in sample && 'exit' in sample) {
-      setThermalPreviewEntry(generateThermalPreview(previewTemplate, sample.entry, companyConfig));
-      setThermalPreviewExit(generateThermalPreview(previewTemplate, sample.exit, companyConfig));
+      const parkingSample = sample as { entry: any; exit: any };
+      setThermalPreviewEntry(generateThermalPreview(previewTemplate, parkingSample.entry, companyConfig));
+      setThermalPreviewExit(generateThermalPreview(previewTemplate, parkingSample.exit, companyConfig));
       setThermalPreview(''); // Clear single preview
     } else {
-      setThermalPreview(generateThermalPreview(previewTemplate, sample, companyConfig));
+      // Type guard: sample is ThermalSampleData (not parking_ticket format)
+      const singleSample = sample as any;
+      setThermalPreview(generateThermalPreview(previewTemplate, singleSample, companyConfig));
       setThermalPreviewEntry('');
       setThermalPreviewExit('');
     }
@@ -799,6 +831,8 @@ export default function ModelosRecibos() {
 
   const handleCreate = () => {
     setEditingTemplate(null);
+    setIsCreatingCustomType(false);
+    setCustomTypeName('');
     const defaultType = 'general_receipt';
     const defaultTemplateText = generateDefaultTemplateText(defaultType, companyConfig);
     const formDataBase: Partial<ReceiptTemplate> = {
@@ -838,6 +872,11 @@ export default function ModelosRecibos() {
 
   const handleEdit = (template: ReceiptTemplate) => {
     setEditingTemplate(template);
+    // Verificar se é tipo customizado (não é um dos 3 padrões)
+    const isCustomType = !['parking_ticket', 'monthly_payment', 'general_receipt'].includes(template.templateType);
+    setIsCreatingCustomType(isCustomType);
+    setCustomTypeName(isCustomType ? template.templateType : '');
+    
     // Se não tiver customTemplateText, gerar o padrão baseado no tipo
     const templateData = { ...template };
     if (template.templateType === 'parking_ticket') {
@@ -847,8 +886,8 @@ export default function ModelosRecibos() {
         templateData.customTemplateTextEntry = templateData.customTemplateTextEntry || defaultParking.entry;
         templateData.customTemplateTextExit = templateData.customTemplateTextExit || defaultParking.exit;
       }
-    } else {
-      // Para outros tipos, usar customTemplateText único
+    } else if (!isCustomType) {
+      // Para tipos padrão (não customizados), usar customTemplateText único
       if (!templateData.customTemplateText) {
         templateData.customTemplateText = generateDefaultTemplateText(
           template.templateType,
@@ -856,12 +895,23 @@ export default function ModelosRecibos() {
         );
       }
     }
+    // Para tipos customizados, manter o customTemplateText como está (pode estar vazio)
     setFormData(templateData);
     setDialogOpen(true);
   };
 
   const handleSave = async () => {
-    if (!formData.templateName || !formData.templateType) {
+    // Validar tipo customizado se estiver criando
+    if (isCreatingCustomType && (!customTypeName || customTypeName.trim() === '')) {
+      toast({
+        title: 'Erro',
+        description: 'Digite o nome do tipo de recibo',
+        variant: 'destructive',
+      });
+      return;
+    }
+    
+    if (!formData.templateName || !formData.templateType || formData.templateType.trim() === '') {
       toast({
         title: 'Erro',
         description: 'Nome e tipo são obrigatórios',
@@ -960,8 +1010,9 @@ export default function ModelosRecibos() {
     const labels: Record<string, string> = {
       parking_ticket: 'Ticket de Estacionamento',
       monthly_payment: 'Mensalista',
-      general_receipt: 'Recibo Geral',
+      general_receipt: 'Recibo de Reembolso',
     };
+    // Se não for um dos tipos padrão, retorna o próprio nome (tipo customizado)
     return labels[type] || type;
   };
 
@@ -987,7 +1038,7 @@ export default function ModelosRecibos() {
               <SelectItem value="all">Todos os Tipos</SelectItem>
               <SelectItem value="parking_ticket">Ticket de Estacionamento</SelectItem>
               <SelectItem value="monthly_payment">Mensalista</SelectItem>
-              <SelectItem value="general_receipt">Recibo Geral</SelectItem>
+              <SelectItem value="general_receipt">Recibo de Reembolso</SelectItem>
             </SelectContent>
           </Select>
 
@@ -1246,47 +1297,104 @@ export default function ModelosRecibos() {
 
                 <div>
                   <Label>Tipo *</Label>
-                  <Select
-                    value={formData.templateType}
-                    onValueChange={(v: any) => {
-                      // Quando mudar o tipo, atualizar o template padrão se não houver texto customizado
-                      const newType = v as 'parking_ticket' | 'monthly_payment' | 'general_receipt';
-                      if (newType === 'parking_ticket') {
-                        // Para parking_ticket, usar templates separados
-                        const defaultParking = generateDefaultTemplateTextParking(companyConfig);
-                        setFormData({
-                          ...formData,
-                          templateType: newType,
-                          customTemplateText: undefined,
-                          customTemplateTextEntry: formData.customTemplateTextEntry || defaultParking.entry,
-                          customTemplateTextExit: formData.customTemplateTextExit || defaultParking.exit,
-                        });
-                      } else {
-                        // Para outros tipos, usar template único
-                        const shouldUpdateTemplate =
-                          !formData.customTemplateText || formData.customTemplateText.trim() === '';
-                        const newTemplateText = shouldUpdateTemplate
-                          ? generateDefaultTemplateText(newType, companyConfig)
-                          : formData.customTemplateText;
-                        setFormData({
-                          ...formData,
-                          templateType: newType,
-                          customTemplateText: newTemplateText,
-                          customTemplateTextEntry: undefined,
-                          customTemplateTextExit: undefined,
-                        });
-                      }
-                    }}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="parking_ticket">Ticket de Estacionamento</SelectItem>
-                      <SelectItem value="monthly_payment">Mensalista</SelectItem>
-                      <SelectItem value="general_receipt">Recibo Geral</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  {!isCreatingCustomType ? (
+                    <Select
+                      value={formData.templateType || ''}
+                      onValueChange={(v: any) => {
+                        if (v === '__create_new__') {
+                          // Usuário quer criar tipo customizado
+                          setIsCreatingCustomType(true);
+                          setCustomTypeName('');
+                          setFormData({
+                            ...formData,
+                            templateType: '',
+                            customTemplateText: '', // Template em branco para tipo customizado
+                            customTemplateTextEntry: undefined,
+                            customTemplateTextExit: undefined,
+                          });
+                        } else {
+                          // Tipo padrão selecionado
+                          const newType = v as 'parking_ticket' | 'monthly_payment' | 'general_receipt';
+                          if (newType === 'parking_ticket') {
+                            // Para parking_ticket, usar templates separados
+                            const defaultParking = generateDefaultTemplateTextParking(companyConfig);
+                            setFormData({
+                              ...formData,
+                              templateType: newType,
+                              customTemplateText: undefined,
+                              customTemplateTextEntry: formData.customTemplateTextEntry || defaultParking.entry,
+                              customTemplateTextExit: formData.customTemplateTextExit || defaultParking.exit,
+                            });
+                          } else {
+                            // Para outros tipos, usar template único
+                            const shouldUpdateTemplate =
+                              !formData.customTemplateText || formData.customTemplateText.trim() === '';
+                            const newTemplateText = shouldUpdateTemplate
+                              ? generateDefaultTemplateText(newType, companyConfig)
+                              : formData.customTemplateText;
+                            setFormData({
+                              ...formData,
+                              templateType: newType,
+                              customTemplateText: newTemplateText,
+                              customTemplateTextEntry: undefined,
+                              customTemplateTextExit: undefined,
+                            });
+                          }
+                        }
+                      }}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="parking_ticket">Ticket de Estacionamento</SelectItem>
+                        <SelectItem value="monthly_payment">Mensalista</SelectItem>
+                        <SelectItem value="general_receipt">Recibo de Reembolso</SelectItem>
+                        <SelectItem value="__create_new__">
+                          <span className="flex items-center gap-2">
+                            <Plus className="h-4 w-4" />
+                            Criar Novo +
+                          </span>
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                  ) : (
+                    <div className="space-y-2">
+                      <div className="flex gap-2">
+                        <Input
+                          placeholder="Digite o nome do tipo (ex: Recibo de Lavagem)"
+                          value={customTypeName}
+                          onChange={(e) => {
+                            const newName = e.target.value.trim();
+                            setCustomTypeName(newName);
+                            setFormData({
+                              ...formData,
+                              templateType: newName, // Usa o nome digitado como tipo
+                            });
+                          }}
+                          className="flex-1"
+                        />
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => {
+                            setIsCreatingCustomType(false);
+                            setCustomTypeName('');
+                            setFormData({
+                              ...formData,
+                              templateType: 'general_receipt', // Volta para padrão
+                              customTemplateText: generateDefaultTemplateText('general_receipt', companyConfig),
+                            });
+                          }}
+                        >
+                          Cancelar
+                        </Button>
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        Digite um nome único para o novo tipo de recibo
+                      </p>
+                    </div>
+                  )}
                 </div>
 
                 <div>
