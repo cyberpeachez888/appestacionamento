@@ -45,18 +45,18 @@ export function sanitizeObject(obj) {
 
 /**
  * Middleware de sanitização de entrada
- * Aplica sanitização em body, query e params
+ * Aplica sanitização em req.body
+ * Nota: req.query e req.params são somente leitura no Express,
+ * então deixamos o express-validator lidar com eles quando necessário
  */
 export function sanitizeInput(req, res, next) {
-  if (req.body) {
+  // Apenas sanitizar req.body, que é mutável
+  // req.query e req.params são objetos especiais do Express que não podem ser modificados diretamente
+  // O express-validator já faz sanitização quando usado nos validadores
+  if (req.body && typeof req.body === 'object') {
     req.body = sanitizeObject(req.body);
   }
-  if (req.query) {
-    req.query = sanitizeObject(req.query);
-  }
-  if (req.params) {
-    req.params = sanitizeObject(req.params);
-  }
+  
   next();
 }
 
