@@ -668,7 +668,16 @@ export default function Financeiro() {
                         </td>
                       </tr>
                     ) : (
-                      expenses.map((expense, index) => (
+                      expenses.map((expense, index) => {
+                        // Debug: log expense status to verify button visibility
+                        if (index === 0) {
+                          console.log('[Financeiro] First expense status:', {
+                            id: expense.id,
+                            status: expense.status,
+                            shouldShowButton: expense.status !== 'Pago',
+                          });
+                        }
+                        return (
                         <tr
                           key={expense.id}
                           className={index % 2 === 0 ? 'bg-background' : 'bg-muted/20'}
