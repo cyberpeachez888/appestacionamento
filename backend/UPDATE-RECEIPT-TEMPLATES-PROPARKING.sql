@@ -6,14 +6,14 @@
 -- ============================================
 UPDATE receipt_templates
 SET 
-  email_body_html = '<!DOCTYPE html>
+  email_body_html = $HTML$<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Recibo Mensalista - ProParking App</title>
 </head>
-<body style="font-family: ''Segoe UI'', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+<body style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
   <div style="background: white; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); overflow: hidden;">
     <!-- Header com identidade ProParking -->
     <div style="background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%); padding: 30px 20px; text-align: center; color: white;">
@@ -101,24 +101,24 @@ SET
     </div>
   </div>
 </body>
-</html>',
+</html>$HTML$,
   email_subject = 'Recibo Mensalista #{{receiptNumber}} - ProParking App',
   whatsapp_message = '🚗 *PROPARKING APP - 2025*\n\n📄 *Recibo Mensalista #{{receiptNumber}}*\n\n👤 Cliente: {{customerName}}\n🚙 Placas: {{plates}}\n📅 Data: {{date}}\n📆 Mês Ref.: {{referenceMonth}}\n💰 Valor: R$ {{value}}\n💳 Pagamento: {{paymentMethod}}\n📅 Próx. Venc.: {{dueDate}}\n\n⚠️ Documento sem validade fiscal\n\nObrigado pela preferência! 🎉'
-WHERE template_type = ''monthly_payment'' AND is_default = TRUE;
+WHERE template_type = 'monthly_payment' AND is_default = TRUE;
 
 -- ============================================
 -- 2. ATUALIZAR TEMPLATE DE REEMBOLSO (PDF/Email/WhatsApp)
 -- ============================================
 UPDATE receipt_templates
 SET 
-  email_body_html = '<!DOCTYPE html>
+  email_body_html = $HTML$<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Recibo de Reembolso - ProParking App</title>
 </head>
-<body style="font-family: ''Segoe UI'', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+<body style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
   <div style="background: white; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); overflow: hidden;">
     <!-- Header com identidade ProParking -->
     <div style="background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%); padding: 30px 20px; text-align: center; color: white;">
@@ -209,15 +209,15 @@ SET
     </div>
   </div>
 </body>
-</html>',
+</html>$HTML$,
   email_subject = 'Recibo de Reembolso #{{receiptNumber}} - ProParking App',
   whatsapp_message = '🚗 *PROPARKING APP - 2025*\n\n📄 *Recibo de Reembolso #{{receiptNumber}}*\n\n👤 Solicitante: {{recipientName}}\n🆔 CPF: {{recipientCpf}}\n🚙 Placa: {{plate}}\n📅 Data: {{date}} {{time}}\n💰 Valor: R$ {{value}}\n💳 Pagamento: {{paymentMethod}}\n📝 Descrição: {{description}}\n👨‍💼 Emitido por: {{issuedBy}}\n\n⚠️ Recibo sem validade fiscal\n\nObrigado pela preferência! 🎉'
-WHERE template_type = ''general_receipt'' AND is_default = TRUE;
+WHERE template_type = 'general_receipt' AND is_default = TRUE;
 
 -- Verificar atualizações
 SELECT template_name, template_type, is_default, 
        LEFT(email_body_html, 100) as email_preview
 FROM receipt_templates 
-WHERE template_type IN (''monthly_payment'', ''general_receipt'') 
+WHERE template_type IN ('monthly_payment', 'general_receipt') 
   AND is_default = TRUE;
 

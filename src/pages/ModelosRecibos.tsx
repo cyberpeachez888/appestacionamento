@@ -1936,15 +1936,146 @@ export default function ModelosRecibos() {
                   />
                 </div>
 
-                <div>
-                  <Label>Corpo do Email (HTML)</Label>
-                  <Textarea
-                    value={formData.emailBodyHtml || ''}
-                    onChange={(e) => setFormData({ ...formData, emailBodyHtml: e.target.value })}
-                    rows={6}
-                    placeholder="<html><body>...</body></html>"
-                    className="font-mono text-xs"
-                  />
+                {/* Editor de Template PDF/Email com Preview */}
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-base font-semibold">Template PDF/Email (HTML)</Label>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={async () => {
+                        // Buscar template padrão do banco ou usar um template padrão
+                        try {
+                          const response = await fetch(
+                            `/api/receipt-templates?type=${formData.templateType}&default=true`
+                          );
+                          if (response.ok) {
+                            const data = await response.json();
+                            if (data && data.length > 0 && data[0].emailBodyHtml) {
+                              setFormData({ ...formData, emailBodyHtml: data[0].emailBodyHtml });
+                              return;
+                            }
+                          }
+                        } catch (error) {
+                          console.error('Erro ao buscar template padrão:', error);
+                        }
+                        // Fallback: template padrão básico
+                        const defaultHtml = formData.templateType === 'monthly_payment'
+                          ? `<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Recibo Mensalista - ProParking App</title>
+</head>
+<body style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+  <div style="background: white; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); overflow: hidden;">
+    <div style="background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%); padding: 30px 20px; text-align: center; color: white;">
+      <h1 style="margin: 0; font-size: 28px; font-weight: 700;">PROPARKING APP - 2025</h1>
+    </div>
+    <div style="padding: 24px;">
+      <h2>Recibo #{{receiptNumber}}</h2>
+      <p><strong>Cliente:</strong> {{customerName}}</p>
+      <p><strong>Valor:</strong> R$ {{value}}</p>
+      <p><strong>Data:</strong> {{date}}</p>
+    </div>
+  </div>
+</body>
+</html>`
+                          : `<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Recibo - ProParking App</title>
+</head>
+<body style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+  <div style="background: white; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); overflow: hidden;">
+    <div style="background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%); padding: 30px 20px; text-align: center; color: white;">
+      <h1 style="margin: 0; font-size: 28px; font-weight: 700;">PROPARKING APP - 2025</h1>
+    </div>
+    <div style="padding: 24px;">
+      <h2>Recibo #{{receiptNumber}}</h2>
+      <p><strong>Valor:</strong> R$ {{value}}</p>
+      <p><strong>Data:</strong> {{date}}</p>
+    </div>
+  </div>
+</body>
+</html>`;
+                        setFormData({ ...formData, emailBodyHtml: defaultHtml });
+                      }}
+                    >
+                      Restaurar Padrão
+                    </Button>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Edite livremente o template HTML para PDF/Email. Use variáveis como{' '}
+                    {formData.templateType === 'monthly_payment'
+                      ? `{{receiptNumber}}, {{customerName}}, {{plates}}, {{value}}, {{date}}, {{referenceMonth}}, {{paymentMethod}}, {{dueDate}}, {{companyName}}, etc.`
+                      : formData.templateType === 'general_receipt'
+                        ? `{{receiptNumber}}, {{recipientName}}, {{recipientCpf}}, {{plate}}, {{value}}, {{date}}, {{time}}, {{paymentMethod}}, {{description}}, {{issuedBy}}, {{companyName}}, etc.`
+                        : `{{receiptNumber}}, {{date}}, {{time}}, {{plate}}, {{value}}, {{paymentMethod}}, {{companyName}}, etc.`}
+                  </p>
+                  
+                  {/* Tabs para Editor e Preview */}
+                  <Tabs defaultValue="editor" className="w-full">
+                    <TabsList className="grid w-full grid-cols-2">
+                      <TabsTrigger value="editor">Editor HTML</TabsTrigger>
+                      <TabsTrigger value="preview">Preview</TabsTrigger>
+                    </TabsList>
+                    
+                    <TabsContent value="editor" className="space-y-2">
+                      <Textarea
+                        value={formData.emailBodyHtml || ''}
+                        onChange={(e) => setFormData({ ...formData, emailBodyHtml: e.target.value })}
+                        rows={20}
+                        placeholder="<!DOCTYPE html>..."
+                        className="font-mono text-xs"
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        💡 Dica: Use variáveis entre chaves duplas, ex: {`{{receiptNumber}}`}
+                      </p>
+                    </TabsContent>
+                    
+                    <TabsContent value="preview" className="space-y-2">
+                      <div className="border rounded-lg p-4 bg-white max-h-[600px] overflow-auto">
+                        {formData.emailBodyHtml ? (
+                          <div
+                            dangerouslySetInnerHTML={{
+                              __html: formData.emailBodyHtml
+                                .replace(/\{\{receiptNumber\}\}/g, '001234')
+                                .replace(/\{\{customerName\}\}/g, 'Cliente Exemplo')
+                                .replace(/\{\{plates\}\}/g, 'ABC-1234')
+                                .replace(/\{\{value\}\}/g, '150,00')
+                                .replace(/\{\{date\}\}/g, '15/01/2025')
+                                .replace(/\{\{time\}\}/g, '14:30')
+                                .replace(/\{\{referenceMonth\}\}/g, 'Janeiro/2025')
+                                .replace(/\{\{paymentMethod\}\}/g, 'PIX')
+                                .replace(/\{\{dueDate\}\}/g, '15/02/2025')
+                                .replace(/\{\{recipientName\}\}/g, 'João Silva')
+                                .replace(/\{\{recipientCpf\}\}/g, '000.000.000-00')
+                                .replace(/\{\{plate\}\}/g, 'XYZ-9876')
+                                .replace(/\{\{description\}\}/g, 'Reembolso de estacionamento')
+                                .replace(/\{\{issuedBy\}\}/g, 'Operador Exemplo')
+                                .replace(/\{\{companyName\}\}/g, companyConfig?.name || 'Nome da Empresa')
+                                .replace(/\{\{companyLegalName\}\}/g, companyConfig?.legalName || 'Razão Social')
+                                .replace(/\{\{companyCnpj\}\}/g, companyConfig?.cnpj || '00.000.000/0000-00')
+                                .replace(/\{\{companyAddress\}\}/g, companyConfig?.address || 'Endereço da Empresa')
+                                .replace(/\{\{companyPhone\}\}/g, companyConfig?.phone || '(00) 0000-0000'),
+                            }}
+                          />
+                        ) : (
+                          <p className="text-sm text-muted-foreground text-center py-8">
+                            Digite o HTML do template para ver o preview
+                          </p>
+                        )}
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        ⚠️ Preview com dados de exemplo. As variáveis serão substituídas pelos dados reais ao enviar.
+                      </p>
+                    </TabsContent>
+                  </Tabs>
                 </div>
 
                 <div>
@@ -1960,9 +2091,21 @@ export default function ModelosRecibos() {
                 <div className="bg-muted p-3 rounded text-xs">
                   <p className="font-medium mb-1">Variáveis disponíveis:</p>
                   <p className="text-muted-foreground">
-                    &#123;&#123;receiptNumber&#125;&#125;, &#123;&#123;date&#125;&#125;,
-                    &#123;&#123;plate&#125;&#125;, &#123;&#123;value&#125;&#125;,
-                    &#123;&#123;paymentMethod&#125;&#125;, &#123;&#123;companyName&#125;&#125;, etc.
+                    {formData.templateType === 'monthly_payment' && (
+                      <>
+                        {`{{receiptNumber}}, {{customerName}}, {{plates}}, {{value}}, {{date}}, {{referenceMonth}}, {{paymentMethod}}, {{dueDate}}, {{companyName}}, {{companyLegalName}}, {{companyCnpj}}, {{companyAddress}}, {{companyPhone}}`}
+                      </>
+                    )}
+                    {formData.templateType === 'general_receipt' && (
+                      <>
+                        {`{{receiptNumber}}, {{recipientName}}, {{recipientCpf}}, {{plate}}, {{value}}, {{date}}, {{time}}, {{paymentMethod}}, {{description}}, {{issuedBy}}, {{companyName}}, {{companyLegalName}}, {{companyCnpj}}, {{companyAddress}}, {{companyPhone}}`}
+                      </>
+                    )}
+                    {formData.templateType === 'parking_ticket' && (
+                      <>
+                        {`{{receiptNumber}}, {{date}}, {{time}}, {{plate}}, {{vehicleType}}, {{entryTime}}, {{exitTime}}, {{duration}}, {{rate}}, {{value}}, {{paymentMethod}}, {{operator}}, {{companyName}}, {{companyLegalName}}, {{companyCnpj}}, {{companyAddress}}, {{companyPhone}}`}
+                      </>
+                    )}
                   </p>
                 </div>
               </TabsContent>
