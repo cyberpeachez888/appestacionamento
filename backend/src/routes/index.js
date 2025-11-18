@@ -24,6 +24,7 @@ import dashboardSettingsController from '../controllers/dashboardSettingsControl
 import setupController from '../controllers/setupController.js';
 import expensesController from '../controllers/expensesController.js';
 import manualRevenuesController from '../controllers/manualRevenuesController.js';
+import cashRegisterController from '../controllers/cashRegisterController.js';
 import pricingRulesRoutes from './pricingRules.js';
 import { requireAuth, requireAdmin, requirePermission } from '../middleware/auth.js';
 import { loginLimiter, apiLimiter, strictLimiter } from '../middleware/rateLimiter.js';
@@ -719,6 +720,19 @@ router.delete(
   requireAuth,
   requirePermission('viewReports'),
   manualRevenuesController.delete
+);
+
+// Cash Register (Opening and closing sessions)
+router.post(
+  '/cash-register/open',
+  requireAuth,
+  requirePermission('openCloseCash'),
+  cashRegisterController.open
+);
+router.get(
+  '/cash-register/current',
+  requireAuth,
+  cashRegisterController.getCurrent
 );
 
 export default router;

@@ -933,6 +933,35 @@ class ApiClient {
       method: 'DELETE',
     });
   }
+
+  // Cash Register endpoints
+  async openCashRegister(data: { openingAmount: number; operatorName: string }) {
+    return this.request<{
+      success: boolean;
+      session: {
+        id: string;
+        openedAt: string;
+        openingAmount: number;
+        operatorName: string;
+      };
+    }>('/cash-register/open', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async getCurrentCashRegisterSession() {
+    return this.request<{
+      isOpen: boolean;
+      session: {
+        id: string;
+        openedAt: string;
+        openingAmount: number;
+        operatorName: string;
+        operatorId?: string;
+      } | null;
+    }>('/cash-register/current');
+  }
 }
 
 export const api = new ApiClient(API_BASE_URL);

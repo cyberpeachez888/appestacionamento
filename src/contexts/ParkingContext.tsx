@@ -104,7 +104,7 @@ interface ParkingContextData {
     closingAmount?: number;
   };
   lastClosingAmount: number;
-  openCashRegister: (openingAmount: number, operatorName?: string) => void;
+  openCashRegister: (openingAmount: number, operatorName?: string) => Promise<void>;
   closeCashRegister: (closingAmount: number, operatorName?: string) => void;
   // Revenue aggregations
   getAvulsoRevenue: (opts?: { start?: string; end?: string }) => number;
@@ -217,7 +217,7 @@ export const ParkingProvider: React.FC<{ children: ReactNode }> = ({ children })
 
         // Auth-dependent resources
         if (token) {
-          const [customersData, configData] = await Promise.all([
+          const [customersData, configData, cashSessionData] = await Promise.all([
             api.getMonthlyCustomers().catch((err) => {
               console.error('Error loading monthly customers:', err);
               return [];
@@ -226,9 +226,29 @@ export const ParkingProvider: React.FC<{ children: ReactNode }> = ({ children })
               console.error('Error loading company config:', err);
               return null as any;
             }),
+            api.getCurrentCashRegisterSession().catch((err) => {
+              console.error('Error loading cash register session:', err);
+              return { isOpen: false, session: null };
+            }),
           ]);
           setMonthlyCustomers(customersData || []);
           if (configData) setCompanyConfig(configData);
+          
+          // Sincronizar estado do caixa com servidor
+          if (cashSessionData?.isOpen && cashSessionData?.session) {
+            setCashSession({
+              openedAt: cashSessionData.session.openedAt,
+              openingAmount: cashSessionData.session.openingAmount,
+              operatorName: cashSessionData.session.operatorName,
+            });
+            setCashIsOpen(true);
+          } else {
+            // Se servidor diz que está fechado, garantir que local também está
+            setCashIsOpen(false);
+            if (!cashSessionData?.isOpen) {
+              setCashSession(undefined);
+            }
+          }
         } else {
           // If logged out, clear auth-bound data
           setMonthlyCustomers([]);
@@ -256,10 +276,72 @@ export const ParkingProvider: React.FC<{ children: ReactNode }> = ({ children })
   // =======================
   // Cash register actions
   // =======================
-  const openCashRegister = (openingAmount: number, operatorName?: string) => {
+  const openCashRegister = async (openingAmount: number, operatorName?: string) => {
+    // Validações
+    if (typeof openingAmount !== 'number' || openingAmount < 0) {
+      throw new Error('Valor de abertura inválido. Deve ser um número maior ou igual a zero.');
+    }
+
+    if (!operatorName || operatorName.trim() === '') {
+      throw new Error('Nome do operador é obrigatório');
+    }
+
+    // Verificar se já está aberto (local)
+    if (cashIsOpen) {
+      throw new Error('Caixa já está aberto');
+    }
+
     const nowIso = new Date().toISOString();
-    setCashSession({ openedAt: nowIso, openingAmount, operatorName });
-    setCashIsOpen(true);
+    const trimmedOperatorName = operatorName.trim();
+
+    try {
+      // Tentar salvar no banco de dados (se autenticado)
+      if (token) {
+        try {
+          const response = await api.openCashRegister({
+            openingAmount,
+            operatorName: trimmedOperatorName,
+          });
+          
+          // Sucesso: atualizar estado local com dados do servidor
+          setCashSession({
+            openedAt: response.session.openedAt,
+            openingAmount: response.session.openingAmount,
+            operatorName: response.session.operatorName,
+          });
+          setCashIsOpen(true);
+          return; // Sucesso, sair
+        } catch (apiError: any) {
+          // Se erro for "já está aberto", verificar no servidor
+          if (apiError.message?.includes('já está aberto') || apiError.message?.includes('Caixa já está aberto')) {
+            // Sincronizar com servidor
+            try {
+              const current = await api.getCurrentCashRegisterSession();
+              if (current.isOpen && current.session) {
+                setCashSession({
+                  openedAt: current.session.openedAt,
+                  openingAmount: current.session.openingAmount,
+                  operatorName: current.session.operatorName,
+                });
+                setCashIsOpen(true);
+                throw new Error('Caixa já está aberto no servidor');
+              }
+            } catch (syncError) {
+              // Ignorar erro de sincronização, continuar com fallback
+            }
+          }
+          // Se erro de API mas não é "já aberto", fazer fallback para localStorage
+          console.warn('Erro ao abrir caixa no servidor, usando localStorage:', apiError);
+        }
+      }
+
+      // Fallback: salvar apenas no localStorage (modo offline ou sem autenticação)
+      setCashSession({ openedAt: nowIso, openingAmount, operatorName: trimmedOperatorName });
+      setCashIsOpen(true);
+    } catch (error) {
+      // Re-throw erros de validação
+      throw error;
+    }
   };
 
   const closeCashRegister = (closingAmount: number, operatorName?: string) => {

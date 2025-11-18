@@ -275,7 +275,7 @@ export default function Operacional() {
             <div className="space-y-3">
               {/* Software Name */}
               <div>
-                <h1 className="text-2xl font-bold text-primary">App Estacionamento</h1>
+                <h1 className="text-2xl font-bold text-primary">ProParking App 2025</h1>
                 <p className="text-sm text-muted-foreground">Sistema de Gestão de Estacionamento</p>
               </div>
 

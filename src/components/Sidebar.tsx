@@ -60,7 +60,7 @@ export const Sidebar = () => {
   return (
     <aside className="w-64 bg-sidebar-background text-sidebar-foreground flex flex-col border-r border-sidebar-border">
       <div className="p-6 border-b border-sidebar-border">
-        <h1 className="text-xl font-bold text-sidebar-primary">Estacionamento</h1>
+        <h1 className="text-xl font-bold text-sidebar-primary">ProParking App 2025</h1>
         <p className="text-sm text-sidebar-foreground/70 mt-1">Sistema de Gestão</p>
       </div>
 

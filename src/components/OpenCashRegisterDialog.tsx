@@ -32,11 +32,33 @@ export const OpenCashRegisterDialog: React.FC<Props> = ({ open, onOpenChange, to
     }
   }, [open, lastClosingAmount, totalRevenue]);
 
-  const handleOpen = () => {
-    const operator = authUser?.name || '';
-    const numericAmount = amount ? Number(amount) : (lastClosingAmount || 0);
-    openCashRegister(numericAmount, operator);
-    onOpenChange(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleOpen = async () => {
+    setError(null);
+    setLoading(true);
+    
+    try {
+      const operator = authUser?.name || '';
+      if (!operator) {
+        throw new Error('Operador não identificado. Faça login novamente.');
+      }
+      
+      const numericAmount = amount ? Number(amount) : (lastClosingAmount || 0);
+      
+      if (isNaN(numericAmount) || numericAmount < 0) {
+        throw new Error('Valor inválido. Informe um valor maior ou igual a zero.');
+      }
+      
+      await openCashRegister(numericAmount, operator);
+      onOpenChange(false);
+    } catch (err: any) {
+      setError(err.message || 'Erro ao abrir caixa. Tente novamente.');
+      console.error('Erro ao abrir caixa:', err);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -49,8 +71,8 @@ export const OpenCashRegisterDialog: React.FC<Props> = ({ open, onOpenChange, to
         <div className="space-y-4 py-2">
           <div className="flex flex-col gap-1">
             <label className="text-sm font-medium">Operador</label>
-            <div className="text-sm text-muted-foreground italic">
-              (será preenchido após implementação de login)
+            <div className="text-sm text-muted-foreground">
+              {authUser?.name || 'Não identificado'}
             </div>
           </div>
           <div className="flex flex-col gap-1">
@@ -74,12 +96,19 @@ export const OpenCashRegisterDialog: React.FC<Props> = ({ open, onOpenChange, to
                   : 'Nenhum valor sugerido. Informe o valor inicial.'}
             </p>
           </div>
+          {error && (
+            <div className="rounded-md bg-destructive/10 p-3">
+              <p className="text-sm text-destructive font-medium">{error}</p>
+            </div>
+          )}
         </div>
         <DialogFooter className="flex justify-end gap-2">
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
+          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={loading}>
             Cancelar
           </Button>
-          <Button onClick={handleOpen}>Abrir Caixa</Button>
+          <Button onClick={handleOpen} disabled={loading}>
+            {loading ? 'Abrindo...' : 'Abrir Caixa'}
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
