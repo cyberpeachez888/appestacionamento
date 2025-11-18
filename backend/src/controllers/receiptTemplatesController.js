@@ -59,6 +59,8 @@ function toFrontendFormat(template) {
     whatsappMessage: template.whatsapp_message,
 
     customTemplateText: template.custom_template_text,
+    customTemplateTextEntry: template.custom_template_text_entry,
+    customTemplateTextExit: template.custom_template_text_exit,
 
     availableVariables: template.available_variables,
     isDefault: template.is_default,
@@ -115,6 +117,8 @@ function toDbFormat(template) {
     whatsapp_message: template.whatsappMessage,
 
     custom_template_text: template.customTemplateText,
+    custom_template_text_entry: template.customTemplateTextEntry,
+    custom_template_text_exit: template.customTemplateTextExit,
 
     available_variables: template.availableVariables,
     is_default: template.isDefault,
