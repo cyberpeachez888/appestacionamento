@@ -904,7 +904,8 @@ class ApiClient {
     description: string;
     value: number;
     date: string;
-    category: 'Sublocação' | 'Outros';
+    category: string; // Campo livre agora
+    status?: 'Pago' | 'Não Pago';
     notes?: string | null;
   }) {
     return this.request<any>('/manual-revenues', {
@@ -917,7 +918,8 @@ class ApiClient {
     description: string;
     value: number;
     date: string;
-    category: 'Sublocação' | 'Outros';
+    category: string; // Campo livre agora
+    status: 'Pago' | 'Não Pago';
     notes: string | null;
   }>) {
     return this.request<any>(`/manual-revenues/${id}`, {

@@ -13,7 +13,8 @@ function toFrontendFormat(revenue) {
     description: revenue.description,
     value: Number(revenue.value) || 0,
     date: revenue.date,
-    category: revenue.category, // 'Sublocação', 'Outros'
+    category: revenue.category || '', // Campo livre agora
+    status: revenue.status || 'Não Pago', // 'Pago', 'Não Pago'
     notes: revenue.notes || null,
     createdAt: revenue.created_at,
     updatedAt: revenue.updated_at,
@@ -27,7 +28,8 @@ function toDbFormat(revenue) {
     description: revenue.description,
     value: Number(revenue.value) || 0,
     date: revenue.date,
-    category: revenue.category,
+    category: revenue.category || '',
+    status: revenue.status || 'Não Pago',
     notes: revenue.notes || null,
   };
 }

@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
-import { Download, FileText, Plus, Trash2, Save } from 'lucide-react';
+import { Download, FileText, Plus, Trash2, Save, CheckCircle2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useToast } from '@/hooks/use-toast';
@@ -45,7 +45,8 @@ type ManualRevenue = {
   description: string;
   value: number;
   date: string;
-  category: 'Sublocação' | 'Outros';
+  category: string; // Campo livre agora
+  status: 'Pago' | 'Não Pago';
   notes: string | null;
 };
 
@@ -304,6 +305,7 @@ export default function Financeiro() {
         toast({ title: 'Despesa criada', description: 'A despesa foi registrada com sucesso' });
       } else {
         const { id, status, ...expenseData } = expense;
+        // Preserve recurringFrequency when saving
         const updated = await api.updateExpense(id, expenseData);
         setExpenses((prev) => prev.map((e) => (e.id === id ? updated : e)));
         toast({ title: 'Despesa atualizada', description: 'A despesa foi atualizada com sucesso' });
@@ -313,6 +315,37 @@ export default function Financeiro() {
       toast({
         title: 'Erro',
         description: err.message || 'Não foi possível salvar a despesa',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleMarkExpenseAsPaid = async (expense: Expense) => {
+    try {
+      const today = format(new Date(), 'yyyy-MM-dd');
+      const updatedExpense = {
+        ...expense,
+        paymentDate: today,
+        status: 'Pago' as const,
+      };
+      await handleExpenseFieldChange(expense.id, 'paymentDate', today);
+      await handleExpenseFieldChange(expense.id, 'status', 'Pago');
+      
+      // Save immediately
+      if (!expense.id.startsWith('new-')) {
+        const { id, status, ...expenseData } = updatedExpense;
+        await api.updateExpense(id, expenseData);
+        setExpenses((prev) => prev.map((e) => (e.id === id ? updatedExpense : e)));
+        toast({ title: 'Pagamento registrado', description: 'A despesa foi marcada como paga' });
+      } else {
+        // If it's a new expense, just update locally
+        setExpenses((prev) => prev.map((e) => (e.id === expense.id ? updatedExpense : e)));
+        toast({ title: 'Pagamento registrado', description: 'A despesa foi marcada como paga' });
+      }
+    } catch (err: any) {
+      toast({
+        title: 'Erro',
+        description: err.message || 'Não foi possível registrar o pagamento',
         variant: 'destructive',
       });
     }
@@ -342,7 +375,8 @@ export default function Financeiro() {
       description: '',
       value: 0,
       date: format(new Date(), 'yyyy-MM-dd'),
-      category: 'Sublocação',
+      category: '',
+      status: 'Não Pago',
       notes: null,
     };
     setManualRevenues([...manualRevenues, newRevenue as ManualRevenue]);
@@ -791,6 +825,17 @@ export default function Financeiro() {
                               </div>
                             ) : (
                               <>
+                                {expense.status !== 'Pago' && (
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    onClick={() => handleMarkExpenseAsPaid(expense)}
+                                    className="text-green-600 hover:text-green-700"
+                                  >
+                                    <CheckCircle2 className="h-4 w-4 mr-1" />
+                                    Realizar Pagamento
+                                  </Button>
+                                )}
                                 <Button
                                   size="sm"
                                   variant="ghost"
@@ -838,13 +883,14 @@ export default function Financeiro() {
                       <th className="px-4 py-3 text-left text-sm font-medium">Valor</th>
                       <th className="px-4 py-3 text-left text-sm font-medium">Categoria</th>
                       <th className="px-4 py-3 text-left text-sm font-medium">Data</th>
+                      <th className="px-4 py-3 text-left text-sm font-medium">Status</th>
                       <th className="px-4 py-3 text-right text-sm font-medium">Ações</th>
                     </tr>
                   </thead>
                   <tbody>
                     {manualRevenues.length === 0 ? (
                       <tr>
-                        <td colSpan={5} className="px-4 py-8 text-center text-muted-foreground">
+                        <td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">
                           Nenhuma receita manual registrada. Clique em "Adicionar Receita" para começar.
                         </td>
                       </tr>
@@ -886,22 +932,16 @@ export default function Financeiro() {
                           </td>
                           <td className="px-4 py-3">
                             {editingRevenueId === revenue.id ? (
-                              <Select
+                              <Input
                                 value={revenue.category}
-                                onValueChange={(value) =>
-                                  handleRevenueFieldChange(revenue.id, 'category', value)
+                                onChange={(e) =>
+                                  handleRevenueFieldChange(revenue.id, 'category', e.target.value)
                                 }
-                              >
-                                <SelectTrigger className="w-full">
-                                  <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="Sublocação">Sublocação</SelectItem>
-                                  <SelectItem value="Outros">Outros</SelectItem>
-                                </SelectContent>
-                              </Select>
+                                placeholder="Digite a categoria"
+                                className="w-full"
+                              />
                             ) : (
-                              <span>{revenue.category}</span>
+                              <span>{revenue.category || '—'}</span>
                             )}
                           </td>
                           <td className="px-4 py-3">
@@ -919,6 +959,34 @@ export default function Financeiro() {
                                 {revenue.date
                                   ? format(new Date(revenue.date), 'dd/MM/yyyy', { locale: ptBR })
                                   : '—'}
+                              </span>
+                            )}
+                          </td>
+                          <td className="px-4 py-3">
+                            {editingRevenueId === revenue.id ? (
+                              <Select
+                                value={revenue.status}
+                                onValueChange={(value) =>
+                                  handleRevenueFieldChange(revenue.id, 'status', value as 'Pago' | 'Não Pago')
+                                }
+                              >
+                                <SelectTrigger className="w-full">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="Pago">Pago</SelectItem>
+                                  <SelectItem value="Não Pago">Não Pago</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            ) : (
+                              <span
+                                className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                                  revenue.status === 'Pago'
+                                    ? 'bg-success/10 text-success'
+                                    : 'bg-muted text-muted-foreground'
+                                }`}
+                              >
+                                {revenue.status}
                               </span>
                             )}
                           </td>
@@ -981,7 +1049,11 @@ export default function Financeiro() {
           </TabsContent>
         </Tabs>
       </div>
-      <OpenCashRegisterDialog open={openDialogOpen} onOpenChange={setOpenDialogOpen} />
+      <OpenCashRegisterDialog 
+        open={openDialogOpen} 
+        onOpenChange={setOpenDialogOpen}
+        totalRevenue={totalRevenue}
+      />
       <CloseCashRegisterDialog open={closeDialogOpen} onOpenChange={setCloseDialogOpen} />
       <MonthlyReportDialog
         open={monthlyReportDialogOpen}

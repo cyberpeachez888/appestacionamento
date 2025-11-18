@@ -15,20 +15,22 @@ import { useAuth } from '@/contexts/AuthContext';
 type Props = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  totalRevenue?: number; // Receita total em caixa para sugerir valor de abertura
 };
 
-export const OpenCashRegisterDialog: React.FC<Props> = ({ open, onOpenChange }) => {
+export const OpenCashRegisterDialog: React.FC<Props> = ({ open, onOpenChange, totalRevenue = 0 }) => {
   const { openCashRegister, lastClosingAmount } = useParking();
   const { user: authUser } = useAuth();
   const [amount, setAmount] = useState<string>('');
 
   useEffect(() => {
     if (open) {
-      // Always suggest the last closing amount, but allow editing
-      const suggestedAmount = lastClosingAmount || 0;
-      setAmount(suggestedAmount > 0 ? suggestedAmount.toString() : '');
+      // Suggest based on total revenue in cash (if available) or last closing amount
+      // Priority: totalRevenue > lastClosingAmount > 0
+      const suggestedAmount = totalRevenue > 0 ? totalRevenue : (lastClosingAmount || 0);
+      setAmount(suggestedAmount > 0 ? suggestedAmount.toFixed(2) : '');
     }
-  }, [open, lastClosingAmount]);
+  }, [open, lastClosingAmount, totalRevenue]);
 
   const handleOpen = () => {
     const operator = authUser?.name || '';
@@ -65,9 +67,11 @@ export const OpenCashRegisterDialog: React.FC<Props> = ({ open, onOpenChange }) 
               placeholder={lastClosingAmount > 0 ? lastClosingAmount.toFixed(2) : '0.00'}
             />
             <p className="text-xs text-muted-foreground">
-              {lastClosingAmount > 0
-                ? `Sugerido: R$ ${lastClosingAmount.toFixed(2)} (último fechamento). Você pode editar este valor.`
-                : 'Nenhum fechamento anterior encontrado. Informe o valor inicial.'}
+              {totalRevenue > 0
+                ? `Sugerido: R$ ${totalRevenue.toFixed(2)} (receita total em caixa). Você pode editar este valor.`
+                : lastClosingAmount > 0
+                  ? `Sugerido: R$ ${lastClosingAmount.toFixed(2)} (último fechamento). Você pode editar este valor.`
+                  : 'Nenhum valor sugerido. Informe o valor inicial.'}
             </p>
           </div>
         </div>
