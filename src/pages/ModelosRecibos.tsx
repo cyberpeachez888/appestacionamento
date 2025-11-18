@@ -140,6 +140,9 @@ function generateDefaultTemplateText(
 
   if (templateType === 'monthly_payment') {
     return `${separator}
+🚗 PROPARKING APP - 2025
+Sistema de Gestão de Estacionamento
+${separator}
 ${company.name || 'Nome da Empresa'}
 ${company.legalName || 'Razão Social'}
 CNPJ: ${company.cnpj || '00.000.000/0000-00'}
@@ -172,11 +175,15 @@ ${separator}
 Documento sem validade fiscal
 ${separator}
 Obrigado pela preferência!
+© 2025 ProParking App
 `;
   }
 
   // general_receipt
   return `${separator}
+🚗 PROPARKING APP - 2025
+Sistema de Gestão de Estacionamento
+${separator}
 ${company.name || 'Nome da Empresa'}
 ${company.legalName || 'Razão Social'}
 CNPJ: ${company.cnpj || '00.000.000/0000-00'}
@@ -184,17 +191,20 @@ ${company.address || 'Endereço da Empresa'}
 Tel: ${company.phone || '(00) 0000-0000'}
 ${separator}
 
-RECIBO: {{receiptNumber}}
+RECIBO DE REEMBOLSO: {{receiptNumber}}
 Data: {{date}}
 Hora: {{time}}
 
-CLIENTE: {{customerName}}
-CPF/CNPJ: {{customerDocument}}
+SOLICITANTE: {{recipientName}}
+CPF: {{recipientCpf}}
 
 Placa: {{plate}}
 Valor: {{value}}
 Pagamento: {{paymentMethod}}
-Operador: {{operator}}
+Emitido por: {{issuedBy}}
+
+Descrição:
+{{description}}
 
 Observações:
 {{notes}}
@@ -203,6 +213,7 @@ ${separator}
 Documento sem validade fiscal
 ${separator}
 Obrigado pela preferência!
+© 2025 ProParking App
 `;
 }
 
@@ -214,6 +225,9 @@ function generateDefaultTemplateTextParking(
   const separator = '--------------------------------';
 
   const entryTemplate = `${separator}
+🚗 PROPARKING APP - 2025
+Sistema de Gestão de Estacionamento
+${separator}
 ${company.name || 'Nome da Empresa'}
 ${company.legalName || 'Razão Social'}
 CNPJ: ${company.cnpj || '00.000.000/0000-00'}
@@ -234,9 +248,13 @@ ${separator}
 Documento sem validade fiscal
 ${separator}
 Obrigado pela preferência!
+© 2025 ProParking App
 `;
 
   const exitTemplate = `${separator}
+🚗 PROPARKING APP - 2025
+Sistema de Gestão de Estacionamento
+${separator}
 ${company.name || 'Nome da Empresa'}
 ${company.legalName || 'Razão Social'}
 CNPJ: ${company.cnpj || '00.000.000/0000-00'}
@@ -264,6 +282,7 @@ ${separator}
 Documento sem validade fiscal
 ${separator}
 Obrigado pela preferência!
+© 2025 ProParking App
 `;
 
   return { entry: entryTemplate, exit: exitTemplate };

@@ -213,27 +213,41 @@ export const PaymentDialog = ({ open, onOpenChange, customer, onSaved }: Payment
               ref={receiptRef}
               className="bg-white text-black p-8 rounded-lg border-2 border-gray-300"
             >
-              {/* Header */}
-              {template?.showCompanyName !== false && (
-                <div className="text-center mb-6">
-                  <h2
-                    className="text-2xl font-bold"
-                    style={{ color: template?.primaryColor || '#000000' }}
-                  >
-                    {companyConfig.name}
-                  </h2>
-                  {template?.showCompanyDetails !== false && (
-                    <>
-                      {companyConfig.legalName && (
-                        <p className="text-sm">{companyConfig.legalName}</p>
-                      )}
-                      {companyConfig.cnpj && <p className="text-sm">CNPJ: {companyConfig.cnpj}</p>}
-                      {companyConfig.address && <p className="text-sm">{companyConfig.address}</p>}
-                      {companyConfig.phone && <p className="text-sm">Tel: {companyConfig.phone}</p>}
-                    </>
-                  )}
+              {/* Header ProParking */}
+              <div className="text-center mb-6 pb-4 border-b-2 border-gray-300">
+                <div className="inline-flex items-center gap-3 mb-3">
+                  <div className="bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg p-2 shadow-md">
+                    <Car className="h-6 w-6 text-white" />
+                  </div>
+                  <div className="text-left">
+                    <h1 className="text-2xl font-bold tracking-tight text-gray-900">PROPARKING</h1>
+                    <p className="text-sm font-medium text-blue-600">APP - 2025</p>
+                  </div>
                 </div>
-              )}
+                <p className="text-xs text-gray-500 mb-4">Sistema de Gestão de Estacionamento</p>
+                
+                {/* Informações da Empresa */}
+                {template?.showCompanyName !== false && (
+                  <div>
+                    <h2
+                      className="text-xl font-bold"
+                      style={{ color: template?.primaryColor || '#1e40af' }}
+                    >
+                      {companyConfig.name}
+                    </h2>
+                    {template?.showCompanyDetails !== false && (
+                      <>
+                        {companyConfig.legalName && (
+                          <p className="text-sm text-gray-600">{companyConfig.legalName}</p>
+                        )}
+                        {companyConfig.cnpj && <p className="text-sm text-gray-600">CNPJ: {companyConfig.cnpj}</p>}
+                        {companyConfig.address && <p className="text-sm text-gray-600">{companyConfig.address}</p>}
+                        {companyConfig.phone && <p className="text-sm text-gray-600">Tel: {companyConfig.phone}</p>}
+                      </>
+                    )}
+                  </div>
+                )}
+              </div>
 
               {/* Receipt Number */}
               {template?.showReceiptNumber !== false && (
@@ -301,6 +315,13 @@ export const PaymentDialog = ({ open, onOpenChange, customer, onSaved }: Payment
               {template?.footerText && (
                 <div className="mt-4 text-center text-sm text-gray-600">{template.footerText}</div>
               )}
+              
+              {/* Footer ProParking */}
+              <div className="mt-6 pt-4 border-t border-gray-300 text-center">
+                <p className="text-xs text-gray-500">
+                  © 2025 ProParking App - Todos os direitos reservados
+                </p>
+              </div>
             </div>
 
             <div className="flex gap-2 mt-4">

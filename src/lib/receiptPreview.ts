@@ -159,6 +159,13 @@ export function generateThermalPreview(
     push(`${' '.repeat(Math.max(padding, 0))}${trimmed}`);
   };
 
+  // Header ProParking
+  center('════════════════════');
+  center('🚗 PROPARKING APP');
+  center('       2025');
+  center('════════════════════');
+  push('');
+  
   if (template.showLogo) {
     center('[ LOGO ]');
   }

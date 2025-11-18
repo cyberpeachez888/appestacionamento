@@ -12,7 +12,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Printer } from 'lucide-react';
+import { Printer, Car } from 'lucide-react';
 import { CompanyConfig, Vehicle } from '@/contexts/ParkingContext';
 
 interface ReimbursementReceiptDialogProps {
@@ -192,15 +192,29 @@ export function ReimbursementReceiptDialog({
               ref={receiptRef}
               className="bg-white text-black p-8 rounded-lg border-2 border-gray-300"
             >
-              <div className="text-center border-b pb-4">
-                <h2 className="text-xl font-bold">{companyConfig?.name || 'Estacionamento'}</h2>
-                {companyConfig?.cnpj && (
-                  <p className="text-sm text-muted-foreground">CNPJ: {companyConfig.cnpj}</p>
-                )}
-                {companyConfig?.address && (
-                  <p className="text-xs text-muted-foreground">{companyConfig.address}</p>
-                )}
-                <p className="text-lg font-semibold mt-2">RECIBO DE REEMBOLSO</p>
+              {/* Header ProParking */}
+              <div className="text-center border-b-2 border-gray-300 pb-4 mb-4">
+                <div className="inline-flex items-center gap-3 mb-3">
+                  <div className="bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg p-2 shadow-md">
+                    <Car className="h-6 w-6 text-white" />
+                  </div>
+                  <div className="text-left">
+                    <h1 className="text-2xl font-bold tracking-tight text-gray-900">PROPARKING</h1>
+                    <p className="text-sm font-medium text-blue-600">APP - 2025</p>
+                  </div>
+                </div>
+                <p className="text-xs text-gray-500 mb-4">Sistema de Gestão de Estacionamento</p>
+                
+                <div>
+                  <h2 className="text-xl font-bold text-gray-900">{companyConfig?.name || 'Estacionamento'}</h2>
+                  {companyConfig?.cnpj && (
+                    <p className="text-sm text-gray-600">CNPJ: {companyConfig.cnpj}</p>
+                  )}
+                  {companyConfig?.address && (
+                    <p className="text-xs text-gray-600">{companyConfig.address}</p>
+                  )}
+                  <p className="text-lg font-semibold mt-3 text-amber-600">RECIBO DE REEMBOLSO</p>
+                </div>
               </div>
 
               <div className="space-y-2 border-b py-3">
@@ -260,10 +274,13 @@ export function ReimbursementReceiptDialog({
               )}
 
               <div className="text-center text-sm text-muted-foreground border-t pt-4 mt-6">
-                <p>Operador: {operatorName}</p>
+                <p className="font-medium">Operador: {operatorName}</p>
                 <p className="mt-2">Documento gerado para fins de reembolso corporativo.</p>
                 <p className="text-xs mt-2">
                   {format(new Date(), "dd/MM/yyyy 'às' HH:mm:ss", { locale: ptBR })}
+                </p>
+                <p className="text-xs mt-3 text-gray-400">
+                  © 2025 ProParking App - Todos os direitos reservados
                 </p>
               </div>
             </div>
