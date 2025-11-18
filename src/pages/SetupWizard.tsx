@@ -108,8 +108,8 @@ export default function SetupWizard() {
 
       // Wait a moment to show success, then redirect
       setTimeout(() => {
-        // Force navigation to login and prevent going back
-        window.location.href = '/login';
+        // Use React Router navigate instead of window.location for better SPA handling
+        navigate('/login', { replace: true });
       }, 2000);
     } catch (error: any) {
       toast({
