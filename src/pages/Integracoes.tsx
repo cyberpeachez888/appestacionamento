@@ -16,6 +16,8 @@ interface IntegrationConfig {
   config: Record<string, any>;
 }
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+
 export const IntegrationsPage = () => {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
@@ -57,41 +59,52 @@ export const IntegrationsPage = () => {
       const token = localStorage.getItem('token');
 
       // Load SMTP config
-      const smtpRes = await fetch('/api/integrations/configs/smtp', {
+      const smtpRes = await fetch(`${API_URL}/api/integrations/configs/smtp`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (smtpRes.ok) {
         const smtp = await smtpRes.json();
-        setSmtpEnabled(smtp.enabled);
-        setSmtpHost(smtp.config.host || '');
-        setSmtpPort(smtp.config.port || 587);
-        setSmtpUser(smtp.config.user || '');
-        setSmtpPass(smtp.config.pass || '');
-        setSmtpSecure(smtp.config.secure || false);
-        setSmtpFromEmail(smtp.config.fromEmail || '');
+        // Backend returns is_enabled, frontend expects enabled
+        setSmtpEnabled(smtp.is_enabled || false);
+        setSmtpHost(smtp.config?.host || '');
+        setSmtpPort(smtp.config?.port || 587);
+        setSmtpUser(smtp.config?.user || '');
+        setSmtpPass(smtp.config?.pass || '');
+        setSmtpSecure(smtp.config?.secure || false);
+        setSmtpFromEmail(smtp.config?.fromEmail || '');
+      } else if (smtpRes.status !== 404) {
+        // 404 is OK (config doesn't exist yet), other errors should be logged
+        const errorText = await smtpRes.text();
+        console.error('Error loading SMTP config:', errorText);
       }
 
       // Load SMS config
-      const smsRes = await fetch('/api/integrations/configs/sms', {
+      const smsRes = await fetch(`${API_URL}/api/integrations/configs/sms`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (smsRes.ok) {
         const sms = await smsRes.json();
-        setSmsEnabled(sms.enabled);
-        setTwilioAccountSid(sms.config.accountSid || '');
-        setTwilioAuthToken(sms.config.authToken || '');
-        setTwilioFromNumber(sms.config.fromNumber || '');
+        setSmsEnabled(sms.is_enabled || false);
+        setTwilioAccountSid(sms.config?.accountSid || '');
+        setTwilioAuthToken(sms.config?.authToken || '');
+        setTwilioFromNumber(sms.config?.fromNumber || '');
+      } else if (smsRes.status !== 404) {
+        const errorText = await smsRes.text();
+        console.error('Error loading SMS config:', errorText);
       }
 
       // Load WhatsApp config
-      const whatsappRes = await fetch('/api/integrations/configs/whatsapp', {
+      const whatsappRes = await fetch(`${API_URL}/api/integrations/configs/whatsapp`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (whatsappRes.ok) {
         const whatsapp = await whatsappRes.json();
-        setWhatsappEnabled(whatsapp.enabled);
-        setWhatsappPhoneNumberId(whatsapp.config.phoneNumberId || '');
-        setWhatsappAccessToken(whatsapp.config.accessToken || '');
+        setWhatsappEnabled(whatsapp.is_enabled || false);
+        setWhatsappPhoneNumberId(whatsapp.config?.phoneNumberId || '');
+        setWhatsappAccessToken(whatsapp.config?.accessToken || '');
+      } else if (whatsappRes.status !== 404) {
+        const errorText = await whatsappRes.text();
+        console.error('Error loading WhatsApp config:', errorText);
       }
     } catch (err) {
       console.error('Error loading configs:', err);
@@ -109,14 +122,14 @@ export const IntegrationsPage = () => {
     setLoading(true);
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('/api/integrations/configs/smtp', {
+      const response = await fetch(`${API_URL}/api/integrations/configs/smtp`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
-          enabled: smtpEnabled,
+          is_enabled: smtpEnabled,
           config: {
             host: smtpHost,
             port: smtpPort,
@@ -151,14 +164,14 @@ export const IntegrationsPage = () => {
     setLoading(true);
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('/api/integrations/configs/sms', {
+      const response = await fetch(`${API_URL}/api/integrations/configs/sms`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
-          enabled: smsEnabled,
+          is_enabled: smsEnabled,
           config: {
             accountSid: twilioAccountSid,
             authToken: twilioAuthToken,
@@ -190,14 +203,14 @@ export const IntegrationsPage = () => {
     setLoading(true);
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('/api/integrations/configs/whatsapp', {
+      const response = await fetch(`${API_URL}/api/integrations/configs/whatsapp`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
-          enabled: whatsappEnabled,
+          is_enabled: whatsappEnabled,
           config: {
             phoneNumberId: whatsappPhoneNumberId,
             accessToken: whatsappAccessToken,
@@ -237,7 +250,7 @@ export const IntegrationsPage = () => {
     setTestingEmail(true);
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('/api/integrations/test-email', {
+      const response = await fetch(`${API_URL}/api/integrations/test-email`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -279,7 +292,7 @@ export const IntegrationsPage = () => {
     setTestingSMS(true);
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('/api/integrations/test-sms', {
+      const response = await fetch(`${API_URL}/api/integrations/test-sms`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -321,7 +334,7 @@ export const IntegrationsPage = () => {
     setTestingWhatsApp(true);
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('/api/integrations/test-whatsapp', {
+      const response = await fetch(`${API_URL}/api/integrations/test-whatsapp`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
