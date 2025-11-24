@@ -20,6 +20,54 @@ import {
 } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
+const DATE_PLACEHOLDER = 'dd/mm/aaaa';
+
+const sanitizeIsoDate = (value?: string | null) => {
+  if (!value) return '';
+  const [datePart] = value.split('T');
+  return /^\d{4}-\d{2}-\d{2}$/.test(datePart) ? datePart : '';
+};
+
+const isoToDisplayDate = (value?: string | null) => {
+  if (!value) return '';
+  if (value.includes('/')) return value;
+  const iso = sanitizeIsoDate(value);
+  if (!iso) return '';
+  const [year, month, day] = iso.split('-');
+  if (!year || !month || !day) return '';
+  return `${day}/${month}/${year}`;
+};
+
+const displayToIsoDate = (value?: string | null) => {
+  if (!value) return '';
+  if (value.includes('-') && /^\d{4}-\d{2}-\d{2}/.test(value)) {
+    return sanitizeIsoDate(value);
+  }
+  const digits = value.replace(/\D/g, '').slice(0, 8);
+  if (digits.length !== 8) return '';
+  const day = digits.slice(0, 2);
+  const month = digits.slice(2, 4);
+  const year = digits.slice(4, 8);
+  return `${year}-${month}-${day}`;
+};
+
+const formatDateInputValue = (value: string) => {
+  const digits = value.replace(/\D/g, '').slice(0, 8);
+  if (digits.length <= 2) return digits;
+  if (digits.length <= 4) return `${digits.slice(0, 2)}/${digits.slice(2)}`;
+  return `${digits.slice(0, 2)}/${digits.slice(2, 4)}/${digits.slice(4)}`;
+};
+
+const parseDisplayDateToDate = (value?: string | null) => {
+  const iso = displayToIsoDate(value);
+  if (!iso) return null;
+  const [year, month, day] = iso.split('-').map((part) => Number(part));
+  if (!year || !month || !day) return null;
+  const date = new Date(year, month - 1, day);
+  date.setHours(0, 0, 0, 0);
+  return date;
+};
+
 type FinancialRecord = {
   type: 'Avulso' | 'Mensalista';
   date: string;
@@ -50,6 +98,56 @@ type ManualRevenue = {
   notes: string | null;
 };
 
+const normalizeExpenseFromApi = (expense: Expense): Expense => ({
+  ...expense,
+  dueDate: isoToDisplayDate(expense.dueDate),
+  paymentDate: expense.paymentDate ? isoToDisplayDate(expense.paymentDate) : null,
+});
+
+const normalizeRevenueFromApi = (revenue: ManualRevenue): ManualRevenue => ({
+  ...revenue,
+  date: isoToDisplayDate(revenue.date),
+});
+
+const buildExpensePayload = (expense: Expense) => {
+  const dueDateISO = displayToIsoDate(expense.dueDate);
+  if (!dueDateISO) {
+    throw new Error('Data de vencimento inválida. Utilize o formato dd/mm/aaaa.');
+  }
+  const paymentDateISO =
+    expense.paymentDate && displayToIsoDate(expense.paymentDate)
+      ? displayToIsoDate(expense.paymentDate)
+      : null;
+  if (expense.paymentDate && !paymentDateISO) {
+    throw new Error('Data de pagamento inválida. Utilize o formato dd/mm/aaaa.');
+  }
+  return {
+    name: expense.name,
+    value: expense.value,
+    dueDate: dueDateISO,
+    paymentDate: paymentDateISO,
+    category: expense.category,
+    isRecurring: expense.isRecurring,
+    recurringFrequency: expense.recurringFrequency,
+    notes: expense.notes,
+  };
+};
+
+const buildRevenuePayload = (revenue: ManualRevenue) => {
+  const dateISO = displayToIsoDate(revenue.date);
+  if (!dateISO) {
+    throw new Error('Data da receita inválida. Utilize o formato dd/mm/aaaa.');
+  }
+  return {
+    description: revenue.description,
+    value: revenue.value,
+    date: dateISO,
+    category: revenue.category,
+    status: revenue.status,
+    notes: revenue.notes,
+  };
+};
+
 export default function Financeiro() {
   const { toast } = useToast();
   const {
@@ -75,11 +173,14 @@ export default function Financeiro() {
   const [expenseBackup, setExpenseBackup] = useState<Expense | null>(null);
   const [revenueBackup, setRevenueBackup] = useState<ManualRevenue | null>(null);
 
+
   useEffect(() => {
     const load = async () => {
       try {
         setLoading(true);
-        const filters = startDate && endDate ? { start: startDate, end: endDate } : undefined;
+        const startIso = displayToIsoDate(startDate);
+        const endIso = displayToIsoDate(endDate);
+        const filters = startIso && endIso ? { start: startIso, end: endIso } : undefined;
         console.log('[Financeiro] Loading financial data with filters:', filters);
         
         // Load all financial data in parallel
@@ -123,7 +224,8 @@ export default function Financeiro() {
         
         console.log('[Financeiro] Mapped records:', mapped.length);
         setRecords(mapped);
-        setExpenses(expensesData || []);
+        const normalizedExpenses = (expensesData || []).map(normalizeExpenseFromApi);
+        setExpenses(normalizedExpenses);
         // Ensure manual revenues have status field (default to 'Não Pago' if missing)
         const revenuesWithStatus = (revenuesData || []).map((r: any) => {
           const revenue = {
@@ -135,7 +237,8 @@ export default function Financeiro() {
           return revenue;
         });
         console.log('[Financeiro] Manual revenues with status:', revenuesWithStatus.length);
-        setManualRevenues(revenuesWithStatus);
+        const normalizedRevenues = revenuesWithStatus.map(normalizeRevenueFromApi);
+        setManualRevenues(normalizedRevenues);
       } catch (err: any) {
         console.error('[Financeiro] Failed to load financial data:', err);
         
@@ -196,10 +299,15 @@ export default function Financeiro() {
     }
   }, [cashIsOpen]);
 
+  const startFilterIso = displayToIsoDate(startDate);
+  const endFilterIso = displayToIsoDate(endDate);
+  const startFilterDate = startFilterIso ? new Date(startFilterIso) : null;
+  const endFilterDate = endFilterIso ? new Date(`${endFilterIso}T23:59:59`) : null;
+
   const filteredRecords = records.filter((r) => {
-    if (!startDate || !endDate) return true;
+    if (!startFilterDate || !endFilterDate) return true;
     const date = new Date(r.date);
-    return date >= new Date(startDate) && date <= new Date(endDate);
+    return date >= startFilterDate && date <= endFilterDate;
   });
 
   // Compute totals from fetched report records to avoid relying on client history
@@ -243,7 +351,7 @@ export default function Financeiro() {
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
-    link.download = `financeiro_${format(new Date(), 'yyyy-MM-dd')}.csv`;
+    link.download = `financeiro_${format(new Date(), 'dd-MM-yyyy')}.csv`;
     link.click();
 
     toast({
@@ -258,7 +366,7 @@ export default function Financeiro() {
       id: `new-${Date.now()}`,
       name: '',
       value: 0,
-      dueDate: format(new Date(), 'yyyy-MM-dd'),
+      dueDate: format(new Date(), 'dd/MM/yyyy'),
       paymentDate: null,
       status: 'Em dia',
       category: 'Contas',
@@ -274,11 +382,23 @@ export default function Financeiro() {
     setExpenses((prev) => {
       const updated = prev.map((e) => {
         if (e.id !== id) return e;
-        const updatedExpense = { ...e, [field]: value };
-        // Recalculate status if dueDate or paymentDate changed
+        let nextValue = value;
+        if (field === 'dueDate' && typeof value === 'string') {
+          nextValue = formatDateInputValue(value);
+        }
+        if (field === 'paymentDate') {
+          if (!value) {
+            nextValue = null;
+          } else if (typeof value === 'string') {
+            nextValue = formatDateInputValue(value);
+          }
+        }
+        const updatedExpense = { ...e, [field]: nextValue };
         if (field === 'dueDate' || field === 'paymentDate') {
-          const status = calculateExpenseStatus(updatedExpense.dueDate, updatedExpense.paymentDate);
-          updatedExpense.status = status;
+          updatedExpense.status = calculateExpenseStatus(
+            updatedExpense.dueDate,
+            updatedExpense.paymentDate
+          );
         }
         return updatedExpense;
       });
@@ -287,17 +407,21 @@ export default function Financeiro() {
   };
 
   const calculateExpenseStatus = (dueDate: string, paymentDate: string | null): Expense['status'] => {
-    if (paymentDate) {
+    const hasPayment = paymentDate ? Boolean(displayToIsoDate(paymentDate)) : false;
+    if (hasPayment) {
       return 'Pago';
     }
-    
+
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    const due = new Date(dueDate);
-    due.setHours(0, 0, 0, 0);
-    
+    const due = parseDisplayDateToDate(dueDate);
+
+    if (!due) {
+      return 'Em dia';
+    }
+
     const diffDays = Math.floor((due.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-    
+
     if (diffDays < 0) {
       return 'Atrasado';
     } else if (diffDays <= 3) {
@@ -309,16 +433,18 @@ export default function Financeiro() {
 
   const handleSaveExpense = async (expense: Expense) => {
     try {
+      const payload = buildExpensePayload(expense);
       if (expense.id.startsWith('new-')) {
-        const { id, status, ...expenseData } = expense;
-        const created = await api.createExpense(expenseData);
-        setExpenses((prev) => prev.map((e) => (e.id === id ? created : e)));
+        const { id } = expense;
+        const created = await api.createExpense(payload);
+        const normalized = normalizeExpenseFromApi(created);
+        setExpenses((prev) => prev.map((e) => (e.id === id ? normalized : e)));
         toast({ title: 'Despesa criada', description: 'A despesa foi registrada com sucesso' });
       } else {
-        const { id, status, ...expenseData } = expense;
-        // Preserve recurringFrequency when saving
-        const updated = await api.updateExpense(id, expenseData);
-        setExpenses((prev) => prev.map((e) => (e.id === id ? updated : e)));
+        const { id } = expense;
+        const updated = await api.updateExpense(id, payload);
+        const normalized = normalizeExpenseFromApi(updated);
+        setExpenses((prev) => prev.map((e) => (e.id === id ? normalized : e)));
         toast({ title: 'Despesa atualizada', description: 'A despesa foi atualizada com sucesso' });
       }
       setEditingExpenseId(null);
@@ -333,23 +459,20 @@ export default function Financeiro() {
 
   const handleMarkExpenseAsPaid = async (expense: Expense) => {
     try {
-      const today = format(new Date(), 'yyyy-MM-dd');
+      const todayDisplay = format(new Date(), 'dd/MM/yyyy');
       const updatedExpense = {
         ...expense,
-        paymentDate: today,
+        paymentDate: todayDisplay,
         status: 'Pago' as const,
       };
-      await handleExpenseFieldChange(expense.id, 'paymentDate', today);
-      await handleExpenseFieldChange(expense.id, 'status', 'Pago');
-      
-      // Save immediately
+
       if (!expense.id.startsWith('new-')) {
-        const { id, status, ...expenseData } = updatedExpense;
-        await api.updateExpense(id, expenseData);
-        setExpenses((prev) => prev.map((e) => (e.id === id ? updatedExpense : e)));
+        const payload = buildExpensePayload(updatedExpense);
+        const saved = await api.updateExpense(expense.id, payload);
+        const normalized = normalizeExpenseFromApi(saved);
+        setExpenses((prev) => prev.map((e) => (e.id === expense.id ? normalized : e)));
         toast({ title: 'Pagamento registrado', description: 'A despesa foi marcada como paga' });
       } else {
-        // If it's a new expense, just update locally
         setExpenses((prev) => prev.map((e) => (e.id === expense.id ? updatedExpense : e)));
         toast({ title: 'Pagamento registrado', description: 'A despesa foi marcada como paga' });
       }
@@ -385,7 +508,7 @@ export default function Financeiro() {
       id: `new-${Date.now()}`,
       description: '',
       value: 0,
-      date: format(new Date(), 'yyyy-MM-dd'),
+      date: format(new Date(), 'dd/MM/yyyy'),
       category: '',
       status: 'Não Pago',
       notes: null,
@@ -396,35 +519,31 @@ export default function Financeiro() {
 
   const handleRevenueFieldChange = (id: string, field: keyof ManualRevenue, value: any) => {
     setManualRevenues((prev) =>
-      prev.map((r) => (r.id === id ? { ...r, [field]: value } : r))
+      prev.map((r) => {
+        if (r.id !== id) return r;
+        let nextValue = value;
+        if (field === 'date' && typeof value === 'string') {
+          nextValue = formatDateInputValue(value);
+        }
+        return { ...r, [field]: nextValue };
+      })
     );
   };
 
   const handleSaveManualRevenue = async (revenue: ManualRevenue) => {
     try {
+      const payload = buildRevenuePayload(revenue);
       if (revenue.id.startsWith('new-')) {
-        const { id, ...revenueData } = revenue;
-        const created = await api.createManualRevenue({
-          description: revenueData.description,
-          value: revenueData.value,
-          date: revenueData.date,
-          category: revenueData.category,
-          status: revenueData.status,
-          notes: revenueData.notes,
-        });
-        setManualRevenues((prev) => prev.map((r) => (r.id === id ? created : r)));
+        const { id } = revenue;
+        const created = await api.createManualRevenue(payload);
+        const normalized = normalizeRevenueFromApi(created);
+        setManualRevenues((prev) => prev.map((r) => (r.id === id ? normalized : r)));
         toast({ title: 'Receita criada', description: 'A receita foi registrada com sucesso' });
       } else {
-        const { id, ...revenueData } = revenue;
-        const updated = await api.updateManualRevenue(id, {
-          description: revenueData.description,
-          value: revenueData.value,
-          date: revenueData.date,
-          category: revenueData.category,
-          status: revenueData.status,
-          notes: revenueData.notes,
-        });
-        setManualRevenues((prev) => prev.map((r) => (r.id === id ? updated : r)));
+        const { id } = revenue;
+        const updated = await api.updateManualRevenue(id, payload);
+        const normalized = normalizeRevenueFromApi(updated);
+        setManualRevenues((prev) => prev.map((r) => (r.id === id ? normalized : r)));
         toast({ title: 'Receita atualizada', description: 'A receita foi atualizada com sucesso' });
       }
       setEditingRevenueId(null);
@@ -484,7 +603,9 @@ export default function Financeiro() {
       });
 
       // Reload data to reflect any changes
-      const filters = startDate && endDate ? { start: startDate, end: endDate } : undefined;
+      const startIso = displayToIsoDate(startDate);
+      const endIso = displayToIsoDate(endDate);
+      const filters = startIso && endIso ? { start: startIso, end: endIso } : undefined;
       const report = await api.getFinancialReport(filters);
       const payments: ReportPayment[] = report?.payments || [];
       const mapType = (t?: string): 'Avulso' | 'Mensalista' =>
@@ -566,22 +687,26 @@ export default function Financeiro() {
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label htmlFor="startDate">Data Inicial</label>
-              <input
+              <Input
                 id="startDate"
-                type="date"
+                type="text"
+                inputMode="numeric"
+                placeholder={DATE_PLACEHOLDER}
                 value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
-                className="input"
+                onChange={(e) => setStartDate(formatDateInputValue(e.target.value))}
+                className="mt-1"
               />
             </div>
             <div>
               <label htmlFor="endDate">Data Final</label>
-              <input
+              <Input
                 id="endDate"
-                type="date"
+                type="text"
+                inputMode="numeric"
+                placeholder={DATE_PLACEHOLDER}
                 value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
-                className="input"
+                onChange={(e) => setEndDate(formatDateInputValue(e.target.value))}
+                className="mt-1"
               />
             </div>
           </div>
@@ -737,41 +862,37 @@ export default function Financeiro() {
                           <td className="px-4 py-3">
                             {editingExpenseId === expense.id ? (
                               <Input
-                                type="date"
-                                value={expense.dueDate}
+                                type="text"
+                                inputMode="numeric"
+                                placeholder={DATE_PLACEHOLDER}
+                                value={expense.dueDate || ''}
                                 onChange={(e) =>
                                   handleExpenseFieldChange(expense.id, 'dueDate', e.target.value)
                                 }
                                 className="w-full"
                               />
                             ) : (
-                              <span>
-                                {expense.dueDate
-                                  ? format(new Date(expense.dueDate), 'dd/MM/yyyy', { locale: ptBR })
-                                  : '—'}
-                              </span>
+                              <span>{expense.dueDate || '—'}</span>
                             )}
                           </td>
                           <td className="px-4 py-3">
                             {editingExpenseId === expense.id ? (
                               <Input
-                                type="date"
+                                type="text"
+                                inputMode="numeric"
+                                placeholder={DATE_PLACEHOLDER}
                                 value={expense.paymentDate || ''}
                                 onChange={(e) =>
                                   handleExpenseFieldChange(
                                     expense.id,
                                     'paymentDate',
-                                    e.target.value || null
+                                    e.target.value
                                   )
                                 }
                                 className="w-full"
                               />
                             ) : (
-                              <span>
-                                {expense.paymentDate
-                                  ? format(new Date(expense.paymentDate), 'dd/MM/yyyy', { locale: ptBR })
-                                  : '—'}
-                              </span>
+                              <span>{expense.paymentDate || '—'}</span>
                             )}
                           </td>
                           <td className="px-4 py-3">
@@ -874,7 +995,7 @@ export default function Financeiro() {
                                   size="sm"
                                   variant="ghost"
                                   onClick={() => {
-                                    setExpenseBackup(expense);
+                                    setExpenseBackup({ ...expense });
                                     setEditingExpenseId(expense.id);
                                   }}
                                 >
@@ -982,19 +1103,17 @@ export default function Financeiro() {
                           <td className="px-4 py-3">
                             {editingRevenueId === revenue.id ? (
                               <Input
-                                type="date"
-                                value={revenue.date}
+                                type="text"
+                                inputMode="numeric"
+                                placeholder={DATE_PLACEHOLDER}
+                                value={revenue.date || ''}
                                 onChange={(e) =>
                                   handleRevenueFieldChange(revenue.id, 'date', e.target.value)
                                 }
                                 className="w-full"
                               />
                             ) : (
-                              <span>
-                                {revenue.date
-                                  ? format(new Date(revenue.date), 'dd/MM/yyyy', { locale: ptBR })
-                                  : '—'}
-                              </span>
+                              <span>{revenue.date || '—'}</span>
                             )}
                           </td>
                           <td className="px-4 py-3">
@@ -1058,7 +1177,7 @@ export default function Financeiro() {
                                   size="sm"
                                   variant="ghost"
                                   onClick={() => {
-                                    setRevenueBackup(revenue);
+                                    setRevenueBackup({ ...revenue });
                                     setEditingRevenueId(revenue.id);
                                   }}
                                 >
