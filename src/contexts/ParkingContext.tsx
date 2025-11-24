@@ -114,7 +114,7 @@ interface ParkingContextData {
   updateVehicle: (id: string, vehicle: Partial<Vehicle>) => Promise<void>;
   deleteVehicle: (id: string) => Promise<void>;
   addRate: (rate: Omit<Rate, 'id'>) => Promise<void>;
-  updateRate: (id: string, rate: Partial<Rate>) => Promise<void>;
+  updateRate: (id: string, rate: Partial<Rate>) => Promise<Rate>;
   deleteRate: (id: string) => Promise<void>;
   addMonthlyCustomer: (
     customer: Omit<MonthlyCustomer, 'id' | 'paymentHistory'>
@@ -132,7 +132,7 @@ interface ParkingContextData {
 const ParkingContext = createContext<ParkingContextData | undefined>(undefined);
 
 export const ParkingProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const { token } = useAuth();
+  const { token, loading: authLoading } = useAuth();
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [rates, setRates] = useState<Rate[]>([]);
   const [monthlyCustomers, setMonthlyCustomers] = useState<MonthlyCustomer[]>([]);
@@ -200,6 +200,10 @@ export const ParkingProvider: React.FC<{ children: ReactNode }> = ({ children })
   // Carregar dados do backend
   // =======================
   useEffect(() => {
+    if (authLoading) {
+      return;
+    }
+
     const fetchData = async () => {
       try {
         const [vehiclesData, ratesData] = await Promise.all([
@@ -271,7 +275,7 @@ export const ParkingProvider: React.FC<{ children: ReactNode }> = ({ children })
     };
 
     fetchData();
-  }, [token]);
+  }, [token, authLoading]);
 
   // =======================
   // Cash register actions
