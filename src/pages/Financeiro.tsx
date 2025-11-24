@@ -68,6 +68,14 @@ const parseDisplayDateToDate = (value?: string | null) => {
   return date;
 };
 
+const getRecurringFrequencyLabel = (expense: Expense) => {
+  if (!expense.isRecurring) return 'Não';
+  const freq = expense.recurringFrequency || 'monthly';
+  if (freq === 'monthly') return 'Mensal';
+  if (freq === 'weekly') return 'Semanal';
+  return 'Anual';
+};
+
 type FinancialRecord = {
   type: 'Avulso' | 'Mensalista';
   date: string;
@@ -98,11 +106,18 @@ type ManualRevenue = {
   notes: string | null;
 };
 
-const normalizeExpenseFromApi = (expense: Expense): Expense => ({
-  ...expense,
-  dueDate: isoToDisplayDate(expense.dueDate),
-  paymentDate: expense.paymentDate ? isoToDisplayDate(expense.paymentDate) : null,
-});
+const normalizeExpenseFromApi = (expense: Expense): Expense => {
+  const recurringFrequency = expense.isRecurring
+    ? expense.recurringFrequency || 'monthly'
+    : null;
+
+  return {
+    ...expense,
+    dueDate: isoToDisplayDate(expense.dueDate),
+    paymentDate: expense.paymentDate ? isoToDisplayDate(expense.paymentDate) : null,
+    recurringFrequency,
+  };
+};
 
 const normalizeRevenueFromApi = (revenue: ManualRevenue): ManualRevenue => ({
   ...revenue,
@@ -121,6 +136,10 @@ const buildExpensePayload = (expense: Expense) => {
   if (expense.paymentDate && !paymentDateISO) {
     throw new Error('Data de pagamento inválida. Utilize o formato dd/mm/aaaa.');
   }
+  const recurringFrequency = expense.isRecurring
+    ? expense.recurringFrequency || 'monthly'
+    : null;
+
   return {
     name: expense.name,
     value: expense.value,
@@ -128,7 +147,7 @@ const buildExpensePayload = (expense: Expense) => {
     paymentDate: paymentDateISO,
     category: expense.category,
     isRecurring: expense.isRecurring,
-    recurringFrequency: expense.recurringFrequency,
+    recurringFrequency,
     notes: expense.notes,
   };
 };
@@ -394,6 +413,13 @@ export default function Financeiro() {
           }
         }
         const updatedExpense = { ...e, [field]: nextValue };
+        if (field === 'isRecurring') {
+          if (nextValue) {
+            updatedExpense.recurringFrequency = updatedExpense.recurringFrequency || 'monthly';
+          } else {
+            updatedExpense.recurringFrequency = null;
+          }
+        }
         if (field === 'dueDate' || field === 'paymentDate') {
           updatedExpense.status = calculateExpenseStatus(
             updatedExpense.dueDate,
@@ -940,15 +966,7 @@ export default function Financeiro() {
                                 )}
                               </div>
                             ) : (
-                              <span className="text-sm">
-                                {expense.isRecurring
-                                  ? expense.recurringFrequency === 'monthly'
-                                    ? 'Mensal'
-                                    : expense.recurringFrequency === 'weekly'
-                                      ? 'Semanal'
-                                      : 'Anual'
-                                  : 'Não'}
-                              </span>
+                              <span className="text-sm">{getRecurringFrequencyLabel(expense)}</span>
                             )}
                           </td>
                           <td className="px-4 py-3 text-right space-x-2">
