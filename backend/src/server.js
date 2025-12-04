@@ -39,10 +39,16 @@ const allowedOrigins = [
   'http://localhost:3000',
   'http://127.0.0.1:5173',
   'http://127.0.0.1:3000',
-  // Vercel deployments (production and previews)
+  // Vercel deployments - NOVA URL PRINCIPAL
+  'https://proparkingapp.vercel.app',
+  // Vercel URLs antigas (manter por compatibilidade)
   'https://appestacionamento.vercel.app',
+  'https://proparking.vercel.app',
+  // URLs de preview/branch do Vercel (geradas automaticamente)
   'https://appestacionamento-f1pr-a3mk2fpyq-cyberpeachezs-projects.vercel.app',
   'https://appestacionamento-v1-4537vs52d-cyberpeachezs-projects.vercel.app',
+  'https://appestacionamento1-git-main-cyberpeachezs-projects.vercel.app',
+  'https://appestacionamento1-izc64zjfu-cyberpeachezs-projects.vercel.app',
   // Render backend
   'https://theproparking-backend-1rxk.onrender.com',
 ];

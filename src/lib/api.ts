@@ -141,14 +141,7 @@ class ApiClient {
         throw new Error('Server returned non-JSON response');
       }
 
-      // Parse JSON with error handling
-      try {
-        const jsonData = await response.json();
-        return jsonData;
-      } catch (parseError) {
-        console.error(`Failed to parse JSON from ${url}:`, parseError);
-        throw new Error('Failed to parse JSON response');
-      }
+      return await response.json();
     } catch (error) {
       console.error(`API Error [${endpoint}]:`, error);
       throw error;

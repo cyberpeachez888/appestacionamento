@@ -28,27 +28,11 @@ const BackupSettingsSection: React.FC = () => {
     setLoading(true);
     try {
       const data = await api.getBackupConfig();
-      // Validate response structure
-      if (data && typeof data === 'object') {
-        setConfig({
-          enabled: data.enabled ?? false,
-          schedule: data.schedule ?? '0 2 * * *',
-          retentionDays: data.retentionDays ?? 30,
-        });
-      } else {
-        console.warn('Invalid backup config response:', data);
-        // Keep default config state
-      }
+      setConfig(data);
     } catch (err: unknown) {
       console.error('Erro ao carregar configuração de backup:', err);
       const message = err instanceof Error ? err.message : String(err);
-      // Only show error if it's not a 404 (config doesn't exist yet) or network error
-      if (
-        !message.includes('404') &&
-        !message.includes('Not Found') &&
-        !message.includes('Failed to fetch') &&
-        !message.includes('NetworkError')
-      ) {
+      if (!message.includes('404') && !message.includes('Not Found')) {
         toast({
           title: 'Erro ao carregar configuração',
           description: message,
@@ -63,8 +47,9 @@ const BackupSettingsSection: React.FC = () => {
 
   useEffect(() => {
     loadConfig();
+    // Professional: Add loadConfig to dependency array for exhaustive-deps compliance
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Only run once on mount
+  }, [loadConfig]);
 
   const saveConfig = async () => {
     setSaving(true);

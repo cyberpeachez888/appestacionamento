@@ -1298,9 +1298,9 @@ export default function ModelosRecibos() {
                 <div>
                   <Label>Tipo *</Label>
                   {!isCreatingCustomType ? (
-                    <Select
+                  <Select
                       value={formData.templateType || ''}
-                      onValueChange={(v: any) => {
+                    onValueChange={(v: any) => {
                         if (v === '__create_new__') {
                           // Usuário quer criar tipo customizado
                           setIsCreatingCustomType(true);
@@ -1314,41 +1314,41 @@ export default function ModelosRecibos() {
                           });
                         } else {
                           // Tipo padrão selecionado
-                          const newType = v as 'parking_ticket' | 'monthly_payment' | 'general_receipt';
-                          if (newType === 'parking_ticket') {
-                            // Para parking_ticket, usar templates separados
-                            const defaultParking = generateDefaultTemplateTextParking(companyConfig);
-                            setFormData({
-                              ...formData,
-                              templateType: newType,
-                              customTemplateText: undefined,
-                              customTemplateTextEntry: formData.customTemplateTextEntry || defaultParking.entry,
-                              customTemplateTextExit: formData.customTemplateTextExit || defaultParking.exit,
-                            });
-                          } else {
-                            // Para outros tipos, usar template único
-                            const shouldUpdateTemplate =
-                              !formData.customTemplateText || formData.customTemplateText.trim() === '';
-                            const newTemplateText = shouldUpdateTemplate
-                              ? generateDefaultTemplateText(newType, companyConfig)
-                              : formData.customTemplateText;
-                            setFormData({
-                              ...formData,
-                              templateType: newType,
-                              customTemplateText: newTemplateText,
-                              customTemplateTextEntry: undefined,
-                              customTemplateTextExit: undefined,
-                            });
+                      const newType = v as 'parking_ticket' | 'monthly_payment' | 'general_receipt';
+                      if (newType === 'parking_ticket') {
+                        // Para parking_ticket, usar templates separados
+                        const defaultParking = generateDefaultTemplateTextParking(companyConfig);
+                        setFormData({
+                          ...formData,
+                          templateType: newType,
+                          customTemplateText: undefined,
+                          customTemplateTextEntry: formData.customTemplateTextEntry || defaultParking.entry,
+                          customTemplateTextExit: formData.customTemplateTextExit || defaultParking.exit,
+                        });
+                      } else {
+                        // Para outros tipos, usar template único
+                        const shouldUpdateTemplate =
+                          !formData.customTemplateText || formData.customTemplateText.trim() === '';
+                        const newTemplateText = shouldUpdateTemplate
+                          ? generateDefaultTemplateText(newType, companyConfig)
+                          : formData.customTemplateText;
+                        setFormData({
+                          ...formData,
+                          templateType: newType,
+                          customTemplateText: newTemplateText,
+                          customTemplateTextEntry: undefined,
+                          customTemplateTextExit: undefined,
+                        });
                           }
-                        }
-                      }}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="parking_ticket">Ticket de Estacionamento</SelectItem>
-                        <SelectItem value="monthly_payment">Mensalista</SelectItem>
+                      }
+                    }}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="parking_ticket">Ticket de Estacionamento</SelectItem>
+                      <SelectItem value="monthly_payment">Mensalista</SelectItem>
                         <SelectItem value="general_receipt">Recibo de Reembolso</SelectItem>
                         <SelectItem value="__create_new__">
                           <span className="flex items-center gap-2">
@@ -1356,8 +1356,8 @@ export default function ModelosRecibos() {
                             Criar Novo +
                           </span>
                         </SelectItem>
-                      </SelectContent>
-                    </Select>
+                    </SelectContent>
+                  </Select>
                   ) : (
                     <div className="space-y-2">
                       <div className="flex gap-2">

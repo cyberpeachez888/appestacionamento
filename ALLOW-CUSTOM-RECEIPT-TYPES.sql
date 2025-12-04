@@ -24,6 +24,7 @@ WHERE conrelid = 'receipt_templates'::regclass
 -- 3. Adicionar validação mais flexível (opcional, apenas para garantir formato)
 -- Permite qualquer string, mas recomenda usar nomes descritivos
 -- Não adicionamos constraint, apenas comentário
+
 COMMENT ON COLUMN receipt_templates.template_type IS 
   'Type of receipt: pode ser um dos tipos padrão (parking_ticket, monthly_payment, general_receipt) ou um tipo customizado criado pelo usuário';
 
@@ -33,4 +34,6 @@ COMMENT ON COLUMN receipt_templates.template_type IS
 -- Tipos padrão continuam funcionando normalmente
 -- Novos tipos podem ser criados via interface
 -- ================================================
+
+
 

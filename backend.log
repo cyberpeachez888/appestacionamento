@@ -1,0 +1,7 @@
+
+> theproparking-backend@1.0.0 start
+> node src/server.js
+
+✅ Connecting to Supabase: https://nnpvazzeomwklugawceg.supabase.co
+Backend running on http://localhost:3000
+Scheduled backup service initialized

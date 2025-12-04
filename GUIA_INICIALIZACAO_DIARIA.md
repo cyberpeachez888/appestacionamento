@@ -223,3 +223,5 @@ Se encontrar algum problema:
 
 Basta seguir a rotina de abertura de caixa todas as manhãs e você estará operando normalmente! 🚀
 
+
+
