@@ -39,12 +39,14 @@ const allowedOrigins = [
   'http://localhost:3000',
   'http://127.0.0.1:5173',
   'http://127.0.0.1:3000',
-  // Vercel deployments - NOVA URL PRINCIPAL
+  // TODAS as URLs do Vercel (antigas e novas)
   'https://proparkingapp.vercel.app',
-  // Vercel URLs antigas (manter por compatibilidade)
-  'https://appestacionamento.vercel.app',
+  'https://theproparking.vercel.app',  // ← ADICIONAR ESTA
   'https://proparking.vercel.app',
-  // URLs de preview/branch do Vercel (geradas automaticamente)
+  'https://appestacionamento.vercel.app',
+  'https://appestacionamento-v1.vercel.app',
+  'https://appestacionamentov1.vercel.app',
+  // URLs de preview/branch do Vercel
   'https://appestacionamento-f1pr-a3mk2fpyq-cyberpeachezs-projects.vercel.app',
   'https://appestacionamento-v1-4537vs52d-cyberpeachezs-projects.vercel.app',
   'https://appestacionamento1-git-main-cyberpeachezs-projects.vercel.app',
