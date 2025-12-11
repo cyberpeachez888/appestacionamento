@@ -89,7 +89,18 @@ export const VehicleDialog = ({ open, onOpenChange, vehicle, onSaved }: VehicleD
       status: (exitDate && exitTime ? 'Concluído' : 'Em andamento') as 'Em andamento' | 'Concluído',
       totalValue: exitDate && exitTime && selectedRate ? calculateCurrentValue() : 0,
       contractedDays: contractedDays ? parseInt(contractedDays) : undefined,
+      contractedEndDate: undefined as string | undefined,
+      contractedEndTime: undefined as string | undefined,
     };
+
+    // Calculate contracted end date/time for long-term rates
+    if (requiresContractedDays && contractedDays && entryDate && entryTime) {
+      const days = parseInt(contractedDays);
+      const startDateTime = new Date(`${entryDate}T${entryTime}`);
+      const endDateTime = new Date(startDateTime.getTime() + days * 24 * 60 * 60 * 1000);
+      vehicleData.contractedEndDate = format(endDateTime, 'yyyy-MM-dd');
+      vehicleData.contractedEndTime = format(endDateTime, 'HH:mm');
+    }
 
     try {
       if (vehicle) {

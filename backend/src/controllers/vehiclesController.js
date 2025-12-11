@@ -30,6 +30,9 @@ export default {
         totalValue: ticket.amount || 0,
         paymentMethod: ticket.metadata?.paymentMethod,
         rateId: ticket.metadata?.rateId || '',
+        contractedDays: ticket.metadata?.contractedDays,
+        contractedEndDate: ticket.metadata?.contractedEndDate,
+        contractedEndTime: ticket.metadata?.contractedEndTime,
       }));
 
       res.json(vehicles);
@@ -51,6 +54,9 @@ export default {
         status: 'open',
         metadata: {
           rateId: req.body.rateId,
+          contractedDays: req.body.contractedDays,
+          contractedEndDate: req.body.contractedEndDate,
+          contractedEndTime: req.body.contractedEndTime,
         },
       };
 
@@ -67,6 +73,9 @@ export default {
         status: 'Em andamento',
         totalValue: 0,
         rateId: req.body.rateId,
+        contractedDays: req.body.contractedDays,
+        contractedEndDate: req.body.contractedEndDate,
+        contractedEndTime: req.body.contractedEndTime,
       };
 
       await logEvent({
@@ -104,8 +113,20 @@ export default {
       if (req.body.totalValue !== undefined) {
         updatePayload.amount = req.body.totalValue;
       }
+
+      // Fetch existing ticket to preserve metadata
+      const { data: existingTicket } = await supabase
+        .from(ticketsTable)
+        .select('metadata')
+        .eq('id', id)
+        .single();
+
+      // Merge metadata instead of replacing
       if (req.body.paymentMethod) {
-        updatePayload.metadata = { paymentMethod: req.body.paymentMethod };
+        updatePayload.metadata = {
+          ...(existingTicket?.metadata || {}),
+          paymentMethod: req.body.paymentMethod,
+        };
       }
 
       const { data, error } = await supabase
@@ -128,6 +149,10 @@ export default {
         status: data.status === 'closed' ? 'Concluído' : 'Em andamento',
         totalValue: data.amount || 0,
         paymentMethod: data.metadata?.paymentMethod,
+        rateId: data.metadata?.rateId,
+        contractedDays: data.metadata?.contractedDays,
+        contractedEndDate: data.metadata?.contractedEndDate,
+        contractedEndTime: data.metadata?.contractedEndTime,
       };
 
       // If ticket got closed here (exit handled via /vehicles update), ensure payment record exists

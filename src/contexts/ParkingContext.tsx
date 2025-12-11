@@ -50,6 +50,8 @@ export interface Vehicle {
   totalValue: number;
   paymentMethod?: PaymentMethod;
   contractedDays?: number;
+  contractedEndDate?: string;
+  contractedEndTime?: string;
 }
 
 export interface Payment {
@@ -237,7 +239,7 @@ export const ParkingProvider: React.FC<{ children: ReactNode }> = ({ children })
           ]);
           setMonthlyCustomers(customersData || []);
           if (configData) setCompanyConfig(configData);
-          
+
           // Sincronizar estado do caixa com servidor
           if (cashSessionData?.isOpen && cashSessionData?.session) {
             setCashSession({
@@ -306,7 +308,7 @@ export const ParkingProvider: React.FC<{ children: ReactNode }> = ({ children })
             openingAmount,
             operatorName: trimmedOperatorName,
           });
-          
+
           // Sucesso: atualizar estado local com dados do servidor
           setCashSession({
             openedAt: response.session.openedAt,
@@ -353,11 +355,11 @@ export const ParkingProvider: React.FC<{ children: ReactNode }> = ({ children })
     setCashSession((prev) =>
       prev
         ? {
-            ...prev,
-            closedAt: nowIso,
-            closingAmount,
-            operatorName: operatorName || prev.operatorName,
-          }
+          ...prev,
+          closedAt: nowIso,
+          closingAmount,
+          operatorName: operatorName || prev.operatorName,
+        }
         : undefined
     );
     setCashIsOpen(false);
