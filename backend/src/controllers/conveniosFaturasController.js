@@ -72,6 +72,57 @@ export default {
     },
 
     /**
+     * GET /api/convenios/relatorios/faturas
+     * Lista todas as faturas (Relatório Geral)
+     */
+    async listAll(req, res) {
+        try {
+            const { status, periodo, data_inicio, data_fim } = req.query;
+
+            let query = supabase
+                .from(FATURAS_TABLE)
+                .select(`
+                    *,
+                    convenio:convenios(nome_empresa)
+                `)
+                .order('data_vencimento', { ascending: true });
+
+            if (status && status !== 'todos') {
+                query = query.eq('status', status);
+            }
+
+            if (periodo) {
+                query = query.eq('periodo_referencia', periodo);
+            }
+
+            if (data_inicio) query = query.gte('data_vencimento', data_inicio);
+            if (data_fim) query = query.lte('data_vencimento', data_fim);
+
+            const { data, error } = await query;
+
+            if (error) {
+                return res.status(500).json({ error: error.message });
+            }
+
+            const faturasEnriquecidas = data.map(fatura => {
+                const diasAtraso = fatura.status === 'vencida' || fatura.status === 'pendente'
+                    ? calcularDiasAtraso(fatura.data_vencimento)
+                    : 0;
+
+                return {
+                    ...fatura,
+                    dias_atraso: diasAtraso
+                };
+            });
+
+            res.json(faturasEnriquecidas);
+        } catch (err) {
+            console.error('Erro no listAll faturas:', err);
+            res.status(500).json({ error: err.message || err });
+        }
+    },
+
+    /**
      * POST /api/convenios/:convenioId/faturas
      * Gera nova fatura
      */

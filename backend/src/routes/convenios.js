@@ -22,6 +22,12 @@ router.use(authenticate);
 // GET /api/convenios/stats - Estatísticas gerais
 router.get('/stats', conveniosController.getStats);
 
+// GET /api/convenios/relatorios/faturas - Relatório global de faturas
+router.get('/relatorios/faturas', conveniosFaturasController.listAll);
+
+// GET /api/convenios/relatorios/ocupacao - Relatório de ocupação (ranking)
+router.get('/relatorios/ocupacao', conveniosController.getOccupancyReport);
+
 // GET /api/convenios - Listar todos
 router.get('/', conveniosController.list);
 

@@ -500,5 +500,35 @@ export default {
             console.error('Erro no getStats:', err);
             res.status(500).json({ error: err.message || err });
         }
+    },
+
+    /**
+     * GET /api/convenios/relatorios/ocupacao
+     * Relatório detalhado de ocupação (Ranking)
+     */
+    async getOccupancyReport(req, res) {
+        try {
+            const { limit } = req.query;
+
+            let query = supabase
+                .from('convenios_ocupacao')
+                .select('*')
+                .order('taxa_ocupacao_percentual', { ascending: false });
+
+            if (limit) {
+                query = query.limit(parseInt(limit));
+            }
+
+            const { data, error } = await query;
+
+            if (error) {
+                return res.status(500).json({ error: error.message });
+            }
+
+            res.json(data);
+        } catch (err) {
+            console.error('Erro no getOccupancyReport:', err);
+            res.status(500).json({ error: err.message || err });
+        }
     }
 };
