@@ -59,6 +59,13 @@ export const VehicleDialog = ({ open, onOpenChange, vehicle, onSaved }: VehicleD
                 description: `${data.nome_empresa} - ${data.tipo_convenio}`,
                 className: 'bg-blue-50 border-blue-200 text-blue-800',
               });
+            } else if (data.bloqueio) {
+              setConvenioData({ ...data, bloqueado: true });
+              toast({
+                title: 'Entrada Bloqueada pelo Convênio',
+                description: data.message,
+                variant: 'destructive',
+              });
             } else {
               setConvenioData(null);
             }
@@ -215,19 +222,31 @@ export const VehicleDialog = ({ open, onOpenChange, vehicle, onSaved }: VehicleD
 
         <form onSubmit={handleSubmit} className="space-y-4 mt-4">
           {convenioData && (
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex items-center gap-3">
-              <div className="bg-blue-100 p-2 rounded-full">
-                <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                </svg>
+            <div className={`border rounded-lg p-4 flex items-center gap-3 ${convenioData.bloqueado
+              ? 'bg-red-50 border-red-200'
+              : 'bg-blue-50 border-blue-200'
+              }`}>
+              <div className={`p-2 rounded-full ${convenioData.bloqueado ? 'bg-red-100' : 'bg-blue-100'
+                }`}>
+                {convenioData.bloqueado ? (
+                  <svg className="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                  </svg>
+                ) : (
+                  <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                  </svg>
+                )}
               </div>
               <div>
-                <h4 className="font-semibold text-blue-900">Veículo de Convênio</h4>
-                <p className="text-sm text-blue-700">
-                  {convenioData.nome_empresa} • {convenioData.tipo_convenio === 'pre-pago' ? 'Pré-pago' : 'Pós-pago'}
+                <h4 className={`font-semibold ${convenioData.bloqueado ? 'text-red-900' : 'text-blue-900'}`}>
+                  {convenioData.bloqueado ? 'Entrada Bloqueada' : 'Veículo de Convênio'}
+                </h4>
+                <p className={`text-sm ${convenioData.bloqueado ? 'text-red-700' : 'text-blue-700'}`}>
+                  {convenioData.message || `${convenioData.nome_empresa} • ${convenioData.tipo_convenio === 'pre-pago' ? 'Pré-pago' : 'Pós-pago'}`}
                 </p>
                 {convenioData.observacoes && (
-                  <p className="text-xs text-blue-600 mt-1 italic">
+                  <p className={`text-xs mt-1 italic ${convenioData.bloqueado ? 'text-red-600' : 'text-blue-600'}`}>
                     Obs: {convenioData.observacoes}
                   </p>
                 )}
@@ -341,7 +360,9 @@ export const VehicleDialog = ({ open, onOpenChange, vehicle, onSaved }: VehicleD
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancelar
             </Button>
-            <Button type="submit">{vehicle ? 'Atualizar' : 'Adicionar'}</Button>
+            <Button type="submit" disabled={convenioData?.bloqueado}>
+              {vehicle ? 'Atualizar' : 'Adicionar'}
+            </Button>
           </div>
         </form>
       </DialogContent>
