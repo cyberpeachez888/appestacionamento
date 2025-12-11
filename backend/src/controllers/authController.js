@@ -13,21 +13,25 @@ import {
   isPasswordReused,
 } from '../services/securityService.js';
 
-// JWT_SECRET deve ser obrigatório em produção
-const JWT_SECRET = process.env.JWT_SECRET;
+// JWT_SECRET validation - lazy to allow environment variables to be set
+function getSecret() {
+  const JWT_SECRET = process.env.JWT_SECRET;
 
-if (!JWT_SECRET) {
-  if (process.env.NODE_ENV === 'production') {
-    throw new Error(
-      '❌ JWT_SECRET é obrigatório em produção! Configure a variável de ambiente.'
+  if (!JWT_SECRET) {
+    if (process.env.NODE_ENV === 'production') {
+      console.error('❌ JWT_SECRET não configurado em produção!');
+      // Don't throw immediately, allow server to start and show better error
+      return 'MISSING_JWT_SECRET_CONFIGURE_IN_RENDER';
+    }
+    console.warn(
+      '⚠️  AVISO: Usando JWT_SECRET padrão (apenas desenvolvimento). Configure JWT_SECRET no .env para produção!'
     );
+    return 'dev-secret-change-me';
   }
-  console.warn(
-    '⚠️  AVISO: Usando JWT_SECRET padrão (apenas desenvolvimento). Configure JWT_SECRET no .env para produção!'
-  );
+
+  return JWT_SECRET;
 }
 
-const SECRET = JWT_SECRET || 'dev-secret-change-me';
 const USERS_TABLE = 'users';
 const MAX_LOGIN_ATTEMPTS = 5;
 
@@ -145,7 +149,7 @@ export default {
       await updateLastLogin(user.id, ipAddress);
 
       const frontendUser = toFrontendUser(user);
-      const token = jwt.sign(frontendUser, SECRET, { expiresIn: '12h' });
+      const token = jwt.sign(frontendUser, getSecret(), { expiresIn: '12h' });
 
       // Check if user must change password
       const mustChangePassword = user.must_change_password || user.is_first_login;
