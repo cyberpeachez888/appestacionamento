@@ -17,10 +17,11 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { addMonths, format } from 'date-fns';
+import { addMonths, format, parseISO } from 'date-fns';
 import { useParking } from '@/contexts/ParkingContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { Pencil, Trash2, Plus } from 'lucide-react';
+import { MonthCheckboxCalendar } from '@/components/MonthCheckboxCalendar';
 
 // Professional: Define explicit type for customer
 interface MonthlyCustomer {
@@ -69,6 +70,8 @@ export function CustomerDialog({ open, onOpenChange, customer, onSaved }: Custom
   const [change, setChange] = useState(0);
   const [operatorName, setOperatorName] = useState('');
   const [contractDate, setContractDate] = useState<Date>(new Date());
+  const [dueDate, setDueDate] = useState('');
+  const [selectedRetroactiveMonths, setSelectedRetroactiveMonths] = useState<string[]>([]);
 
   useEffect(() => {
     if (customer) {
@@ -106,6 +109,8 @@ export function CustomerDialog({ open, onOpenChange, customer, onSaved }: Custom
       setOperatorName('');
       setIsAddingPlate(false);
       setNewPlateValue('');
+      setDueDate('');
+      setSelectedRetroactiveMonths([]);
     }
   }, [customer, open]);
 
@@ -325,7 +330,8 @@ export function CustomerDialog({ open, onOpenChange, customer, onSaved }: Custom
           operatorName: operatorName.trim() || undefined,
           status: 'Em dia' as const,
           contractDate: contractDate.toISOString(),
-          dueDate: addMonths(contractDate, 1).toISOString(),
+          dueDate: dueDate || addMonths(contractDate, 1).toISOString(),
+          retroactivePayments: selectedRetroactiveMonths.length > 0 ? selectedRetroactiveMonths : undefined,
         };
         const created = await addMonthlyCustomer(customerData);
         if (created?.id) {
@@ -427,37 +433,34 @@ export function CustomerDialog({ open, onOpenChange, customer, onSaved }: Custom
                 <span class="field-label">Nome:</span>
                 <span class="field-value">${receiptData.customer.name}</span>
               </div>
-              ${
-                receiptData.customer.cpf
-                  ? `
+              ${receiptData.customer.cpf
+        ? `
               <div class="field">
                 <span class="field-label">CPF:</span>
                 <span class="field-value">${receiptData.customer.cpf}</span>
               </div>`
-                  : ''
-              }
-              ${
-                receiptData.customer.phone
-                  ? `
+        : ''
+      }
+              ${receiptData.customer.phone
+        ? `
               <div class="field">
                 <span class="field-label">Telefone:</span>
                 <span class="field-value">${receiptData.customer.phone}</span>
               </div>`
-                  : ''
-              }
+        : ''
+      }
             </div>
 
             <div class="section">
               <div class="section-title">Vaga e Veículos</div>
-              ${
-                receiptData.customer.parkingSlot
-                  ? `
+              ${receiptData.customer.parkingSlot
+        ? `
               <div class="field">
                 <span class="field-label">Vaga Reservada:</span>
                 <span class="field-value" style="font-size: 18px; font-weight: bold; color: #2563eb;">Nº ${receiptData.customer.parkingSlot}</span>
               </div>`
-                  : ''
-              }
+        : ''
+      }
               <div class="field" style="margin-top: 10px;">
                 <span class="field-label">Placas Cadastradas:</span>
               </div>
@@ -485,9 +488,8 @@ export function CustomerDialog({ open, onOpenChange, customer, onSaved }: Custom
               </div>
             </div>
 
-            ${
-              receiptData.payment
-                ? `
+            ${receiptData.payment
+        ? `
             <div class="section">
               <div class="section-title">Pagamento</div>
               <div class="field">
@@ -503,20 +505,19 @@ export function CustomerDialog({ open, onOpenChange, customer, onSaved }: Custom
                 <span class="field-value">${format(new Date(receiptData.payment.date), 'dd/MM/yyyy HH:mm')}</span>
               </div>
             </div>`
-                : ''
-            }
+        : ''
+      }
 
-            ${
-              receiptData.operator
-                ? `
+            ${receiptData.operator
+        ? `
             <div class="section">
               <div class="field">
                 <span class="field-label">Operador:</span>
                 <span class="field-value">${receiptData.operator}</span>
               </div>
             </div>`
-                : ''
-            }
+        : ''
+      }
 
             <div class="footer">
               <p>Este recibo é comprovante de contrato de estacionamento mensal.</p>
@@ -777,6 +778,39 @@ export function CustomerDialog({ open, onOpenChange, customer, onSaved }: Custom
                 required
               />
             </div>
+
+            {/* Due Date (only for new customers) */}
+            {!customer && (
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="dueDate" className="text-right">
+                  Próximo Vencimento
+                </Label>
+                <div className="col-span-3 space-y-1">
+                  <Input
+                    id="dueDate"
+                    type="date"
+                    value={dueDate}
+                    onChange={(e) => setDueDate(e.target.value)}
+                    className="col-span-3"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Deixe em branco para usar o padrão (1 mês após hoje)
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* Retroactive Payments Calendar (only for new customers) */}
+            {!customer && dueDate && parseFloat(value) > 0 && (
+              <div className="col-span-4">
+                <MonthCheckboxCalendar
+                  dueDate={dueDate}
+                  monthlyValue={parseFloat(value)}
+                  selectedMonths={selectedRetroactiveMonths}
+                  onMonthsChange={setSelectedRetroactiveMonths}
+                />
+              </div>
+            )}
 
             {/* Operator Name */}
             <div className="grid grid-cols-4 items-center gap-4">

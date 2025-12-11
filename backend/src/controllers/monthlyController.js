@@ -157,6 +157,36 @@ export default {
         method: req.body.paymentMethod || 'cash',
       });
 
+      // Process retroactive payments if provided
+      if (req.body.retroactivePayments && Array.isArray(req.body.retroactivePayments) && req.body.retroactivePayments.length > 0) {
+        const retroactiveMonths = req.body.retroactivePayments.sort(); // Sort months (oldest first)
+
+        // Create payment record for each retroactive month
+        const retroactivePaymentRecords = retroactiveMonths.map(month => ({
+          id: uuid(),
+          target_type: 'monthly_customer',
+          target_id: id,
+          date: `${month}-01T00:00:00.000Z`, // First day of the month
+          value: req.body.value || 0,
+          method: 'retroactive', // Special method to identify retroactive payments
+          metadata: JSON.stringify({ type: 'import', note: 'Pagamento anterior ao cadastro no sistema' }),
+        }));
+
+        // Insert all retroactive payments
+        const { error: retroError } = await supabase.from('payments').insert(retroactivePaymentRecords);
+        if (retroError) {
+          console.error('Error creating retroactive payments:', retroError);
+          // Don't fail the entire request, just log the error
+        }
+
+        // Update customer's contract_date to the first retroactive month
+        const firstMonth = retroactiveMonths[0];
+        await supabase
+          .from(table)
+          .update({ contract_date: `${firstMonth}-01T00:00:00.000Z` })
+          .eq('id', id);
+      }
+
       // Parse plates back to array for response
       const response = { ...data, plates: JSON.parse(data.plates || '[]') };
       await logEvent({
@@ -344,10 +374,10 @@ export default {
         },
         payment: payment
           ? {
-              method: payment.method,
-              value: payment.value,
-              date: payment.date,
-            }
+            method: payment.method,
+            value: payment.value,
+            date: payment.date,
+          }
           : null,
         contract: {
           date: customer.contract_date,
