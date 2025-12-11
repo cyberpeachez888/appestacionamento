@@ -5,7 +5,7 @@
 
 import { supabase } from '../config/supabase.js';
 import { v4 as uuid } from 'uuid';
-import { logEvent } from '../services/auditService.js';
+import { logEvent } from '../services/auditLogger.js';
 
 const VEICULOS_TABLE = 'convenios_veiculos';
 const CONVENIOS_TABLE = 'convenios';

@@ -5,7 +5,7 @@
 
 import { supabase } from '../config/supabase.js';
 import { v4 as uuid } from 'uuid';
-import { logEvent } from '../services/auditService.js';
+import { logEvent } from '../services/auditLogger.js';
 import { calcularTempoPermanencia, validarEntradaVeiculo } from '../utils/conveniosHelpers.js';
 
 const MOVIMENTACOES_TABLE = 'convenios_movimentacoes';
