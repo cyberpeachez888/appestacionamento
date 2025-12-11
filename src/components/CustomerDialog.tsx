@@ -335,13 +335,16 @@ export function CustomerDialog({ open, onOpenChange, customer, onSaved }: Custom
         };
         const created = await addMonthlyCustomer(customerData);
         if (created?.id) {
-          // Generate and print receipt (authenticated request)
-          const response = await fetch(`${API_URL}/monthlyCustomers/${created.id}/receipt`, {
-            headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-          });
-          if (response.ok) {
-            const receiptData = await response.json();
-            printReceipt(receiptData);
+          // Only print receipt if this is NOT a retroactive registration
+          if (selectedRetroactiveMonths.length === 0) {
+            // Generate and print receipt (authenticated request)
+            const response = await fetch(`${API_URL}/monthlyCustomers/${created.id}/receipt`, {
+              headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+            });
+            if (response.ok) {
+              const receiptData = await response.json();
+              printReceipt(receiptData);
+            }
           }
         }
       }
@@ -880,7 +883,12 @@ export function CustomerDialog({ open, onOpenChange, customer, onSaved }: Custom
               Cancelar
             </Button>
             <Button type="submit" className="bg-green-600 hover:bg-green-700">
-              {customer ? 'Salvar Alterações' : 'Salvar + Imprimir Recibo'}
+              {customer
+                ? 'Salvar Alterações'
+                : selectedRetroactiveMonths.length > 0
+                  ? 'Salvar Cliente'
+                  : 'Salvar + Imprimir Recibo'
+              }
             </Button>
           </DialogFooter>
         </form>
