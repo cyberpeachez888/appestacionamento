@@ -279,7 +279,8 @@ export default {
 
             const placaNormalizada = placa.toUpperCase().trim().replace(/[^A-Z0-9]/g, '');
 
-            const { data, error } = await supabase
+            // 1. Buscar veículo e convênio
+            const { data: veiculos, error } = await supabase
                 .from(VEICULOS_TABLE)
                 .select(`
           *,
@@ -287,7 +288,8 @@ export default {
             id,
             nome_empresa,
             status,
-            tipo_convenio
+            tipo_convenio,
+            plano_ativo_id
           )
         `)
                 .eq('placa', placaNormalizada)
@@ -297,7 +299,7 @@ export default {
                 return res.status(500).json({ error: error.message });
             }
 
-            if (!data || data.length === 0) {
+            if (!veiculos || veiculos.length === 0) {
                 return res.json({
                     autorizado: false,
                     message: 'Placa não autorizada em nenhum convênio'
@@ -305,7 +307,7 @@ export default {
             }
 
             // Filtrar apenas convênios ativos
-            const conveniosAtivos = data.filter(v => v.convenio?.status === 'ativo');
+            const conveniosAtivos = veiculos.filter(v => v.convenio?.status === 'ativo');
 
             if (conveniosAtivos.length === 0) {
                 return res.json({
@@ -314,10 +316,91 @@ export default {
                 });
             }
 
-            res.json({
-                autorizado: true,
-                veiculos: conveniosAtivos
-            });
+            // 2. Para cada convênio ativo, verificar limites
+            const resultados = [];
+
+            for (const v of conveniosAtivos) {
+                const convenioId = v.convenio.id;
+
+                // Buscar plano ativo
+                const { data: plano } = await supabase
+                    .from('convenios_planos')
+                    .select('num_vagas_contratadas, permite_vagas_extras')
+                    .eq('id', v.convenio.plano_ativo_id)
+                    .single();
+
+                if (!plano) {
+                    resultados.push({ ...v, permitido: true, motivo: 'Sem plano configurado (ilimitado)' });
+                    continue;
+                }
+
+                // Contar ocupação atual
+                const { count } = await supabase
+                    .from(MOVIMENTACOES_TABLE)
+                    .select('*', { count: 'exact', head: true })
+                    .eq('convenio_id', convenioId)
+                    .is('data_saida', null);
+
+                // Verificar se veículo está dentro
+                const { data: jaDentro } = await supabase
+                    .from(MOVIMENTACOES_TABLE)
+                    .select('id')
+                    .eq('convenio_id', convenioId)
+                    .eq('placa', placaNormalizada)
+                    .is('data_saida', null)
+                    .maybeSingle();
+
+                if (jaDentro) {
+                    resultados.push({ ...v, permitido: false, motivo: 'Veículo já consta como dentro do pátio' });
+                    continue;
+                }
+
+                if (count >= plano.num_vagas_contratadas && !plano.permite_vagas_extras) {
+                    resultados.push({
+                        ...v,
+                        permitido: false,
+                        motivo: `Limite de vagas excedido (${count}/${plano.num_vagas_contratadas})`
+                    });
+                } else {
+                    resultados.push({
+                        ...v,
+                        permitido: true,
+                        ocupacao: { atual: count, limite: plano.num_vagas_contratadas }
+                    });
+                }
+            }
+
+            // 3. Retornar resultado
+            // Se houver pelo menos um permitido, autoriza
+            const permitido = resultados.find(r => r.permitido);
+
+            if (permitido) {
+                res.json({
+                    autorizado: true,
+                    nome_empresa: permitido.convenio.nome_empresa,
+                    tipo_convenio: permitido.convenio.tipo_convenio,
+                    convenio_id: permitido.convenio.id,
+                    observacoes: permitido.ocupacao
+                        ? `Vagas: ${permitido.ocupacao.atual}/${permitido.ocupacao.limite}`
+                        : null
+                });
+            } else {
+                // Se foi negado por limite
+                const negadoPorLimite = resultados.find(r => r.motivo.includes('Limite'));
+                if (negadoPorLimite) {
+                    res.json({
+                        autorizado: false,
+                        message: negadoPorLimite.motivo,
+                        bloqueio: true // Flag para UI saber que é bloqueio de regra
+                    });
+                } else {
+                    res.json({
+                        autorizado: false,
+                        message: resultados[0]?.motivo || 'Não autorizado'
+                    });
+                }
+            }
+
         } catch (err) {
             console.error('Erro no verificarPlaca:', err);
             res.status(500).json({ error: err.message || err });
