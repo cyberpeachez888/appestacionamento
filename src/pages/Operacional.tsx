@@ -65,6 +65,7 @@ export default function Operacional() {
   const [selectedVehicle, setSelectedVehicle] = useState<any>();
   const [exitingVehicle, setExitingVehicle] = useState<any>();
   const [exitingVehicleIsMonthly, setExitingVehicleIsMonthly] = useState(false);
+  const [exitingVehicleIsConvenio, setExitingVehicleIsConvenio] = useState(false); // Novo estado
   const [reimbursementDialogOpen, setReimbursementDialogOpen] = useState(false);
   const [reimbursementVehicle, setReimbursementVehicle] = useState<any>();
   const [selectedRowId, setSelectedRowId] = useState<string | null>(null);
@@ -168,11 +169,18 @@ export default function Operacional() {
   const handleFinishExit = (vehicle: any) => {
     console.log('Clicou em finalizar saída', vehicle);
     if (!hasPermission('openCloseCash')) return;
+
+    // Verificar Mensalista
     const isMonthly = monthlyCustomers.some((customer) =>
       customer.plates.some((plate) => plate.toUpperCase() === vehicle.plate.toUpperCase())
     );
+
+    // Verificar Convênio
+    const isConvenio = vehicle.metadata?.isConvenio;
+
     setExitingVehicle(vehicle);
     setExitingVehicleIsMonthly(isMonthly);
+    setExitingVehicleIsConvenio(!!isConvenio); // Setar flag de convênio
     setExitDialogOpen(true);
   };
 
@@ -188,11 +196,29 @@ export default function Operacional() {
     if (!rate) return;
 
     const baseValue = calculateRateValue(exitingVehicle, rate, now);
-    const totalValue = exitingVehicleIsMonthly ? 0 : baseValue;
+
+    // Valor é zero se for mensalista ou convênio
+    const totalValue = (exitingVehicleIsMonthly || exitingVehicleIsConvenio) ? 0 : baseValue;
 
     // Log do token para diagnóstico
     console.log('Token usado na saída:', token);
     try {
+      // Se for convênio, registrar saída no módulo de convênios também
+      if (exitingVehicleIsConvenio && exitingVehicle.metadata?.convenioId) {
+        await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/api/convenios/${exitingVehicle.metadata.convenioId}/movimentacoes`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            placa: exitingVehicle.plate,
+            tipo_movimentacao: 'saida',
+            data_saida: `${exitDate}T${exitTime}:00`
+          })
+        });
+      }
+
       // Update vehicle exit
       await fetch(`${API_URL}/vehicles/${exitingVehicle.id}`, {
         method: 'PUT',
@@ -205,7 +231,7 @@ export default function Operacional() {
           exitTime,
           status: 'Concluído',
           totalValue,
-          paymentMethod,
+          paymentMethod: exitingVehicleIsConvenio ? 'Convênio' : paymentMethod, // Método específico
         }),
       });
 
@@ -226,7 +252,7 @@ export default function Operacional() {
 
       toast({
         title: 'Saída registrada com sucesso',
-        description: `Valor total: R$ ${totalValue.toFixed(2)} - ${paymentMethod}`,
+        description: `Valor total: R$ ${totalValue.toFixed(2)} - ${exitingVehicleIsConvenio ? 'Convênio' : paymentMethod}`,
       });
       fetchVehicles();
       setExitingVehicle(undefined);
@@ -534,6 +560,7 @@ export default function Operacional() {
                         <td className="px-4 py-3 font-medium">
                           <div className="flex items-center gap-2">
                             <span>{vehicle.plate}</span>
+                            {/* Badge Mensalista */}
                             {monthlyCustomers.some((customer) =>
                               customer.plates.some(
                                 (plate) => plate.toUpperCase() === vehicle.plate.toUpperCase()
@@ -543,6 +570,13 @@ export default function Operacional() {
                                   Mensalista
                                 </span>
                               )}
+
+                            {/* Badge Convênio */}
+                            {vehicle.metadata?.isConvenio && (
+                              <span className="text-[11px] font-semibold uppercase tracking-wide bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full">
+                                Convênio
+                              </span>
+                            )}
                           </div>
                         </td>
                         <td className="px-4 py-3">{vehicle.vehicleType}</td>
