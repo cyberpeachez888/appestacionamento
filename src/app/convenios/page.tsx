@@ -26,6 +26,9 @@ import {
     Download,
     Receipt,
 } from 'lucide-react';
+import { ConvenioDetailPanel } from './components/ConvenioDetailPanel';
+import { DialogNovoConvenio } from './components/dialogs/DialogNovoConvenio';
+import { DialogAdicionarVeiculo } from './components/dialogs/DialogAdicionarVeiculo';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
 
@@ -65,6 +68,10 @@ export default function ConveniosPage() {
     const [filtroTipo, setFiltroTipo] = useState('todos');
     const [filtroCategoria, setFiltroCategoria] = useState('todos');
     const [busca, setBusca] = useState('');
+
+    // Diálogos
+    const [dialogNovoConvenio, setDialogNovoConvenio] = useState(false);
+    const [dialogAdicionarVeiculo, setDialogAdicionarVeiculo] = useState(false);
 
     // Buscar estatísticas
     useEffect(() => {
@@ -300,7 +307,10 @@ export default function ConveniosPage() {
 
                         {/* Ações */}
                         <div className="flex gap-2">
-                            <Button className="bg-green-600 hover:bg-green-700">
+                            <Button
+                                className="bg-green-600 hover:bg-green-700"
+                                onClick={() => setDialogNovoConvenio(true)}
+                            >
                                 <Plus className="mr-2 h-4 w-4" />
                                 Novo Convênio
                             </Button>
@@ -393,26 +403,32 @@ export default function ConveniosPage() {
                 </CardContent>
             </Card>
 
-            {/* Detail Panel Placeholder */}
+            {/* Detail Panel */}
             {selectedConvenio && (
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Detalhes: {selectedConvenio.nome_empresa}</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <p className="text-muted-foreground">
-                            Painel de detalhes será implementado aqui...
-                        </p>
-                        <Button
-                            variant="outline"
-                            className="mt-4"
-                            onClick={() => setSelectedConvenio(null)}
-                        >
-                            Fechar
-                        </Button>
-                    </CardContent>
-                </Card>
+                <ConvenioDetailPanel
+                    convenioId={selectedConvenio.id}
+                    onClose={() => setSelectedConvenio(null)}
+                />
             )}
+
+            {/* Dialogs */}
+            <DialogNovoConvenio
+                open={dialogNovoConvenio}
+                onOpenChange={setDialogNovoConvenio}
+                onSuccess={() => {
+                    fetchConvenios();
+                    fetchStats();
+                }}
+            />
+
+            <DialogAdicionarVeiculo
+                open={dialogAdicionarVeiculo}
+                onOpenChange={setDialogAdicionarVeiculo}
+                convenioId={selectedConvenio?.id || ''}
+                onSuccess={() => {
+                    // Refresh detail panel
+                }}
+            />
         </div>
     );
 }
