@@ -16,7 +16,7 @@ services:
       - key: SUPABASE_ANON_KEY
         sync: false
       - key: JWT_SECRET
-        generateValue: true
+        sync: false
       - key: FRONTEND_URL
         sync: false
     healthCheckPath: /health
