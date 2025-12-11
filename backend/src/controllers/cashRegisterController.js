@@ -1,5 +1,5 @@
 import { supabase } from '../config/supabase.js';
-import { logEvent } from '../middleware/auditLogger.js';
+import { logEvent } from '../services/auditLogger.js';
 import { triggerCashRegisterOpened } from '../services/webhookService.js';
 
 /**
@@ -48,7 +48,7 @@ export default {
       }
 
       if (openSession) {
-        return res.status(400).json({ 
+        return res.status(400).json({
           error: 'Caixa já está aberto',
           details: {
             openedAt: openSession.opened_at,

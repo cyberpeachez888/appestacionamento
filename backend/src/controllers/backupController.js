@@ -2,7 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import backupService from '../services/backupService.js';
 import scheduledBackupService from '../services/scheduledBackupService.js';
-import { logEvent } from '../middleware/auditLogger.js';
+import { logEvent } from '../services/auditLogger.js';
 
 export default {
   async create(req, res) {

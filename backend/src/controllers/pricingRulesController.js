@@ -9,7 +9,7 @@ import {
   updatePricingRule,
   deletePricingRule,
 } from '../services/pricingCalculator.js';
-import { logEvent } from '../middleware/auditLogger.js';
+import { logEvent } from '../services/auditLogger.js';
 
 /**
  * Get all pricing rules for a specific rate

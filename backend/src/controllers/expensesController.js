@@ -1,6 +1,6 @@
 import { supabase } from '../config/supabase.js';
 import { v4 as uuid } from 'uuid';
-import { logEvent } from '../middleware/auditLogger.js';
+import { logEvent } from '../services/auditLogger.js';
 
 const table = 'expenses';
 
@@ -9,14 +9,14 @@ function calculateStatus(dueDate, paymentDate) {
   if (paymentDate) {
     return 'Pago';
   }
-  
+
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const due = new Date(dueDate);
   due.setHours(0, 0, 0, 0);
-  
+
   const diffDays = Math.floor((due - today) / (1000 * 60 * 60 * 24));
-  
+
   if (diffDays < 0) {
     return 'Atrasado';
   } else if (diffDays <= 3) {
@@ -29,9 +29,9 @@ function calculateStatus(dueDate, paymentDate) {
 // Transform to frontend format
 function toFrontendFormat(expense) {
   if (!expense) return null;
-  
+
   const status = calculateStatus(expense.due_date, expense.payment_date);
-  
+
   return {
     id: expense.id,
     name: expense.name,
@@ -68,20 +68,20 @@ export default {
     try {
       const { start, end, category, status } = req.query;
       let q = supabase.from(table).select('*');
-      
+
       if (start) q = q.gte('due_date', start);
       if (end) q = q.lte('due_date', end);
       if (category) q = q.eq('category', category);
-      
+
       const { data, error } = await q.order('due_date', { ascending: true });
       if (error) return res.status(500).json({ error });
-      
+
       // Filter by status if provided (client-side filtering since status is calculated)
       let expenses = data.map(toFrontendFormat);
       if (status) {
         expenses = expenses.filter((e) => e.status === status);
       }
-      
+
       res.json(expenses);
     } catch (err) {
       res.status(500).json({ error: err.message || err });
@@ -107,7 +107,7 @@ export default {
       const payload = toDbFormat(req.body);
       const { data, error } = await supabase.from(table).insert(payload).select().single();
       if (error) return res.status(500).json({ error });
-      
+
       await logEvent({
         actor: req.user,
         action: 'expense.create',
@@ -115,7 +115,7 @@ export default {
         targetId: data.id,
         details: { name: data.name, value: data.value, category: data.category },
       });
-      
+
       res.status(201).json(toFrontendFormat(data));
     } catch (err) {
       res.status(500).json({ error: err.message || err });
@@ -126,19 +126,19 @@ export default {
     try {
       const { id } = req.params;
       const payload = toDbFormat({ ...req.body, id });
-      
+
       const { data, error } = await supabase
         .from(table)
         .update(payload)
         .eq('id', id)
         .select()
         .single();
-      
+
       if (error) {
         if (error.code === 'PGRST116') return res.status(404).json({ error: 'Expense not found' });
         return res.status(500).json({ error });
       }
-      
+
       await logEvent({
         actor: req.user,
         action: 'expense.update',
@@ -146,7 +146,7 @@ export default {
         targetId: id,
         details: { name: data.name, value: data.value },
       });
-      
+
       res.json(toFrontendFormat(data));
     } catch (err) {
       res.status(500).json({ error: err.message || err });
@@ -158,14 +158,14 @@ export default {
       const { id } = req.params;
       const { error } = await supabase.from(table).delete().eq('id', id);
       if (error) return res.status(500).json({ error });
-      
+
       await logEvent({
         actor: req.user,
         action: 'expense.delete',
         targetType: 'expense',
         targetId: id,
       });
-      
+
       res.status(204).send();
     } catch (err) {
       res.status(500).json({ error: err.message || err });

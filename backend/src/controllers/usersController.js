@@ -1,7 +1,7 @@
 import { supabase } from '../config/supabase.js';
 import { v4 as uuid } from 'uuid';
 import bcrypt from 'bcryptjs';
-import { logEvent } from '../middleware/auditLogger.js';
+import { logEvent } from '../services/auditLogger.js';
 
 const TABLE = 'users';
 
