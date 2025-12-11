@@ -22,6 +22,7 @@ import { useParking } from '@/contexts/ParkingContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { Pencil, Trash2, Plus } from 'lucide-react';
 import { MonthCheckboxCalendar } from '@/components/MonthCheckboxCalendar';
+import { Checkbox } from '@/components/ui/checkbox';
 
 // Professional: Define explicit type for customer
 interface MonthlyCustomer {
@@ -72,6 +73,7 @@ export function CustomerDialog({ open, onOpenChange, customer, onSaved }: Custom
   const [contractDate, setContractDate] = useState<Date>(new Date());
   const [dueDate, setDueDate] = useState('');
   const [selectedRetroactiveMonths, setSelectedRetroactiveMonths] = useState<string[]>([]);
+  const [isRetroactive, setIsRetroactive] = useState(false);
 
   useEffect(() => {
     if (customer) {
@@ -111,6 +113,7 @@ export function CustomerDialog({ open, onOpenChange, customer, onSaved }: Custom
       setNewPlateValue('');
       setDueDate('');
       setSelectedRetroactiveMonths([]);
+      setIsRetroactive(false);
     }
   }, [customer, open]);
 
@@ -273,14 +276,17 @@ export function CustomerDialog({ open, onOpenChange, customer, onSaved }: Custom
       return;
     }
 
-    if (!cpf.trim()) {
-      alert('Por favor, preencha o CPF do cliente.');
-      return;
-    }
+    // CPF and Phone are optional when retroactive
+    if (!isRetroactive) {
+      if (!cpf.trim()) {
+        alert('Por favor, preencha o CPF do cliente.');
+        return;
+      }
 
-    if (!phone.trim()) {
-      alert('Por favor, preencha o telefone do cliente.');
-      return;
+      if (!phone.trim()) {
+        alert('Por favor, preencha o telefone do cliente.');
+        return;
+      }
     }
 
     if (!parkingSlot) {
@@ -320,23 +326,24 @@ export function CustomerDialog({ open, onOpenChange, customer, onSaved }: Custom
         // Create new customer and print initial receipt
         const customerData = {
           name: name.trim(),
-          cpf: cpf.trim(),
-          phone: phone.trim(),
+          cpf: cpf.trim() || null, // Can be null if retroactive
+          phone: phone.trim() || null, // Can be null if retroactive
           parkingSlot: parseInt(parkingSlot),
           plates: plates.map((p) => p.value),
           value: parseFloat(value),
-          paymentMethod,
-          paidAmount: paymentMethod === 'Dinheiro' ? parseFloat(paidAmount) : undefined,
+          paymentMethod: isRetroactive ? null : paymentMethod,
+          paidAmount: isRetroactive ? null : (paymentMethod === 'Dinheiro' ? parseFloat(paidAmount) : undefined),
           operatorName: operatorName.trim() || undefined,
           status: 'Em dia' as const,
           contractDate: contractDate.toISOString(),
           dueDate: dueDate || addMonths(contractDate, 1).toISOString(),
           retroactivePayments: selectedRetroactiveMonths.length > 0 ? selectedRetroactiveMonths : undefined,
+          isRetroactive, // Flag to indicate retroactive customer
         };
         const created = await addMonthlyCustomer(customerData);
         if (created?.id) {
           // Only print receipt if this is NOT a retroactive registration
-          if (selectedRetroactiveMonths.length === 0) {
+          if (!isRetroactive && selectedRetroactiveMonths.length === 0) {
             // Generate and print receipt (authenticated request)
             const response = await fetch(`${API_URL}/monthlyCustomers/${created.id}/receipt`, {
               headers: token ? { Authorization: `Bearer ${token}` } : undefined,
@@ -551,15 +558,35 @@ export function CustomerDialog({ open, onOpenChange, customer, onSaved }: Custom
               : 'Registre um novo cliente mensalista com pagamento e recibo.'}
           </DialogDescription>
         </DialogHeader>
+
+        {/* Retroactive Customer Checkbox - Only for new customers */}
+        {!customer && (
+          <div className="flex items-center space-x-2 p-4 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900 rounded-md">
+            <Checkbox
+              id="retroactive"
+              checked={isRetroactive}
+              onCheckedChange={(checked) => setIsRetroactive(checked as boolean)}
+            />
+            <Label
+              htmlFor="retroactive"
+              className="cursor-pointer text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+            >
+              Cliente Retroativo (já era mensalista antes do app existir)
+            </Label>
+          </div>
+        )}
+
         <form onSubmit={handleSubmit}>
           <div className="grid gap-4 py-4">
-            {/* Contract Date Display */}
-            <div className="bg-muted/50 p-3 rounded-md">
-              <div className="text-sm font-medium text-muted-foreground">Data do Contrato</div>
-              <div className="text-lg font-semibold">
-                {format(contractDate, "dd/MM/yyyy 'às' HH:mm")}
+            {/* Contract Date Display - Hide when retroactive */}
+            {!customer && !isRetroactive && (
+              <div className="bg-muted/50 p-3 rounded-md">
+                <div className="text-sm font-medium text-muted-foreground">Data do Contrato</div>
+                <div className="text-lg font-semibold">
+                  {format(contractDate, "dd/MM/yyyy 'às' HH:mm")}
+                </div>
               </div>
-            </div>
+            )}
 
             {/* Name */}
             <div className="grid grid-cols-4 items-center gap-4">
@@ -829,8 +856,8 @@ export function CustomerDialog({ open, onOpenChange, customer, onSaved }: Custom
               />
             </div>
 
-            {/* Payment Section (only for creation) */}
-            {!customer && (
+            {/* Payment Section (only for creation and NOT retroactive) */}
+            {!customer && !isRetroactive && (
               <div className="border-t pt-4 mt-2">
                 <h3 className="font-semibold mb-3">Pagamento</h3>
 
@@ -885,8 +912,8 @@ export function CustomerDialog({ open, onOpenChange, customer, onSaved }: Custom
             <Button type="submit" className="bg-green-600 hover:bg-green-700">
               {customer
                 ? 'Salvar Alterações'
-                : selectedRetroactiveMonths.length > 0
-                  ? 'Salvar Cliente'
+                : isRetroactive
+                  ? 'Salvar'
                   : 'Salvar + Imprimir Recibo'
               }
             </Button>

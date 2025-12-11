@@ -148,14 +148,19 @@ export default {
       }
 
       // register initial payment in payments table
-      await supabase.from('payments').insert({
-        id: uuid(),
-        target_type: 'monthly_customer',
-        target_id: id,
-        date: contractDate,
-        value: req.body.value || 0,
-        method: req.body.paymentMethod || 'cash',
-      });
+      // Skip if retroactive customer
+      const isRetroactive = req.body.isRetroactive || false;
+
+      if (!isRetroactive) {
+        await supabase.from('payments').insert({
+          id: uuid(),
+          target_type: 'monthly_customer',
+          target_id: id,
+          date: contractDate,
+          value: req.body.value || 0,
+          method: req.body.paymentMethod || 'cash',
+        });
+      }
 
       // Process retroactive payments if provided
       if (req.body.retroactivePayments && Array.isArray(req.body.retroactivePayments) && req.body.retroactivePayments.length > 0) {
@@ -194,7 +199,7 @@ export default {
         action: 'monthlyCustomer.create',
         targetType: 'monthly_customer',
         targetId: id,
-        details: { parkingSlot: payload.parking_slot },
+        details: { parkingSlot: payload.parking_slot, isRetroactive },
       });
       res.status(201).json(response);
     } catch (err) {
