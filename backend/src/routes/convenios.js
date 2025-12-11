@@ -8,12 +8,12 @@ import conveniosController from '../controllers/conveniosController.js';
 import conveniosVeiculosController from '../controllers/conveniosVeiculosController.js';
 import conveniosMovimentacoesController from '../controllers/conveniosMovimentacoesController.js';
 import conveniosFaturasController from '../controllers/conveniosFaturasController.js';
-import { authenticate } from '../middleware/auth.js';
+import { requireAuth } from '../middleware/auth.js';
 
 const router = express.Router();
 
 // Todas as rotas requerem autenticação
-router.use(authenticate);
+router.use(requireAuth);
 
 // =====================================================
 // CONVÊNIOS - CRUD Principal
