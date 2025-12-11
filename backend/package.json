@@ -21,6 +21,7 @@
     "archiver": "^7.0.1",
     "bcryptjs": "^2.4.3",
     "cors": "^2.8.5",
+    "date-fns": "^4.1.0",
     "dompurify": "^3.3.0",
     "dotenv": "^16.3.1",
     "express": "^5.1.0",
