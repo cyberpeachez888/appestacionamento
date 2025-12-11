@@ -8,6 +8,7 @@ import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { Sidebar } from './components/Sidebar';
 import Operacional from './pages/Operacional';
 import Mensalistas from './pages/Mensalistas';
+import Convenios from './pages/Convenios';
 import Financeiro from './pages/Financeiro';
 import RelatoriosMensais from './pages/RelatoriosMensais';
 import Users from './pages/Users';
@@ -84,14 +85,14 @@ const SetupGuard: React.FC<{ children: React.ReactNode }> = ({ children }) => {
         const timeoutSignal = setTimeout(() => controller.abort(), 12000); // 12 second abort
 
         const url = `${API_URL}/setup/check-first-run`;
-        
+
         const response = await fetch(url, {
           signal: controller.signal,
         });
-        
+
         clearTimeout(timeoutSignal);
         clearTimeout(timeoutId);
-        
+
         // Check if response is actually JSON
         const contentType = response.headers.get('content-type');
         if (!contentType || !contentType.includes('application/json')) {
@@ -99,12 +100,12 @@ const SetupGuard: React.FC<{ children: React.ReactNode }> = ({ children }) => {
           console.warn('[SetupGuard] Non-JSON response - backend may be hibernating');
           throw new Error('Server returned non-JSON response');
         }
-        
+
         const data = await response.json();
         setNeedsSetup(data.needsSetup || false);
       } catch (error: any) {
         clearTimeout(timeoutId);
-        
+
         // Silently handle errors - fail open to allow app to continue
         // This is expected when Render is hibernating or network is slow
         if (error.name === 'AbortError' || error.message?.includes('aborted')) {
@@ -117,7 +118,7 @@ const SetupGuard: React.FC<{ children: React.ReactNode }> = ({ children }) => {
           // Only log unexpected errors
           console.warn('[SetupGuard] Setup check failed, proceeding anyway:', error.message || error);
         }
-        
+
         // Assume setup is not needed if check fails (fail open)
         // This allows the app to continue even if backend is unavailable
         setNeedsSetup(false);
@@ -226,6 +227,14 @@ const App = () => (
                     element={
                       <Protected required={['manageMonthlyCustomers']}>
                         <Mensalistas />
+                      </Protected>
+                    }
+                  />
+                  <Route
+                    path="/convenios"
+                    element={
+                      <Protected required={['manageMonthlyCustomers']}>
+                        <Convenios />
                       </Protected>
                     }
                   />

@@ -3,19 +3,19 @@
  * Gestão de Convênios Empresariais
  */
 
-'use client';
-
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from '@/components/ui/table';
 import {
     Building2,
     TrendingUp,
@@ -23,15 +23,16 @@ import {
     AlertTriangle,
     Plus,
     FileText,
-    Download,
     Receipt,
+    Search,
+    Filter
 } from 'lucide-react';
-import { ConveniosDetailPanel } from './components/ConvenioDetailPanel';
-import { ConveniosRelatoriosPanel } from './components/ConveniosRelatoriosPanel';
-import { DialogNovoConvenio } from './components/dialogs/DialogNovoConvenio';
-import { DialogAdicionarVeiculo } from './components/dialogs/DialogAdicionarVeiculo';
+import { ConvenioDetailPanel } from '@/components/convenios/ConvenioDetailPanel';
+import { ConveniosRelatoriosPanel } from '@/components/convenios/ConveniosRelatoriosPanel';
+import { DialogNovoConvenio } from '@/components/convenios/dialogs/DialogNovoConvenio';
+import { DialogAdicionarVeiculo } from '@/components/convenios/dialogs/DialogAdicionarVeiculo';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
+const API_URL = import.meta.env.NEXT_PUBLIC_API_URL || import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
 
 interface ConvenioStats {
     total_ativos: number;
@@ -81,7 +82,10 @@ export default function ConveniosPage() {
 
     // Buscar convênios
     useEffect(() => {
-        fetchConvenios();
+        const timeoutId = setTimeout(() => {
+            fetchConvenios();
+        }, 300);
+        return () => clearTimeout(timeoutId);
     }, [filtroStatus, filtroTipo, filtroCategoria, busca]);
 
     const fetchStats = async () => {
@@ -171,19 +175,25 @@ export default function ConveniosPage() {
     }, []);
 
     return (
-        <div className="p-6 space-y-6">
+        <div className="p-6 space-y-6 animate-in fade-in duration-500">
             {/* Header */}
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-3xl font-bold">Convênios</h1>
+                    <h1 className="text-3xl font-bold tracking-tight">Convênios</h1>
                     <p className="text-muted-foreground">
                         Gestão de contratos empresariais de estacionamento
                     </p>
                 </div>
+                <div className="flex items-center gap-2">
+                    <Button onClick={() => setDialogNovoConvenio(true)}>
+                        <Plus className="h-4 w-4 mr-2" />
+                        Novo Convênio
+                    </Button>
+                </div>
             </div>
 
             <Tabs defaultValue="gerenciamento" className="space-y-6">
-                <TabsList className="grid w-full grid-cols-2 lg:w-[400px]">
+                <TabsList>
                     <TabsTrigger value="gerenciamento">Gerenciamento</TabsTrigger>
                     <TabsTrigger value="relatorios">Relatórios</TabsTrigger>
                 </TabsList>
@@ -248,6 +258,27 @@ export default function ConveniosPage() {
                         </Card>
                     </div>
 
+                    {/* Filters */}
+                    <Card>
+                        <CardHeader className="pb-3">
+                            <CardTitle className="text-sm font-medium">Filtros e Busca</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="flex flex-col md:flex-row gap-4">
+                                <div className="relative flex-1">
+                                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                                    <Input
+                                        placeholder="Buscar por empresa ou CNPJ..."
+                                        className="pl-8"
+                                        value={busca}
+                                        onChange={(e) => setBusca(e.target.value)}
+                                    />
+                                </div>
+                                {/* Add Select filters here if needed */}
+                            </div>
+                        </CardContent>
+                    </Card>
+
                     {/* Main Content Area */}
                     {selectedConvenio ? (
                         <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -261,76 +292,97 @@ export default function ConveniosPage() {
                             <ConvenioDetailPanel convenioId={selectedConvenio.id} onClose={() => setSelectedConvenio(null)} />
                         </div>
                     ) : (
-                                    </tr>
-            </thead>
-            <tbody>
-                {convenios.map((convenio) => (
-                    <tr
-                        key={convenio.id}
-                        className={`border-b hover:bg-muted/50 cursor-pointer transition-colors ${selectedConvenio?.id === convenio.id ? 'bg-muted' : ''
-                            }`}
-                        onClick={() => setSelectedConvenio(convenio)}
-                    >
-                        <td className="p-3">
-                            <span
-                                className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusBadge(
-                                    convenio
-                                )}`}
-                            >
-                                {getStatusText(convenio)}
-                            </span>
-                        </td>
-                        <td className="p-3 font-medium">{convenio.nome_empresa}</td>
-                        <td className="p-3 text-sm text-muted-foreground">
-                            {formatarCNPJ(convenio.cnpj)}
-                        </td>
-                        <td className="p-3">
-                            <span className="capitalize">{convenio.tipo_convenio}</span>
-                        </td>
-                        <td className="p-3">
-                            {convenio.vagas_ocupadas} / {convenio.plano_ativo?.num_vagas_contratadas || 0}
-                            <span className="text-xs text-muted-foreground ml-1">
-                                ({convenio.taxa_ocupacao.toFixed(0)}%)
-                            </span>
-                        </td>
-                        <td className="p-3 font-medium">
-                            {formatarValor(convenio.plano_ativo?.valor_mensal || 0)}
-                        </td>
-                        <td className="p-3">
-                            Dia {convenio.plano_ativo?.dia_vencimento_pagamento || '-'}
-                        </td>
-                        <td className="p-3">
-                            <Button variant="ghost" size="sm">
-                                <Receipt className="h-4 w-4" />
-                            </Button>
-                        </td>
-                    </tr>
-                ))}
-            </tbody>
-        </table>
-                        </div >
-                    )
-}
-                </CardContent >
-            </Card >
+                        <Card>
+                            <CardContent className="p-0">
+                                <div className="rounded-md border">
+                                    <Table>
+                                        <TableHeader>
+                                            <TableRow>
+                                                <TableHead>Status</TableHead>
+                                                <TableHead>Empresa</TableHead>
+                                                <TableHead>CNPJ</TableHead>
+                                                <TableHead>Tipo</TableHead>
+                                                <TableHead>Vagas</TableHead>
+                                                <TableHead>Valor Mensal</TableHead>
+                                                <TableHead>Vencimento</TableHead>
+                                                <TableHead className="w-[50px]"></TableHead>
+                                            </TableRow>
+                                        </TableHeader>
+                                        <TableBody>
+                                            {loading ? (
+                                                <TableRow>
+                                                    <TableCell colSpan={8} className="h-24 text-center">
+                                                        Carregando...
+                                                    </TableCell>
+                                                </TableRow>
+                                            ) : convenios.length === 0 ? (
+                                                <TableRow>
+                                                    <TableCell colSpan={8} className="h-24 text-center">
+                                                        Nenhum convênio encontrado.
+                                                    </TableCell>
+                                                </TableRow>
+                                            ) : (
+                                                convenios.map((convenio) => (
+                                                    <TableRow
+                                                        key={convenio.id}
+                                                        className="cursor-pointer hover:bg-muted/50"
+                                                        onClick={() => setSelectedConvenio(convenio)}
+                                                    >
+                                                        <TableCell>
+                                                            <span
+                                                                className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusBadge(
+                                                                    convenio
+                                                                )}`}
+                                                            >
+                                                                {getStatusText(convenio)}
+                                                            </span>
+                                                        </TableCell>
+                                                        <TableCell className="font-medium">{convenio.nome_empresa}</TableCell>
+                                                        <TableCell className="text-muted-foreground">
+                                                            {formatarCNPJ(convenio.cnpj)}
+                                                        </TableCell>
+                                                        <TableCell className="capitalize">{convenio.tipo_convenio}</TableCell>
+                                                        <TableCell>
+                                                            {convenio.vagas_ocupadas} / {convenio.plano_ativo?.num_vagas_contratadas || 0}
+                                                            <span className="text-xs text-muted-foreground ml-1">
+                                                                ({convenio.taxa_ocupacao.toFixed(0)}%)
+                                                            </span>
+                                                        </TableCell>
+                                                        <TableCell className="font-medium">
+                                                            {formatarValor(convenio.plano_ativo?.valor_mensal || 0)}
+                                                        </TableCell>
+                                                        <TableCell>
+                                                            Dia {convenio.plano_ativo?.dia_vencimento_pagamento || '-'}
+                                                        </TableCell>
+                                                        <TableCell>
+                                                            <Button variant="ghost" size="icon">
+                                                                <FileText className="h-4 w-4" />
+                                                            </Button>
+                                                        </TableCell>
+                                                    </TableRow>
+                                                ))
+                                            )}
+                                        </TableBody>
+                                    </Table>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    )}
+                </TabsContent>
 
-    {/* Detail Panel */ }
-{
-    selectedConvenio && (
-        <ConvenioDetailPanel
-            convenioId={selectedConvenio.id}
-            onClose={() => setSelectedConvenio(null)}
-        />
-    )
-}
+                <TabsContent value="relatorios">
+                    <ConveniosRelatoriosPanel />
+                </TabsContent>
+            </Tabs>
 
-{/* Dialogs */ }
+            {/* Dialogs */}
             <DialogNovoConvenio
                 open={dialogNovoConvenio}
                 onOpenChange={setDialogNovoConvenio}
                 onSuccess={() => {
                     fetchConvenios();
                     fetchStats();
+                    setDialogNovoConvenio(false);
                 }}
             />
 
@@ -339,9 +391,9 @@ export default function ConveniosPage() {
                 onOpenChange={setDialogAdicionarVeiculo}
                 convenioId={selectedConvenio?.id || ''}
                 onSuccess={() => {
-                    // Refresh detail panel
+                    // Update detail panel if needed
                 }}
             />
-        </div >
+        </div>
     );
 }

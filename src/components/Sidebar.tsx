@@ -10,6 +10,7 @@ import {
   FileCheck,
   Calendar,
   BarChart3,
+  Building2,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useParking } from '@/contexts/ParkingContext';
@@ -27,6 +28,7 @@ export const Sidebar = () => {
   const navItems = [
     { to: '/', icon: Car, label: 'Operacional', perm: 'openCloseCash' },
     { to: '/mensalistas', icon: UsersIcon, label: 'Mensalistas', perm: 'manageMonthlyCustomers' },
+    { to: '/convenios', icon: Building2, label: 'Convênios', perm: 'manageMonthlyCustomers' },
     { to: '/financeiro', icon: DollarSign, label: 'Financeiro', perm: 'viewReports' },
     { to: '/relatorios-mensais', icon: FileText, label: 'Relatórios Mensais', perm: 'viewReports' },
     { to: '/users', icon: UsersIcon, label: 'Usuários', perm: 'manageUsers' },
