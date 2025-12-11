@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
 import { CustomerDialog } from '@/components/CustomerDialog';
 import { PaymentDialog } from '@/components/PaymentDialog';
+import { MensalistasDetailPanel } from '@/components/MensalistasDetailPanel';
 import {
   ContextMenu,
   ContextMenuContent,
@@ -10,11 +11,12 @@ import {
   ContextMenuTrigger,
 } from '@/components/ui/context-menu';
 import { useToast } from '@/hooks/use-toast';
-import { format, isPast } from 'date-fns';
+import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { useParking } from '@/contexts/ParkingContext'; // Importar contexto
+import { useParking } from '@/contexts/ParkingContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { Badge } from '@/components/ui/badge';
+import { calculateCustomerStatus, getRowBackgroundColor } from '@/types/mensalistas';
 
 // Helper function to format payment method display
 const formatPaymentMethod = (method: string | undefined): string => {
@@ -36,11 +38,12 @@ const formatPaymentMethod = (method: string | undefined): string => {
 
 export default function Mensalistas() {
   const { toast } = useToast();
-  const { monthlyCustomers, deleteMonthlyCustomer } = useParking(); // Usar dados do contexto
+  const { monthlyCustomers, deleteMonthlyCustomer } = useParking();
   const { hasPermission } = useAuth();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState<any>();
+  const [selectedCustomerId, setSelectedCustomerId] = useState<string | null>(null);
 
   // --- AÇÕES ---
   const handleAddNew = () => {
@@ -73,8 +76,20 @@ export default function Mensalistas() {
     }
   };
 
-  const getCustomerStatus = (customer: any) => {
-    return isPast(new Date(customer.dueDate)) ? 'Atrasado' : 'Em dia';
+  // ESC key handler to deselect row
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setSelectedCustomerId(null);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
+  // Handle row click
+  const handleRowClick = (customerId: string) => {
+    setSelectedCustomerId(customerId);
   };
 
   const canManage = hasPermission('manageMonthlyCustomers');
@@ -146,14 +161,17 @@ export default function Mensalistas() {
                   </tr>
                 ) : (
                   monthlyCustomers.map((customer, index) => {
-                    // Usar monthlyCustomers do contexto
-                    const status = getCustomerStatus(customer);
-                    // Log de debug para contractDate
-                    console.log('Cliente:', customer.name, 'contractDate:', customer.contractDate);
+                    const statusInfo = calculateCustomerStatus(customer.dueDate);
+                    const isSelected = selectedCustomerId === customer.id;
+                    const rowBgColor = getRowBackgroundColor(statusInfo.status, isSelected, index);
+
                     return (
                       <ContextMenu key={customer.id}>
                         <ContextMenuTrigger asChild>
-                          <tr className={index % 2 === 0 ? 'bg-background' : 'bg-muted/20'}>
+                          <tr
+                            className={`cursor-pointer transition-colors ${rowBgColor}`}
+                            onClick={() => handleRowClick(customer.id)}
+                          >
                             <td className="px-4 py-3 font-medium">{customer.name}</td>
                             <td className="px-4 py-3">
                               <div className="flex flex-wrap gap-1">
@@ -175,8 +193,8 @@ export default function Mensalistas() {
                             <td className="px-4 py-3 text-sm">
                               {customer.contractDate
                                 ? format(new Date(customer.contractDate), 'dd/MM/yyyy', {
-                                    locale: ptBR,
-                                  })
+                                  locale: ptBR,
+                                })
                                 : '-'}
                             </td>
                             <td className="px-4 py-3 text-sm">
@@ -185,8 +203,8 @@ export default function Mensalistas() {
                             <td className="px-4 py-3 text-sm">
                               {customer.lastPayment
                                 ? format(new Date(customer.lastPayment), 'dd/MM/yyyy', {
-                                    locale: ptBR,
-                                  })
+                                  locale: ptBR,
+                                })
                                 : '-'}
                             </td>
                             <td className="px-4 py-3 text-sm">
@@ -200,18 +218,20 @@ export default function Mensalistas() {
                             </td>
                             <td className="px-4 py-3">
                               <span
-                                className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                                  status === 'Em dia'
-                                    ? 'bg-success/10 text-success'
-                                    : 'bg-destructive/10 text-destructive'
-                                }`}
+                                className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusInfo.bgColor} ${statusInfo.textColor}`}
                               >
-                                {status}
+                                {statusInfo.status}
                               </span>
                             </td>
                             <td className="px-4 py-3 text-right space-x-2">
                               {canManage && (
-                                <Button size="sm" onClick={() => handleRegisterPayment(customer)}>
+                                <Button
+                                  size="sm"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleRegisterPayment(customer);
+                                  }}
+                                >
                                   Registrar Pagamento
                                 </Button>
                               )}
@@ -244,6 +264,19 @@ export default function Mensalistas() {
             </table>
           </div>
         </div>
+
+        {/* Detail Panel */}
+        {selectedCustomerId && (() => {
+          const selectedCustomer = monthlyCustomers.find(c => c.id === selectedCustomerId);
+          if (!selectedCustomer) return null;
+          const statusInfo = calculateCustomerStatus(selectedCustomer.dueDate);
+          return (
+            <MensalistasDetailPanel
+              customer={selectedCustomer}
+              statusInfo={statusInfo}
+            />
+          );
+        })()}
       </div>
 
       <CustomerDialog open={dialogOpen} onOpenChange={setDialogOpen} customer={selectedCustomer} />

@@ -73,7 +73,7 @@ export interface MonthlyCustomer {
   dueDate: string;
   lastPayment?: string;
   lastPaymentMethod?: string; // Allow any string from backend
-  status: 'Em dia' | 'Atrasado';
+  status: 'Em dia' | 'Próximo do vencimento' | 'Atrasado' | 'Atraso crítico';
   paymentHistory: Payment[];
   contractDate: string;
   operatorName?: string;
