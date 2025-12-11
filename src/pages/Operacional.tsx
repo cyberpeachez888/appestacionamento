@@ -59,7 +59,7 @@ export default function Operacional() {
   const { user, hasPermission, token } = useAuth();
   const [vehicles, setVehicles] = useState<any[]>([]);
   const [rates, setRates] = useState<any[]>([]);
-  const [filter, setFilter] = useState<'all' | string>('all');
+  const [filter, setFilter] = useState<'all' | string>('Em andamento');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [exitDialogOpen, setExitDialogOpen] = useState(false);
   const [selectedVehicle, setSelectedVehicle] = useState<any>();
@@ -522,10 +522,10 @@ export default function Operacional() {
                       <tr
                         key={vehicle.id}
                         className={`cursor-pointer transition-colors ${isSelected
-                            ? 'bg-primary/10 border-l-4 border-primary'
-                            : index % 2 === 0
-                              ? 'bg-background hover:bg-muted/30'
-                              : 'bg-muted/20 hover:bg-muted/40'
+                          ? 'bg-primary/10 border-l-4 border-primary'
+                          : index % 2 === 0
+                            ? 'bg-background hover:bg-muted/30'
+                            : 'bg-muted/20 hover:bg-muted/40'
                           }`}
                         onClick={() => setSelectedRowId(vehicle.id)}
                         onDoubleClick={() => handleOpenReimbursement(vehicle)}
@@ -558,8 +558,8 @@ export default function Operacional() {
                         <td className="px-4 py-3">
                           <span
                             className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${vehicle.status === 'Em andamento'
-                                ? 'bg-warning/10 text-warning'
-                                : 'bg-success/10 text-success'
+                              ? 'bg-warning/10 text-warning'
+                              : 'bg-success/10 text-success'
                               }`}
                           >
                             {vehicle.status}
