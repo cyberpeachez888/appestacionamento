@@ -276,24 +276,7 @@ export function CustomerDialog({ open, onOpenChange, customer, onSaved }: Custom
       return;
     }
 
-    // CPF and Phone are optional when retroactive
-    if (!isRetroactive) {
-      if (!cpf.trim()) {
-        alert('Por favor, preencha o CPF do cliente.');
-        return;
-      }
-
-      if (!phone.trim()) {
-        alert('Por favor, preencha o telefone do cliente.');
-        return;
-      }
-    }
-
-    if (!parkingSlot) {
-      alert('Por favor, informe o número da vaga.');
-      return;
-    }
-
+    // Only plates are required (CPF, phone, and parking slot are optional)
     if (plates.length === 0) {
       alert('Por favor, adicione pelo menos uma placa de veículo.');
       return;
@@ -314,9 +297,9 @@ export function CustomerDialog({ open, onOpenChange, customer, onSaved }: Custom
         // Update existing customer (no receipt generation)
         const patch = {
           name: name.trim(),
-          cpf: cpf.trim(),
-          phone: phone.trim(),
-          parkingSlot: parseInt(parkingSlot),
+          cpf: cpf.trim() || null,
+          phone: phone.trim() || null,
+          parkingSlot: parkingSlot ? parseInt(parkingSlot) : null,
           plates: plates.map((p) => p.value),
           value: parseFloat(value),
           operatorName: operatorName.trim() || undefined,
@@ -326,9 +309,9 @@ export function CustomerDialog({ open, onOpenChange, customer, onSaved }: Custom
         // Create new customer and print initial receipt
         const customerData = {
           name: name.trim(),
-          cpf: cpf.trim() || null, // Can be null if retroactive
-          phone: phone.trim() || null, // Can be null if retroactive
-          parkingSlot: parseInt(parkingSlot),
+          cpf: cpf.trim() || null, // Optional for all customers
+          phone: phone.trim() || null, // Optional for all customers
+          parkingSlot: parkingSlot ? parseInt(parkingSlot) : null, // Optional for all customers
           plates: plates.map((p) => p.value),
           value: parseFloat(value),
           paymentMethod: isRetroactive ? null : paymentMethod,
@@ -606,7 +589,7 @@ export function CustomerDialog({ open, onOpenChange, customer, onSaved }: Custom
             {/* CPF */}
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="cpf" className="text-right">
-                CPF <span className="text-red-500">*</span>
+                CPF
               </Label>
               <Input
                 id="cpf"
@@ -622,7 +605,7 @@ export function CustomerDialog({ open, onOpenChange, customer, onSaved }: Custom
             {/* Phone */}
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="phone" className="text-right">
-                Telefone <span className="text-red-500">*</span>
+                Telefone
               </Label>
               <Input
                 id="phone"
@@ -638,7 +621,7 @@ export function CustomerDialog({ open, onOpenChange, customer, onSaved }: Custom
             {/* Parking Slot */}
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="parkingSlot" className="text-right">
-                Vaga <span className="text-red-500">*</span>
+                Vaga
               </Label>
               <div className="col-span-3 space-y-1">
                 <Input
