@@ -542,7 +542,7 @@ export function CustomerDialog({ open, onOpenChange, customer, onSaved }: Custom
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[550px] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[650px] max-h-[95vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{customer ? 'Editar Cliente' : 'Adicionar Cliente Mensalista'}</DialogTitle>
           <DialogDescription>
