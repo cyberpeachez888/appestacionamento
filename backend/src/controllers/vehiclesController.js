@@ -99,10 +99,21 @@ export default {
       const updatePayload = {};
       // Desfazer finalização: status 'Em andamento'
       if (req.body.status === 'Em andamento') {
+        // Fetch existing ticket to preserve metadata
+        const { data: existingTicket } = await supabase
+          .from(ticketsTable)
+          .select('metadata')
+          .eq('id', id)
+          .single();
+
         updatePayload.status = 'open';
         updatePayload.exit_time = null;
         updatePayload.amount = 0;
-        updatePayload.metadata = {};
+
+        // Preserve rateId and contracted period data, remove only paymentMethod
+        const preservedMetadata = { ...(existingTicket?.metadata || {}) };
+        delete preservedMetadata.paymentMethod;
+        updatePayload.metadata = preservedMetadata;
       }
       // Finalizar saída normalmente
       if (req.body.exitDate && req.body.exitTime) {
@@ -154,6 +165,20 @@ export default {
         contractedEndDate: data.metadata?.contractedEndDate,
         contractedEndTime: data.metadata?.contractedEndTime,
       };
+
+      // If undoing finalization, delete any associated payment records
+      if (req.body.status === 'Em andamento' && updatePayload.status === 'open') {
+        try {
+          await supabase
+            .from('payments')
+            .delete()
+            .eq('target_type', 'ticket')
+            .eq('target_id', id);
+        } catch (paymentErr) {
+          console.error('Failed to delete payment for ticket', id, paymentErr);
+          // Do not block response to frontend
+        }
+      }
 
       // If ticket got closed here (exit handled via /vehicles update), ensure payment record exists
       if (vehicle.status === 'Concluído') {
