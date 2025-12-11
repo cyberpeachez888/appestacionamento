@@ -26,6 +26,7 @@ import expensesController from '../controllers/expensesController.js';
 import manualRevenuesController from '../controllers/manualRevenuesController.js';
 import cashRegisterController from '../controllers/cashRegisterController.js';
 import pricingRulesRoutes from './pricingRules.js';
+import conveniosRoutes from './convenios.js';
 import { requireAuth, requireAdmin, requirePermission } from '../middleware/auth.js';
 import { loginLimiter, apiLimiter, strictLimiter } from '../middleware/rateLimiter.js';
 import printerJobsController from '../controllers/printerJobsController.js';
@@ -736,5 +737,8 @@ router.get(
   requireAuth,
   cashRegisterController.getCurrent
 );
+
+// Convenios (Corporate Agreements Management)
+router.use('/convenios', conveniosRoutes);
 
 export default router;
