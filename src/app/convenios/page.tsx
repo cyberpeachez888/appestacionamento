@@ -26,7 +26,8 @@ import {
     Download,
     Receipt,
 } from 'lucide-react';
-import { ConvenioDetailPanel } from './components/ConvenioDetailPanel';
+import { ConveniosDetailPanel } from './components/ConvenioDetailPanel';
+import { ConveniosRelatoriosPanel } from './components/ConveniosRelatoriosPanel';
 import { DialogNovoConvenio } from './components/dialogs/DialogNovoConvenio';
 import { DialogAdicionarVeiculo } from './components/dialogs/DialogAdicionarVeiculo';
 
@@ -181,237 +182,149 @@ export default function ConveniosPage() {
                 </div>
             </div>
 
-            {/* Statistics Cards */}
-            {stats && (
-                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                    <Card>
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">
-                                Convênios Ativos
-                            </CardTitle>
-                            <Building2 className="h-4 w-4 text-muted-foreground" />
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-bold">{stats.total_ativos}</div>
-                            <p className="text-xs text-muted-foreground">
-                                Contratos vigentes
-                            </p>
-                        </CardContent>
-                    </Card>
+            <Tabs defaultValue="gerenciamento" className="space-y-6">
+                <TabsList className="grid w-full grid-cols-2 lg:w-[400px]">
+                    <TabsTrigger value="gerenciamento">Gerenciamento</TabsTrigger>
+                    <TabsTrigger value="relatorios">Relatórios</TabsTrigger>
+                </TabsList>
 
-                    <Card>
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">
-                                Receita Mensal
-                            </CardTitle>
-                            <TrendingUp className="h-4 w-4 text-muted-foreground" />
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-bold">
-                                {formatarValor(stats.receita_mensal_prevista)}
-                            </div>
-                            <p className="text-xs text-muted-foreground">
-                                Prevista total
-                            </p>
-                        </CardContent>
-                    </Card>
+                <TabsContent value="gerenciamento" className="space-y-6">
+                    {/* Statistics Cards */}
+                    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                        <Card>
+                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                <CardTitle className="text-sm font-medium">Convênios Ativos</CardTitle>
+                                <Building2 className="h-4 w-4 text-muted-foreground" />
+                            </CardHeader>
+                            <CardContent>
+                                <div className="text-2xl font-bold">{stats?.total_ativos || 0}</div>
+                                <p className="text-xs text-muted-foreground">
+                                    Empresas parcerias
+                                </p>
+                            </CardContent>
+                        </Card>
 
-                    <Card>
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">
-                                Taxa de Ocupação
-                            </CardTitle>
-                            <ParkingSquare className="h-4 w-4 text-muted-foreground" />
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-bold">
-                                {stats.taxa_ocupacao_media.toFixed(1)}%
-                            </div>
-                            <p className="text-xs text-muted-foreground">
-                                Média geral
-                            </p>
-                        </CardContent>
-                    </Card>
+                        <Card>
+                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                <CardTitle className="text-sm font-medium">Receita Estimada</CardTitle>
+                                <TrendingUp className="h-4 w-4 text-muted-foreground" />
+                            </CardHeader>
+                            <CardContent>
+                                <div className="text-2xl font-bold">
+                                    {stats?.receita_mensal_prevista.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) || 'R$ 0,00'}
+                                </div>
+                                <p className="text-xs text-muted-foreground">
+                                    Mensal recorrente
+                                </p>
+                            </CardContent>
+                        </Card>
 
-                    <Card>
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">
-                                Inadimplência
-                            </CardTitle>
-                            <AlertTriangle className="h-4 w-4 text-muted-foreground" />
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-bold text-red-600">
-                                {stats.taxa_inadimplencia.toFixed(1)}%
-                            </div>
-                            <p className="text-xs text-muted-foreground">
-                                {stats.total_inadimplentes} convênio(s)
-                            </p>
-                        </CardContent>
-                    </Card>
-                </div>
-            )}
+                        <Card>
+                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                <CardTitle className="text-sm font-medium">Ocupação Média</CardTitle>
+                                <ParkingSquare className="h-4 w-4 text-muted-foreground" />
+                            </CardHeader>
+                            <CardContent>
+                                <div className="text-2xl font-bold">{stats?.taxa_ocupacao_media || 0}%</div>
+                                <p className="text-xs text-muted-foreground">
+                                    Utilização de vagas
+                                </p>
+                            </CardContent>
+                        </Card>
 
-            {/* Filters and Actions */}
-            <Card>
-                <CardContent className="pt-6">
-                    <div className="flex flex-col md:flex-row gap-4">
-                        {/* Busca */}
-                        <div className="flex-1">
-                            <Input
-                                placeholder="Buscar por empresa ou CNPJ..."
-                                value={busca}
-                                onChange={(e) => setBusca(e.target.value)}
-                            />
-                        </div>
-
-                        {/* Filtro Status */}
-                        <Select value={filtroStatus} onValueChange={setFiltroStatus}>
-                            <SelectTrigger className="w-[180px]">
-                                <SelectValue placeholder="Status" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="todos">Todos os Status</SelectItem>
-                                <SelectItem value="ativo">Ativo</SelectItem>
-                                <SelectItem value="suspenso">Suspenso</SelectItem>
-                                <SelectItem value="inadimplente">Inadimplente</SelectItem>
-                                <SelectItem value="cancelado">Cancelado</SelectItem>
-                            </SelectContent>
-                        </Select>
-
-                        {/* Filtro Tipo */}
-                        <Select value={filtroTipo} onValueChange={setFiltroTipo}>
-                            <SelectTrigger className="w-[180px]">
-                                <SelectValue placeholder="Tipo" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="todos">Todos os Tipos</SelectItem>
-                                <SelectItem value="pre-pago">Pré-pago</SelectItem>
-                                <SelectItem value="pos-pago">Pós-pago</SelectItem>
-                            </SelectContent>
-                        </Select>
-
-                        {/* Filtro Categoria */}
-                        <Select value={filtroCategoria} onValueChange={setFiltroCategoria}>
-                            <SelectTrigger className="w-[180px]">
-                                <SelectValue placeholder="Categoria" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="todos">Todas Categorias</SelectItem>
-                                <SelectItem value="funcionarios">Funcionários</SelectItem>
-                                <SelectItem value="clientes">Clientes</SelectItem>
-                                <SelectItem value="fornecedores">Fornecedores</SelectItem>
-                                <SelectItem value="outros">Outros</SelectItem>
-                            </SelectContent>
-                        </Select>
-
-                        {/* Ações */}
-                        <div className="flex gap-2">
-                            <Button
-                                className="bg-green-600 hover:bg-green-700"
-                                onClick={() => setDialogNovoConvenio(true)}
-                            >
-                                <Plus className="mr-2 h-4 w-4" />
-                                Novo Convênio
-                            </Button>
-
-                            <Button variant="outline">
-                                <FileText className="mr-2 h-4 w-4" />
-                                Relatórios
-                            </Button>
-
-                            <Button variant="outline">
-                                <Download className="mr-2 h-4 w-4" />
-                                Exportar
-                            </Button>
-                        </div>
+                        <Card>
+                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                <CardTitle className="text-sm font-medium">Inadimplência</CardTitle>
+                                <AlertTriangle className="h-4 w-4 text-muted-foreground" />
+                            </CardHeader>
+                            <CardContent>
+                                <div className={`text-2xl font-bold ${stats?.taxa_inadimplencia ? 'text-red-500' : ''}`}>
+                                    {stats?.taxa_inadimplencia || 0}%
+                                </div>
+                                <p className="text-xs text-muted-foreground">
+                                    {stats?.total_inadimplentes || 0} empresas pendentes
+                                </p>
+                            </CardContent>
+                        </Card>
                     </div>
-                </CardContent>
-            </Card>
 
-            {/* Table */}
-            <Card>
-                <CardContent className="pt-6">
-                    {loading ? (
-                        <div className="text-center py-8">Carregando...</div>
-                    ) : convenios.length === 0 ? (
-                        <div className="text-center py-8 text-muted-foreground">
-                            Nenhum convênio encontrado
+                    {/* Main Content Area */}
+                    {selectedConvenio ? (
+                        <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+                            <Button
+                                variant="ghost"
+                                onClick={() => setSelectedConvenio(null)}
+                                className="mb-4"
+                            >
+                                ← Voltar para lista
+                            </Button>
+                            <ConvenioDetailPanel convenioId={selectedConvenio.id} onClose={() => setSelectedConvenio(null)} />
                         </div>
                     ) : (
-                        <div className="overflow-x-auto">
-                            <table className="w-full">
-                                <thead>
-                                    <tr className="border-b">
-                                        <th className="text-left p-3 font-medium">Status</th>
-                                        <th className="text-left p-3 font-medium">Empresa</th>
-                                        <th className="text-left p-3 font-medium">CNPJ</th>
-                                        <th className="text-left p-3 font-medium">Tipo</th>
-                                        <th className="text-left p-3 font-medium">Vagas</th>
-                                        <th className="text-left p-3 font-medium">Valor Mensal</th>
-                                        <th className="text-left p-3 font-medium">Vencimento</th>
-                                        <th className="text-left p-3 font-medium">Ações</th>
                                     </tr>
-                                </thead>
-                                <tbody>
-                                    {convenios.map((convenio) => (
-                                        <tr
-                                            key={convenio.id}
-                                            className={`border-b hover:bg-muted/50 cursor-pointer transition-colors ${selectedConvenio?.id === convenio.id ? 'bg-muted' : ''
-                                                }`}
-                                            onClick={() => setSelectedConvenio(convenio)}
-                                        >
-                                            <td className="p-3">
-                                                <span
-                                                    className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusBadge(
-                                                        convenio
-                                                    )}`}
-                                                >
-                                                    {getStatusText(convenio)}
-                                                </span>
-                                            </td>
-                                            <td className="p-3 font-medium">{convenio.nome_empresa}</td>
-                                            <td className="p-3 text-sm text-muted-foreground">
-                                                {formatarCNPJ(convenio.cnpj)}
-                                            </td>
-                                            <td className="p-3">
-                                                <span className="capitalize">{convenio.tipo_convenio}</span>
-                                            </td>
-                                            <td className="p-3">
-                                                {convenio.vagas_ocupadas} / {convenio.plano_ativo?.num_vagas_contratadas || 0}
-                                                <span className="text-xs text-muted-foreground ml-1">
-                                                    ({convenio.taxa_ocupacao.toFixed(0)}%)
-                                                </span>
-                                            </td>
-                                            <td className="p-3 font-medium">
-                                                {formatarValor(convenio.plano_ativo?.valor_mensal || 0)}
-                                            </td>
-                                            <td className="p-3">
-                                                Dia {convenio.plano_ativo?.dia_vencimento_pagamento || '-'}
-                                            </td>
-                                            <td className="p-3">
-                                                <Button variant="ghost" size="sm">
-                                                    <Receipt className="h-4 w-4" />
-                                                </Button>
-                                            </td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
-                    )}
-                </CardContent>
-            </Card>
+            </thead>
+            <tbody>
+                {convenios.map((convenio) => (
+                    <tr
+                        key={convenio.id}
+                        className={`border-b hover:bg-muted/50 cursor-pointer transition-colors ${selectedConvenio?.id === convenio.id ? 'bg-muted' : ''
+                            }`}
+                        onClick={() => setSelectedConvenio(convenio)}
+                    >
+                        <td className="p-3">
+                            <span
+                                className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusBadge(
+                                    convenio
+                                )}`}
+                            >
+                                {getStatusText(convenio)}
+                            </span>
+                        </td>
+                        <td className="p-3 font-medium">{convenio.nome_empresa}</td>
+                        <td className="p-3 text-sm text-muted-foreground">
+                            {formatarCNPJ(convenio.cnpj)}
+                        </td>
+                        <td className="p-3">
+                            <span className="capitalize">{convenio.tipo_convenio}</span>
+                        </td>
+                        <td className="p-3">
+                            {convenio.vagas_ocupadas} / {convenio.plano_ativo?.num_vagas_contratadas || 0}
+                            <span className="text-xs text-muted-foreground ml-1">
+                                ({convenio.taxa_ocupacao.toFixed(0)}%)
+                            </span>
+                        </td>
+                        <td className="p-3 font-medium">
+                            {formatarValor(convenio.plano_ativo?.valor_mensal || 0)}
+                        </td>
+                        <td className="p-3">
+                            Dia {convenio.plano_ativo?.dia_vencimento_pagamento || '-'}
+                        </td>
+                        <td className="p-3">
+                            <Button variant="ghost" size="sm">
+                                <Receipt className="h-4 w-4" />
+                            </Button>
+                        </td>
+                    </tr>
+                ))}
+            </tbody>
+        </table>
+                        </div >
+                    )
+}
+                </CardContent >
+            </Card >
 
-            {/* Detail Panel */}
-            {selectedConvenio && (
-                <ConvenioDetailPanel
-                    convenioId={selectedConvenio.id}
-                    onClose={() => setSelectedConvenio(null)}
-                />
-            )}
+    {/* Detail Panel */ }
+{
+    selectedConvenio && (
+        <ConvenioDetailPanel
+            convenioId={selectedConvenio.id}
+            onClose={() => setSelectedConvenio(null)}
+        />
+    )
+}
 
-            {/* Dialogs */}
+{/* Dialogs */ }
             <DialogNovoConvenio
                 open={dialogNovoConvenio}
                 onOpenChange={setDialogNovoConvenio}
@@ -429,6 +342,6 @@ export default function ConveniosPage() {
                     // Refresh detail panel
                 }}
             />
-        </div>
+        </div >
     );
 }
