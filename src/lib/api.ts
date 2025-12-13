@@ -941,6 +941,73 @@ class ApiClient {
     });
   }
 
+  // Convenios endpoints
+  async getConveniosRelatoriosFaturas(filters?: { status?: string; periodo?: string; data_inicio?: string; data_fim?: string }) {
+    const query = new URLSearchParams();
+    if (filters?.status) query.set('status', filters.status);
+    if (filters?.periodo) query.set('periodo', filters.periodo);
+    if (filters?.data_inicio) query.set('data_inicio', filters.data_inicio);
+    if (filters?.data_fim) query.set('data_fim', filters.data_fim);
+    const queryString = query.toString();
+    return this.request<any[]>(`/convenios/relatorios/faturas${queryString ? `?${queryString}` : ''}`);
+  }
+
+  async getConvenioMovimentacoes(convenioId: string, filters?: { data_inicio?: string; data_fim?: string; placa?: string; faturado?: boolean }) {
+    const query = new URLSearchParams();
+    if (filters?.data_inicio) query.set('data_inicio', filters.data_inicio);
+    if (filters?.data_fim) query.set('data_fim', filters.data_fim);
+    if (filters?.placa) query.set('placa', filters.placa);
+    if (filters?.faturado !== undefined) query.set('faturado', String(filters.faturado));
+    const queryString = query.toString();
+    return this.request<any[]>(`/convenios/${convenioId}/movimentacoes${queryString ? `?${queryString}` : ''}`);
+  }
+
+  async getConvenioDocumentos(convenioId: string) {
+    return this.request<any[]>(`/convenios/${convenioId}/documentos`);
+  }
+
+  async uploadConvenioDocumento(convenioId: string, documento: any) {
+    return this.request<any>(`/convenios/${convenioId}/documentos`, {
+      method: 'POST',
+      body: JSON.stringify(documento),
+    });
+  }
+
+  async deleteConvenioDocumento(convenioId: string, docId: string) {
+    return this.request<void>(`/convenios/${convenioId}/documentos/${docId}`, {
+      method: 'DELETE',
+    });
+  }
+
+  // Notificações
+  async getNotificacoes(unreadOnly?: boolean) {
+    const query = unreadOnly ? '?unreadOnly=true' : '';
+    return this.request<any[]>(`/notificacoes${query}`);
+  }
+
+  async countNotificacoes() {
+    return this.request<{ count: number }>('/notificacoes/count');
+  }
+
+  async markNotificacaoRead(id: string) {
+    return this.request<any>(`/notificacoes/${id}/read`, {
+      method: 'PATCH',
+    });
+  }
+
+  async markAllNotificacoesRead() {
+    return this.request<any>('/notificacoes/read-all', {
+      method: 'PATCH',
+    });
+  }
+
+  // Jobs
+  async runConveniosJob(jobName: 'verificar-vencimentos' | 'verificar-faturas-atrasadas') {
+    return this.request<any>(`/convenios/jobs/${jobName}`, {
+      method: 'POST',
+    });
+  }
+
   // Cash Register endpoints
   async openCashRegister(data: { openingAmount: number; operatorName: string }) {
     return this.request<{

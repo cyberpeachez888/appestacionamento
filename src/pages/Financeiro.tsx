@@ -181,6 +181,7 @@ export default function Financeiro() {
   const [records, setRecords] = useState<FinancialRecord[]>([]);
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [manualRevenues, setManualRevenues] = useState<ManualRevenue[]>([]);
+  const [convenioInvoices, setConvenioInvoices] = useState<any[]>([]); // New state for convenios
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [openDialogOpen, setOpenDialogOpen] = useState(false);
@@ -201,9 +202,9 @@ export default function Financeiro() {
         const endIso = displayToIsoDate(endDate);
         const filters = startIso && endIso ? { start: startIso, end: endIso } : undefined;
         console.log('[Financeiro] Loading financial data with filters:', filters);
-        
+
         // Load all financial data in parallel
-        const [report, expensesData, revenuesData] = await Promise.all([
+        const [report, expensesData, revenuesData, conveniosData] = await Promise.all([
           api.getFinancialReport(filters).catch((err) => {
             console.error('[Financeiro] Error fetching financial report:', err);
             throw err;
@@ -224,14 +225,22 @@ export default function Financeiro() {
             }
             return []; // Return empty array on error
           }),
+          api.getConveniosRelatoriosFaturas({
+            status: 'paga',
+            data_inicio: startIso,
+            data_fim: endIso
+          }).catch((err) => {
+            console.error('[Financeiro] Error fetching convenios invoices:', err);
+            return [];
+          }),
         ]);
-        
+
         console.log('[Financeiro] Report received:', {
           hasReport: !!report,
           paymentsCount: report?.payments?.length || 0,
           total: report?.total || 0,
         });
-        
+
         const payments: ReportPayment[] = report?.payments || [];
         const mapType = (t?: string): 'Avulso' | 'Mensalista' =>
           t === 'monthly_customer' ? 'Mensalista' : 'Avulso';
@@ -240,7 +249,7 @@ export default function Financeiro() {
           date: p.date,
           value: Number(p.value) || 0,
         }));
-        
+
         console.log('[Financeiro] Mapped records:', mapped.length);
         setRecords(mapped);
         const normalizedExpenses = (expensesData || []).map(normalizeExpenseFromApi);
@@ -258,21 +267,23 @@ export default function Financeiro() {
         console.log('[Financeiro] Manual revenues with status:', revenuesWithStatus.length);
         const normalizedRevenues = revenuesWithStatus.map(normalizeRevenueFromApi);
         setManualRevenues(normalizedRevenues);
+
+        setConvenioInvoices(conveniosData || []);
       } catch (err: any) {
         console.error('[Financeiro] Failed to load financial data:', err);
-        
+
         // Check if it's a table not found error
-        const isTableError = err.message?.includes('table') || 
-                             err.message?.includes('schema cache') ||
-                             err.message?.includes('manual_revenues') ||
-                             err.message?.includes('expenses');
-        
+        const isTableError = err.message?.includes('table') ||
+          err.message?.includes('schema cache') ||
+          err.message?.includes('manual_revenues') ||
+          err.message?.includes('expenses');
+
         const errorMessage = isTableError
           ? 'Tabelas não encontradas. Execute o script CREATE-TABLES-FINANCEIRO.sql no Supabase SQL Editor.'
           : err.message || String(err);
-        
-        toast({ 
-          title: 'Erro ao carregar dados', 
+
+        toast({
+          title: 'Erro ao carregar dados',
           description: errorMessage,
           variant: 'destructive',
         });
@@ -337,20 +348,25 @@ export default function Financeiro() {
     .filter((r) => r.type === 'Mensalista')
     .reduce((s, r) => s + r.value, 0);
   const totalParkingRevenue = totalAvulsos + totalMensalistas;
-  
+
   // Calculate manual revenues total
   const totalManualRevenues = useMemo(() => {
     return manualRevenues.reduce((sum, r) => sum + (r.value || 0), 0);
   }, [manualRevenues]);
-  
+
   // Calculate expenses total
   const totalExpenses = useMemo(() => {
     return expenses.reduce((sum, e) => sum + (e.value || 0), 0);
   }, [expenses]);
-  
-  // Total revenue (parking + manual)
-  const totalRevenue = totalParkingRevenue + totalManualRevenues;
-  
+
+  // Calculate convenios total
+  const totalConveniosRevenue = useMemo(() => {
+    return convenioInvoices.reduce((sum, i) => sum + (Number(i.valor_total) || 0), 0);
+  }, [convenioInvoices]);
+
+  // Total revenue (parking + manual + convenios)
+  const totalRevenue = totalParkingRevenue + totalManualRevenues + totalConveniosRevenue;
+
   // Net balance (revenue - expenses)
   const netBalance = totalRevenue - totalExpenses;
 
@@ -360,6 +376,7 @@ export default function Financeiro() {
       ...filteredRecords.map((r) => [r.type, r.date, r.value.toFixed(2)]),
       ['Total Receitas Estacionamento', '', totalParkingRevenue.toFixed(2)],
       ['Total Receitas Manuais', '', totalManualRevenues.toFixed(2)],
+      ['Total Receitas Convênios', '', totalConveniosRevenue.toFixed(2)],
       ['Total Receitas', '', totalRevenue.toFixed(2)],
       ['Total Despesas', '', totalExpenses.toFixed(2)],
       ['Saldo Líquido', '', netBalance.toFixed(2)],
@@ -772,6 +789,12 @@ export default function Financeiro() {
             <p className="text-xs text-muted-foreground mt-1">Total de despesas registradas</p>
           </div>
 
+          <div className="bg-card p-6 rounded-lg shadow-sm border">
+            <p className="text-sm text-muted-foreground mb-2">Receita Convênios</p>
+            <p className="text-3xl font-bold text-blue-600">R$ {totalConveniosRevenue.toFixed(2)}</p>
+            <p className="text-xs text-muted-foreground mt-1">Faturas pagas no período</p>
+          </div>
+
           <div className="bg-card p-6 rounded-lg shadow-sm border border-primary/20">
             <p className="text-sm text-muted-foreground mb-2">Saldo Líquido</p>
             <p className={`text-3xl font-bold ${netBalance >= 0 ? 'text-success' : 'text-destructive'}`}>
@@ -829,207 +852,207 @@ export default function Financeiro() {
                           });
                         }
                         return (
-                        <tr
-                          key={expense.id}
-                          className={index % 2 === 0 ? 'bg-background' : 'bg-muted/20'}
-                        >
-                          <td className="px-4 py-3">
-                            {editingExpenseId === expense.id ? (
-                              <Input
-                                value={expense.name}
-                                onChange={(e) =>
-                                  handleExpenseFieldChange(expense.id, 'name', e.target.value)
-                                }
-                                placeholder="Nome da despesa"
-                                className="w-full"
-                              />
-                            ) : (
-                              <span className="font-medium">{expense.name || '—'}</span>
-                            )}
-                          </td>
-                          <td className="px-4 py-3">
-                            {editingExpenseId === expense.id ? (
-                              <Input
-                                type="number"
-                                step="0.01"
-                                min="0"
-                                value={expense.value}
-                                onChange={(e) =>
-                                  handleExpenseFieldChange(expense.id, 'value', Number(e.target.value))
-                                }
-                                className="w-full"
-                              />
-                            ) : (
-                              <span>R$ {expense.value.toFixed(2)}</span>
-                            )}
-                          </td>
-                          <td className="px-4 py-3">
-                            {editingExpenseId === expense.id ? (
-                              <Select
-                                value={expense.category}
-                                onValueChange={(value) =>
-                                  handleExpenseFieldChange(expense.id, 'category', value)
-                                }
-                              >
-                                <SelectTrigger className="w-full">
-                                  <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="Contas">Contas</SelectItem>
-                                  <SelectItem value="Manutenção">Manutenção</SelectItem>
-                                  <SelectItem value="Pró-labore">Pró-labore</SelectItem>
-                                  <SelectItem value="Impostos">Impostos</SelectItem>
-                                </SelectContent>
-                              </Select>
-                            ) : (
-                              <span>{expense.category}</span>
-                            )}
-                          </td>
-                          <td className="px-4 py-3">
-                            {editingExpenseId === expense.id ? (
-                              <Input
-                                type="text"
-                                inputMode="numeric"
-                                placeholder={DATE_PLACEHOLDER}
-                                value={expense.dueDate || ''}
-                                onChange={(e) =>
-                                  handleExpenseFieldChange(expense.id, 'dueDate', e.target.value)
-                                }
-                                className="w-full"
-                              />
-                            ) : (
-                              <span>{expense.dueDate || '—'}</span>
-                            )}
-                          </td>
-                          <td className="px-4 py-3">
-                            {editingExpenseId === expense.id ? (
-                              <Input
-                                type="text"
-                                inputMode="numeric"
-                                placeholder={DATE_PLACEHOLDER}
-                                value={expense.paymentDate || ''}
-                                onChange={(e) =>
-                                  handleExpenseFieldChange(
-                                    expense.id,
-                                    'paymentDate',
-                                    e.target.value
-                                  )
-                                }
-                                className="w-full"
-                              />
-                            ) : (
-                              <span>{expense.paymentDate || '—'}</span>
-                            )}
-                          </td>
-                          <td className="px-4 py-3">
-                            <span
-                              className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(
-                                expense.status
-                              )}`}
-                            >
-                              {expense.status}
-                            </span>
-                          </td>
-                          <td className="px-4 py-3">
-                            {editingExpenseId === expense.id ? (
-                              <div className="space-y-1">
+                          <tr
+                            key={expense.id}
+                            className={index % 2 === 0 ? 'bg-background' : 'bg-muted/20'}
+                          >
+                            <td className="px-4 py-3">
+                              {editingExpenseId === expense.id ? (
+                                <Input
+                                  value={expense.name}
+                                  onChange={(e) =>
+                                    handleExpenseFieldChange(expense.id, 'name', e.target.value)
+                                  }
+                                  placeholder="Nome da despesa"
+                                  className="w-full"
+                                />
+                              ) : (
+                                <span className="font-medium">{expense.name || '—'}</span>
+                              )}
+                            </td>
+                            <td className="px-4 py-3">
+                              {editingExpenseId === expense.id ? (
+                                <Input
+                                  type="number"
+                                  step="0.01"
+                                  min="0"
+                                  value={expense.value}
+                                  onChange={(e) =>
+                                    handleExpenseFieldChange(expense.id, 'value', Number(e.target.value))
+                                  }
+                                  className="w-full"
+                                />
+                              ) : (
+                                <span>R$ {expense.value.toFixed(2)}</span>
+                              )}
+                            </td>
+                            <td className="px-4 py-3">
+                              {editingExpenseId === expense.id ? (
                                 <Select
-                                  value={expense.isRecurring ? 'true' : 'false'}
+                                  value={expense.category}
                                   onValueChange={(value) =>
-                                    handleExpenseFieldChange(expense.id, 'isRecurring', value === 'true')
+                                    handleExpenseFieldChange(expense.id, 'category', value)
                                   }
                                 >
                                   <SelectTrigger className="w-full">
                                     <SelectValue />
                                   </SelectTrigger>
                                   <SelectContent>
-                                    <SelectItem value="false">Não</SelectItem>
-                                    <SelectItem value="true">Sim</SelectItem>
+                                    <SelectItem value="Contas">Contas</SelectItem>
+                                    <SelectItem value="Manutenção">Manutenção</SelectItem>
+                                    <SelectItem value="Pró-labore">Pró-labore</SelectItem>
+                                    <SelectItem value="Impostos">Impostos</SelectItem>
                                   </SelectContent>
                                 </Select>
-                                {expense.isRecurring && (
+                              ) : (
+                                <span>{expense.category}</span>
+                              )}
+                            </td>
+                            <td className="px-4 py-3">
+                              {editingExpenseId === expense.id ? (
+                                <Input
+                                  type="text"
+                                  inputMode="numeric"
+                                  placeholder={DATE_PLACEHOLDER}
+                                  value={expense.dueDate || ''}
+                                  onChange={(e) =>
+                                    handleExpenseFieldChange(expense.id, 'dueDate', e.target.value)
+                                  }
+                                  className="w-full"
+                                />
+                              ) : (
+                                <span>{expense.dueDate || '—'}</span>
+                              )}
+                            </td>
+                            <td className="px-4 py-3">
+                              {editingExpenseId === expense.id ? (
+                                <Input
+                                  type="text"
+                                  inputMode="numeric"
+                                  placeholder={DATE_PLACEHOLDER}
+                                  value={expense.paymentDate || ''}
+                                  onChange={(e) =>
+                                    handleExpenseFieldChange(
+                                      expense.id,
+                                      'paymentDate',
+                                      e.target.value
+                                    )
+                                  }
+                                  className="w-full"
+                                />
+                              ) : (
+                                <span>{expense.paymentDate || '—'}</span>
+                              )}
+                            </td>
+                            <td className="px-4 py-3">
+                              <span
+                                className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(
+                                  expense.status
+                                )}`}
+                              >
+                                {expense.status}
+                              </span>
+                            </td>
+                            <td className="px-4 py-3">
+                              {editingExpenseId === expense.id ? (
+                                <div className="space-y-1">
                                   <Select
-                                    value={expense.recurringFrequency || 'monthly'}
+                                    value={expense.isRecurring ? 'true' : 'false'}
                                     onValueChange={(value) =>
-                                      handleExpenseFieldChange(expense.id, 'recurringFrequency', value)
+                                      handleExpenseFieldChange(expense.id, 'isRecurring', value === 'true')
                                     }
                                   >
                                     <SelectTrigger className="w-full">
                                       <SelectValue />
                                     </SelectTrigger>
                                     <SelectContent>
-                                      <SelectItem value="monthly">Mensal</SelectItem>
-                                      <SelectItem value="weekly">Semanal</SelectItem>
-                                      <SelectItem value="yearly">Anual</SelectItem>
+                                      <SelectItem value="false">Não</SelectItem>
+                                      <SelectItem value="true">Sim</SelectItem>
                                     </SelectContent>
                                   </Select>
-                                )}
-                              </div>
-                            ) : (
-                              <span className="text-sm">{getRecurringFrequencyLabel(expense)}</span>
-                            )}
-                          </td>
-                          <td className="px-4 py-3 text-right space-x-2">
-                            {editingExpenseId === expense.id ? (
-                              <div className="flex gap-2 justify-end">
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={() => {
-                                    if (expenseBackup) {
-                                      setExpenses((prev) =>
-                                        prev.map((e) => (e.id === expense.id ? expenseBackup : e))
-                                      );
-                                    }
-                                    setEditingExpenseId(null);
-                                    setExpenseBackup(null);
-                                  }}
-                                >
-                                  Cancelar
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  onClick={() => handleSaveExpense(expense)}
-                                  disabled={!expense.name || expense.value <= 0}
-                                >
-                                  <Save className="h-4 w-4 mr-1" />
-                                  Salvar
-                                </Button>
-                              </div>
-                            ) : (
-                              <>
-                                {expense.status !== 'Pago' && (
+                                  {expense.isRecurring && (
+                                    <Select
+                                      value={expense.recurringFrequency || 'monthly'}
+                                      onValueChange={(value) =>
+                                        handleExpenseFieldChange(expense.id, 'recurringFrequency', value)
+                                      }
+                                    >
+                                      <SelectTrigger className="w-full">
+                                        <SelectValue />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        <SelectItem value="monthly">Mensal</SelectItem>
+                                        <SelectItem value="weekly">Semanal</SelectItem>
+                                        <SelectItem value="yearly">Anual</SelectItem>
+                                      </SelectContent>
+                                    </Select>
+                                  )}
+                                </div>
+                              ) : (
+                                <span className="text-sm">{getRecurringFrequencyLabel(expense)}</span>
+                              )}
+                            </td>
+                            <td className="px-4 py-3 text-right space-x-2">
+                              {editingExpenseId === expense.id ? (
+                                <div className="flex gap-2 justify-end">
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => {
+                                      if (expenseBackup) {
+                                        setExpenses((prev) =>
+                                          prev.map((e) => (e.id === expense.id ? expenseBackup : e))
+                                        );
+                                      }
+                                      setEditingExpenseId(null);
+                                      setExpenseBackup(null);
+                                    }}
+                                  >
+                                    Cancelar
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    onClick={() => handleSaveExpense(expense)}
+                                    disabled={!expense.name || expense.value <= 0}
+                                  >
+                                    <Save className="h-4 w-4 mr-1" />
+                                    Salvar
+                                  </Button>
+                                </div>
+                              ) : (
+                                <>
+                                  {expense.status !== 'Pago' && (
+                                    <Button
+                                      size="sm"
+                                      variant="ghost"
+                                      onClick={() => handleMarkExpenseAsPaid(expense)}
+                                      className="text-green-600 hover:text-green-700"
+                                    >
+                                      <CheckCircle2 className="h-4 w-4 mr-1" />
+                                      Realizar Pagamento
+                                    </Button>
+                                  )}
                                   <Button
                                     size="sm"
                                     variant="ghost"
-                                    onClick={() => handleMarkExpenseAsPaid(expense)}
-                                    className="text-green-600 hover:text-green-700"
+                                    onClick={() => {
+                                      setExpenseBackup({ ...expense });
+                                      setEditingExpenseId(expense.id);
+                                    }}
                                   >
-                                    <CheckCircle2 className="h-4 w-4 mr-1" />
-                                    Realizar Pagamento
+                                    Editar
                                   </Button>
-                                )}
-                                <Button
-                                  size="sm"
-                                  variant="ghost"
-                                  onClick={() => {
-                                    setExpenseBackup({ ...expense });
-                                    setEditingExpenseId(expense.id);
-                                  }}
-                                >
-                                  Editar
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  variant="ghost"
-                                  onClick={() => handleDeleteExpense(expense.id)}
-                                >
-                                  <Trash2 className="h-4 w-4 text-destructive" />
-                                </Button>
-                              </>
-                            )}
-                          </td>
-                        </tr>
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    onClick={() => handleDeleteExpense(expense.id)}
+                                  >
+                                    <Trash2 className="h-4 w-4 text-destructive" />
+                                  </Button>
+                                </>
+                              )}
+                            </td>
+                          </tr>
                         );
                       })
                     )}
@@ -1152,11 +1175,10 @@ export default function Financeiro() {
                               </Select>
                             ) : (
                               <span
-                                className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                                  revenue.status === 'Pago'
-                                    ? 'bg-success/10 text-success'
-                                    : 'bg-muted text-muted-foreground'
-                                }`}
+                                className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${revenue.status === 'Pago'
+                                  ? 'bg-success/10 text-success'
+                                  : 'bg-muted text-muted-foreground'
+                                  }`}
                               >
                                 {revenue.status}
                               </span>
@@ -1221,8 +1243,8 @@ export default function Financeiro() {
           </TabsContent>
         </Tabs>
       </div>
-      <OpenCashRegisterDialog 
-        open={openDialogOpen} 
+      <OpenCashRegisterDialog
+        open={openDialogOpen}
         onOpenChange={setOpenDialogOpen}
         totalRevenue={totalRevenue}
       />

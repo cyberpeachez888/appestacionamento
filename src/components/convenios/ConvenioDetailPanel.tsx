@@ -22,7 +22,13 @@ import {
     Pause,
     Play,
     X,
+    Trash2,
+    Upload,
+    Download,
 } from 'lucide-react';
+import { api } from '@/lib/api';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
 
@@ -56,10 +62,23 @@ export function ConvenioDetailPanel({ convenioId, onClose }: ConvenioDetailPanel
     const [convenio, setConvenio] = useState<ConvenioDetalhes | null>(null);
     const [loading, setLoading] = useState(true);
     const [activeTab, setActiveTab] = useState('dados-gerais');
+    const [movimentacoes, setMovimentacoes] = useState<any[]>([]);
+    const [documentos, setDocumentos] = useState<any[]>([]);
+    const [loadingMovimentacoes, setLoadingMovimentacoes] = useState(false);
+    const [loadingDocumentos, setLoadingDocumentos] = useState(false);
+    const [uploadingDoc, setUploadingDoc] = useState(false);
 
     useEffect(() => {
         fetchConvenioDetalhes();
     }, [convenioId]);
+
+    useEffect(() => {
+        if (activeTab === 'movimentacoes') {
+            fetchMovimentacoes();
+        } else if (activeTab === 'documentos') {
+            fetchDocumentos();
+        }
+    }, [activeTab, convenioId]);
 
     const fetchConvenioDetalhes = async () => {
         try {
@@ -79,6 +98,74 @@ export function ConvenioDetailPanel({ convenioId, onClose }: ConvenioDetailPanel
             console.error('Erro ao buscar detalhes:', error);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const fetchMovimentacoes = async () => {
+        try {
+            setLoadingMovimentacoes(true);
+            const data = await api.getConvenioMovimentacoes(convenioId);
+            setMovimentacoes(data || []);
+        } catch (error) {
+            console.error('Erro ao buscar movimentações:', error);
+        } finally {
+            setLoadingMovimentacoes(false);
+        }
+    };
+
+    const fetchDocumentos = async () => {
+        try {
+            setLoadingDocumentos(true);
+            const data = await api.getConvenioDocumentos(convenioId);
+            setDocumentos(data || []);
+        } catch (error) {
+            console.error('Erro ao buscar documentos:', error);
+        } finally {
+            setLoadingDocumentos(false);
+        }
+    };
+
+    const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        // Validar tamanho (10MB)
+        if (file.size > 10 * 1024 * 1024) {
+            alert('Arquivo muito grande. Máximo 10MB.');
+            return;
+        }
+
+        try {
+            setUploadingDoc(true);
+
+            // Simular upload e pegar metadados
+            // Em produção, aqui enviaria para S3/Storage primeiro
+            const docData = {
+                nome_arquivo: file.name,
+                tipo_documento: file.type || 'application/octet-stream',
+                tamanho_bytes: file.size,
+                caminho_arquivo: URL.createObjectURL(file) // Placeholder local
+            };
+
+            await api.uploadConvenioDocumento(convenioId, docData);
+            fetchDocumentos();
+        } catch (error) {
+            console.error('Erro ao enviar documento:', error);
+            alert('Erro ao enviar documento');
+        } finally {
+            setUploadingDoc(false);
+        }
+    };
+
+    const handleDeleteDocument = async (docId: string) => {
+        if (!confirm('Tem certeza que deseja excluir este documento?')) return;
+
+        try {
+            await api.deleteConvenioDocumento(convenioId, docId);
+            fetchDocumentos();
+        } catch (error) {
+            console.error('Erro ao excluir documento:', error);
+            alert('Erro ao excluir documento');
         }
     };
 
@@ -386,17 +473,127 @@ export function ConvenioDetailPanel({ convenioId, onClose }: ConvenioDetailPanel
 
                     {/* Aba 5: Movimentações */}
                     <TabsContent value="movimentacoes" className="space-y-4">
-                        <div className="text-center py-8 text-muted-foreground">
-                            Movimentações serão implementadas aqui
+                        <div className="flex justify-between items-center">
+                            <h3 className="font-semibold">Últimas Movimentações</h3>
+                            {/* Filtros poderiam vir aqui */}
                         </div>
+
+                        {loadingMovimentacoes ? (
+                            <div className="text-center py-8 text-muted-foreground">Carregando movimentações...</div>
+                        ) : movimentacoes && movimentacoes.length > 0 ? (
+                            <div className="border rounded-lg overflow-hidden">
+                                <table className="w-full text-sm">
+                                    <thead className="bg-muted">
+                                        <tr>
+                                            <th className="p-3 text-left">Data/Hora</th>
+                                            <th className="p-3 text-left">Placa</th>
+                                            <th className="p-3 text-left">Tipo</th>
+                                            <th className="p-3 text-left">Tempo</th>
+                                            <th className="p-3 text-right">Valor</th>
+                                            <th className="p-3 text-center">Faturado</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {movimentacoes.map((mov) => {
+                                            const isSaida = !!mov.data_saida;
+                                            return (
+                                                <tr key={mov.id} className="border-t hover:bg-muted/50">
+                                                    <td className="p-3">
+                                                        <div>{formatarData(mov.data_entrada)}</div>
+                                                        <div className="text-muted-foreground text-xs">{mov.hora_entrada.slice(0, 5)}</div>
+                                                    </td>
+                                                    <td className="p-3 font-medium">{mov.placa}</td>
+                                                    <td className="p-3">
+                                                        {isSaida ? (
+                                                            <Badge variant="outline" className="text-red-600 border-red-200 bg-red-50">Saída</Badge>
+                                                        ) : (
+                                                            <Badge variant="outline" className="text-green-600 border-green-200 bg-green-50">Entrada</Badge>
+                                                        )}
+                                                    </td>
+                                                    <td className="p-3 text-muted-foreground">
+                                                        {mov.tempo_permanencia ? mov.tempo_permanencia.replace('hours', 'h').replace('minutes', 'min') : '-'}
+                                                    </td>
+                                                    <td className="p-3 text-right font-medium">
+                                                        {mov.valor_calculado ? formatarValor(Number(mov.valor_calculado)) : '-'}
+                                                    </td>
+                                                    <td className="p-3 text-center">
+                                                        {mov.faturado ? (
+                                                            <Badge variant="default" className="bg-green-600">Sim</Badge>
+                                                        ) : (
+                                                            <Badge variant="outline">Não</Badge>
+                                                        )}
+                                                    </td>
+                                                </tr>
+                                            );
+                                        })}
+                                    </tbody>
+                                </table>
+                            </div>
+                        ) : (
+                            <div className="text-center py-8 text-muted-foreground">
+                                Nenhuma movimentação registrada no período
+                            </div>
+                        )}
                     </TabsContent>
 
                     {/* Aba 6: Documentos */}
                     <TabsContent value="documentos" className="space-y-4">
-                        <div className="text-center py-8 text-muted-foreground">
-                            Documentos serão implementados aqui
+                        <div className="flex justify-between items-center">
+                            <h3 className="font-semibold">Documentos Anexados ({documentos.length})</h3>
+                            <div>
+                                <Input
+                                    type="file"
+                                    id="upload-doc"
+                                    className="hidden"
+                                    onChange={handleFileUpload}
+                                    disabled={uploadingDoc}
+                                />
+                                <Label htmlFor="upload-doc">
+                                    <div className={`inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-9 px-3 cursor-pointer ${uploadingDoc ? 'opacity-50' : ''}`}>
+                                        <Upload className="h-4 w-4 mr-2" />
+                                        {uploadingDoc ? 'Enviando...' : 'Upload'}
+                                    </div>
+                                </Label>
+                            </div>
                         </div>
+
+                        {loadingDocumentos ? (
+                            <div className="text-center py-8 text-muted-foreground">Carregando documentos...</div>
+                        ) : documentos && documentos.length > 0 ? (
+                            <div className="grid grid-cols-1 gap-2">
+                                {documentos.map((doc) => (
+                                    <div key={doc.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/30">
+                                        <div className="flex items-center gap-3">
+                                            <div className="h-10 w-10 bg-blue-100 rounded flex items-center justify-center text-blue-600">
+                                                <FileText className="h-5 w-5" />
+                                            </div>
+                                            <div>
+                                                <p className="font-medium truncate max-w-[200px]">{doc.nome_arquivo}</p>
+                                                <p className="text-xs text-muted-foreground">
+                                                    {(doc.tamanho_bytes / 1024).toFixed(1)} KB • {formatarData(doc.created_at)}
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <Button variant="ghost" size="icon" onClick={() => window.open(doc.caminho_arquivo, '_blank')}>
+                                                <Download className="h-4 w-4" />
+                                            </Button>
+                                            <Button variant="ghost" size="icon" className="text-red-500 hover:text-red-700 hover:bg-red-50" onClick={() => handleDeleteDocument(doc.id)}>
+                                                <Trash2 className="h-4 w-4" />
+                                            </Button>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        ) : (
+                            <div className="text-center py-12 border-2 border-dashed rounded-lg text-muted-foreground">
+                                <FileText className="h-10 w-10 mx-auto mb-2 opacity-20" />
+                                <p>Nenhum documento anexado</p>
+                                <p className="text-xs mt-1">Faça upload de contratos, aditivos e comprovantes</p>
+                            </div>
+                        )}
                     </TabsContent>
+
 
                     {/* Aba 7: Histórico */}
                     <TabsContent value="historico" className="space-y-4">

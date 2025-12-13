@@ -176,6 +176,7 @@ export function ConveniosRelatoriosPanel() {
             <Tabs defaultValue="faturas" className="space-y-4">
                 <TabsList>
                     <TabsTrigger value="faturas">Relatório Financeiro</TabsTrigger>
+                    <TabsTrigger value="inadimplencia">Inadimplência</TabsTrigger>
                     <TabsTrigger value="ranking">Ranking de Ocupação</TabsTrigger>
                 </TabsList>
 
@@ -316,8 +317,8 @@ export function ConveniosRelatoriosPanel() {
                                                 <div className="w-full bg-secondary h-2.5 rounded-full overflow-hidden">
                                                     <div
                                                         className={`h-2.5 rounded-full ${item.taxa_ocupacao_percentual > 90 ? 'bg-red-500' :
-                                                                item.taxa_ocupacao_percentual > 70 ? 'bg-yellow-500' :
-                                                                    'bg-green-500'
+                                                            item.taxa_ocupacao_percentual > 70 ? 'bg-yellow-500' :
+                                                                'bg-green-500'
                                                             }`}
                                                         style={{ width: `${Math.min(item.taxa_ocupacao_percentual, 100)}%` }}
                                                     ></div>
@@ -332,6 +333,82 @@ export function ConveniosRelatoriosPanel() {
                                             </TableCell>
                                         </TableRow>
                                     )}
+                                </TableBody>
+                            </Table>
+                        </CardContent>
+                    </Card>
+                </TabsContent>
+
+                {/* TAB INADIMPLENCIA */}
+                <TabsContent value="inadimplencia" className="space-y-4">
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Relatório de Inadimplência</CardTitle>
+                            <CardDescription>
+                                Empresas com faturas vencidas e não pagas.
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead>Empresa</TableHead>
+                                        <TableHead>Faturas Vencidas</TableHead>
+                                        <TableHead>Valor Total Devido</TableHead>
+                                        <TableHead>Maior Atraso</TableHead>
+                                        <TableHead className="text-right">Ações</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {(() => {
+                                        // Agrupar faturas vencidas por empresa
+                                        const vencidas = faturas.filter(f => f.status === 'vencida');
+                                        const porEmpresa = vencidas.reduce((acc: any, curr) => {
+                                            const empresa = curr.convenio?.nome_empresa || 'Desconhecida';
+                                            if (!acc[empresa]) {
+                                                acc[empresa] = {
+                                                    nome: empresa,
+                                                    qtd: 0,
+                                                    total: 0,
+                                                    maiorAtraso: 0,
+                                                    faturas: []
+                                                };
+                                            }
+                                            acc[empresa].qtd += 1;
+                                            acc[empresa].total += Number(curr.valor_total);
+                                            acc[empresa].maiorAtraso = Math.max(acc[empresa].maiorAtraso, curr.dias_atraso);
+                                            acc[empresa].faturas.push(curr);
+                                            return acc;
+                                        }, {});
+
+                                        const lista = Object.values(porEmpresa);
+
+                                        if (lista.length === 0) {
+                                            return (
+                                                <TableRow>
+                                                    <TableCell colSpan={5} className="text-center h-24 text-muted-foreground">
+                                                        Nenhuma inadimplência encontrada no período selecionado.
+                                                    </TableCell>
+                                                </TableRow>
+                                            );
+                                        }
+
+                                        return lista.map((item: any, idx) => (
+                                            <TableRow key={idx}>
+                                                <TableCell className="font-medium text-red-600">
+                                                    {item.nome}
+                                                </TableCell>
+                                                <TableCell>{item.qtd}</TableCell>
+                                                <TableCell>{formatarMoeda(item.total)}</TableCell>
+                                                <TableCell className="font-bold">{item.maiorAtraso} dias</TableCell>
+                                                <TableCell className="text-right">
+                                                    <Button variant="ghost" size="sm" className="text-blue-600">
+                                                        Ver Detalhes
+                                                    </Button>
+                                                </TableCell>
+                                            </TableRow>
+                                        ));
+                                    })()}
                                 </TableBody>
                             </Table>
                         </CardContent>

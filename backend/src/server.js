@@ -4,6 +4,7 @@ import bodyParser from 'body-parser';
 import dotenv from 'dotenv';
 import routes from './routes/index.js';
 import scheduledBackupService from './services/scheduledBackupService.js';
+import cronService from './services/cronJobs.js';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 // Security middlewares
@@ -58,15 +59,15 @@ const allowedOrigins = [
 // Middleware to always set CORS headers (even for errors/503)
 app.use((req, res, next) => {
   const origin = req.headers.origin;
-  
+
   // Set CORS headers for all requests
   if (origin) {
     // Check if origin should be allowed
-    const isAllowed = 
+    const isAllowed =
       allowedOrigins.includes(origin) ||
       origin.match(/^https:\/\/appestacionamento.*\.vercel\.app$/) ||
       origin.match(/^https:\/\/appestacionamento\.vercel\.app$/);
-    
+
     if (isAllowed) {
       res.header('Access-Control-Allow-Origin', origin);
       res.header('Access-Control-Allow-Credentials', 'true');
@@ -74,12 +75,12 @@ app.use((req, res, next) => {
       res.header('Access-Control-Allow-Headers', 'Content-Type,Authorization');
     }
   }
-  
+
   // Handle preflight requests
   if (req.method === 'OPTIONS') {
     return res.sendStatus(204);
   }
-  
+
   next();
 });
 
@@ -96,7 +97,7 @@ app.use(
 
       // Allow any Vercel deployment (production or preview)
       if (origin.match(/^https:\/\/appestacionamento.*\.vercel\.app$/) ||
-          origin.match(/^https:\/\/appestacionamento\.vercel\.app$/)) {
+        origin.match(/^https:\/\/appestacionamento\.vercel\.app$/)) {
         return callback(null, true);
       }
 
@@ -149,7 +150,7 @@ app.use((err, req, res, next) => {
   res.header('Access-Control-Allow-Credentials', 'true');
   res.header('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS');
   res.header('Access-Control-Allow-Headers', 'Content-Type,Authorization');
-  
+
   // Não expor stack trace em produção
   const isDev = process.env.NODE_ENV !== 'production';
   if (isDev) {
@@ -157,10 +158,10 @@ app.use((err, req, res, next) => {
   } else {
     console.error('Error:', err.message);
   }
-  
+
   // Se já foi enviada resposta, não tente enviar novamente
   if (res.headersSent) return next(err);
-  
+
   res.status(err.status || 500).json({
     error: err.message || 'Internal Server Error',
     ...(isDev && { stack: err.stack }), // Apenas em desenvolvimento
@@ -176,6 +177,8 @@ app.listen(PORT, () => {
     .loadBackupConfig()
     .then(() => {
       console.log('Scheduled backup service initialized');
+      // Initialize other cron jobs
+      cronService.init();
     })
     .catch((err) => {
       console.error('Failed to initialize scheduled backups:', err);

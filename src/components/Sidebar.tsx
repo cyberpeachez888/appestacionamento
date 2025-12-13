@@ -18,6 +18,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
+import { Notificacoes } from '@/components/Notifications/Notificacoes';
 
 export const Sidebar = () => {
   const { cashIsOpen } = useParking();
@@ -61,9 +62,12 @@ export const Sidebar = () => {
 
   return (
     <aside className="w-64 bg-sidebar-background text-sidebar-foreground flex flex-col border-r border-sidebar-border">
-      <div className="p-6 border-b border-sidebar-border">
-        <h1 className="text-xl font-bold text-sidebar-primary">ProParking App 2025</h1>
-        <p className="text-sm text-sidebar-foreground/70 mt-1">Sistema de Gestão</p>
+      <div className="p-6 border-b border-sidebar-border flex items-center justify-between">
+        <div>
+          <h1 className="text-xl font-bold text-sidebar-primary">ProParking</h1>
+          <p className="text-sm text-sidebar-foreground/70 mt-1">Gestão 2025</p>
+        </div>
+        <Notificacoes />
       </div>
 
       <nav className="flex-1 p-4 space-y-2">

@@ -8,6 +8,8 @@ import conveniosController from '../controllers/conveniosController.js';
 import conveniosVeiculosController from '../controllers/conveniosVeiculosController.js';
 import conveniosMovimentacoesController from '../controllers/conveniosMovimentacoesController.js';
 import conveniosFaturasController from '../controllers/conveniosFaturasController.js';
+import conveniosDocumentosController from '../controllers/conveniosDocumentosController.js';
+import conveniosJobsController from '../controllers/conveniosJobsController.js';
 import { requireAuth } from '../middleware/auth.js';
 
 const router = express.Router();
@@ -99,5 +101,28 @@ router.patch('/:convenioId/faturas/:faturaId/pagar', conveniosFaturasController.
 
 // PATCH /api/convenios/:convenioId/faturas/:faturaId/cancelar - Cancelar fatura
 router.patch('/:convenioId/faturas/:faturaId/cancelar', conveniosFaturasController.cancelar);
+
+// =====================================================
+// DOCUMENTOS
+// =====================================================
+
+// GET /api/convenios/:convenioId/documentos - Listar documentos
+router.get('/:convenioId/documentos', conveniosDocumentosController.list);
+
+// POST /api/convenios/:convenioId/documentos - Upload documento
+router.post('/:convenioId/documentos', conveniosDocumentosController.upload);
+
+// DELETE /api/convenios/:convenioId/documentos/:docId - Remover documento
+router.delete('/:convenioId/documentos/:docId', conveniosDocumentosController.delete);
+
+// =====================================================
+// JOBS / CRONS (Verificações Automáticas)
+// =====================================================
+
+// POST /api/convenios/jobs/verificar-vencimentos
+router.post('/jobs/verificar-vencimentos', conveniosJobsController.verificarVencimentosContrato);
+
+// POST /api/convenios/jobs/verificar-faturas-atrasadas
+router.post('/jobs/verificar-faturas-atrasadas', conveniosJobsController.verificarFaturasAtrasadas);
 
 export default router;
