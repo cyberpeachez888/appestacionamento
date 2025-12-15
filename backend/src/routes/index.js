@@ -26,7 +26,7 @@ import expensesController from '../controllers/expensesController.js';
 import manualRevenuesController from '../controllers/manualRevenuesController.js';
 import cashRegisterController from '../controllers/cashRegisterController.js';
 import pricingRulesRoutes from './pricingRules.js';
-import pricingRulesRoutes from './pricingRules.js';
+
 import conveniosRoutes from './convenios.js';
 import notificacoesRoutes from './notificacoes.js';
 import { requireAuth, requireAdmin, requirePermission } from '../middleware/auth.js';
