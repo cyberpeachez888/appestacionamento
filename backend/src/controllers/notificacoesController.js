@@ -20,7 +20,7 @@ export default {
             let query = supabase
                 .from(NOTIFICACOES_TABLE)
                 .select('*')
-                .order('created_at', { ascending: false })
+                .order('data_criacao', { ascending: false })
                 .limit(50); // Limitar às últimas 50
 
             // Se quiser filtrar por lidas/não lidas: req.query.lidas

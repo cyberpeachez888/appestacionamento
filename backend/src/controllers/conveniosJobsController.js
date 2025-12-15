@@ -41,7 +41,7 @@ export const checkVencimentos = async () => {
             mensagem: `O contrato do convênio ${conv.nome_empresa} vence em ${diasRestantes} dias.`,
             tipo: 'alerta', // alerta, info, erro, sucesso
             lida: false,
-            link: `/convenios?id=${conv.id}` // Link para abrir detalhes se frontend suportar
+            acao_url: `/convenios?id=${conv.id}` // Link para abrir detalhes se frontend suportar
         });
     }
 
@@ -82,7 +82,7 @@ export const checkFaturas = async () => {
             mensagem: `A fatura ${fat.numero_fatura} de ${empresa} venceu ontem (${fat.data_vencimento}).`,
             tipo: 'erro',
             lida: false,
-            link: `/convenios` // Idealmente deep link
+            acao_url: `/convenios` // Idealmente deep link
         });
     }
 

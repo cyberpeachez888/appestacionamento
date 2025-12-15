@@ -17,8 +17,9 @@ interface Notificacao {
     mensagem: string;
     tipo: 'alerta' | 'info' | 'erro' | 'sucesso';
     lida: boolean;
-    created_at: string;
-    link?: string;
+    lida: boolean;
+    data_criacao: string;
+    acao_url?: string;
 }
 
 export function Notificacoes() {
@@ -70,9 +71,9 @@ export function Notificacoes() {
         if (!notification.lida) {
             handleMarkAsRead(notification.id);
         }
-        if (notification.link) {
+        if (notification.acao_url) {
             setOpen(false);
-            navigate(notification.link);
+            navigate(notification.acao_url);
         }
     };
 
@@ -130,7 +131,7 @@ export function Notificacoes() {
                                             {notificacao.mensagem}
                                         </p>
                                         <p className="text-[10px] text-muted-foreground">
-                                            {new Date(notificacao.created_at).toLocaleString('pt-BR')}
+                                            {new Date(notificacao.data_criacao).toLocaleString('pt-BR')}
                                         </p>
                                     </div>
                                     {!notificacao.lida && (
