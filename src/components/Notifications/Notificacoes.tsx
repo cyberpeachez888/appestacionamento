@@ -17,7 +17,6 @@ interface Notificacao {
     mensagem: string;
     tipo: 'alerta' | 'info' | 'erro' | 'sucesso';
     lida: boolean;
-    lida: boolean;
     data_criacao: string;
     acao_url?: string;
 }
