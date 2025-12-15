@@ -60,6 +60,7 @@ export function DialogNovoConvenio({ open, onOpenChange, onSuccess }: DialogNovo
     const [diaVencimento, setDiaVencimento] = useState('');
     const [permiteVagasExtras, setPermiteVagasExtras] = useState(false);
     const [valorVagaExtra, setValorVagaExtra] = useState('');
+    const [diaFechamento, setDiaFechamento] = useState(''); // New state for pos-pago
 
     // Passo 4: Contrato
     const [dataInicio, setDataInicio] = useState('');
@@ -81,6 +82,7 @@ export function DialogNovoConvenio({ open, onOpenChange, onSuccess }: DialogNovo
         setNumVagasReservadas('');
         setValorMensal('');
         setDiaVencimento('');
+        setDiaFechamento('');
         setPermiteVagasExtras(false);
         setValorVagaExtra('');
         setDataInicio('');
@@ -91,6 +93,8 @@ export function DialogNovoConvenio({ open, onOpenChange, onSuccess }: DialogNovo
         try {
             setLoading(true);
             const token = localStorage.getItem('token');
+
+            const isPrePago = tipoConvenio === 'pre-pago';
 
             const payload = {
                 nome_empresa: nomeEmpresa,
@@ -109,8 +113,13 @@ export function DialogNovoConvenio({ open, onOpenChange, onSuccess }: DialogNovo
                     tipo_plano: 'padrao',
                     num_vagas_contratadas: parseInt(numVagas),
                     num_vagas_reservadas: parseInt(numVagasReservadas) || 0,
-                    valor_mensal: parseFloat(valorMensal),
-                    dia_vencimento_pagamento: parseInt(diaVencimento),
+                    // Pre-pago fields
+                    valor_mensal: isPrePago ? parseFloat(valorMensal) : null,
+                    dia_vencimento_pagamento: isPrePago ? parseInt(diaVencimento) : undefined,
+                    // Pos-pago fields
+                    dia_vencimento_pos_pago: !isPrePago ? parseInt(diaVencimento) : undefined,
+                    dia_fechamento: !isPrePago ? parseInt(diaFechamento) : undefined,
+
                     permite_vagas_extras: permiteVagasExtras,
                     valor_vaga_extra: permiteVagasExtras ? parseFloat(valorVagaExtra) : undefined,
                 },
@@ -149,7 +158,12 @@ export function DialogNovoConvenio({ open, onOpenChange, onSuccess }: DialogNovo
             return contatoNome && contatoEmail && contatoTelefone;
         }
         if (step === 3) {
-            return tipoConvenio && numVagas && valorMensal && diaVencimento;
+            if (tipoConvenio === 'pre-pago') {
+                return tipoConvenio && numVagas && valorMensal && diaVencimento;
+            } else if (tipoConvenio === 'pos-pago') {
+                return tipoConvenio && numVagas && diaVencimento && diaFechamento;
+            }
+            return false;
         }
         if (step === 4) {
             return dataInicio;
@@ -330,36 +344,73 @@ export function DialogNovoConvenio({ open, onOpenChange, onSuccess }: DialogNovo
                                 </div>
                             </div>
 
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="grid gap-2">
-                                    <Label htmlFor="valor_mensal">
-                                        Valor Mensal <span className="text-red-500">*</span>
-                                    </Label>
-                                    <Input
-                                        id="valor_mensal"
-                                        type="number"
-                                        step="0.01"
-                                        value={valorMensal}
-                                        onChange={(e) => setValorMensal(e.target.value)}
-                                        placeholder="0.00"
-                                    />
+                            {tipoConvenio === 'pre-pago' ? (
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="valor_mensal">
+                                            Valor Mensal <span className="text-red-500">*</span>
+                                        </Label>
+                                        <Input
+                                            id="valor_mensal"
+                                            type="number"
+                                            step="0.01"
+                                            value={valorMensal}
+                                            onChange={(e) => setValorMensal(e.target.value)}
+                                            placeholder="0.00"
+                                        />
+                                    </div>
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="dia_vencimento">
+                                            Dia de Vencimento <span className="text-red-500">*</span>
+                                        </Label>
+                                        <Input
+                                            id="dia_vencimento"
+                                            type="number"
+                                            min="1"
+                                            max="28"
+                                            value={diaVencimento}
+                                            onChange={(e) => setDiaVencimento(e.target.value)}
+                                            placeholder="1-28"
+                                        />
+                                    </div>
                                 </div>
-
-                                <div className="grid gap-2">
-                                    <Label htmlFor="dia_vencimento">
-                                        Dia de Vencimento <span className="text-red-500">*</span>
-                                    </Label>
-                                    <Input
-                                        id="dia_vencimento"
-                                        type="number"
-                                        min="1"
-                                        max="28"
-                                        value={diaVencimento}
-                                        onChange={(e) => setDiaVencimento(e.target.value)}
-                                        placeholder="1-28"
-                                    />
-                                </div>
-                            </div>
+                            ) : tipoConvenio === 'pos-pago' ? (
+                                <>
+                                    <div className="bg-blue-50 text-blue-700 p-3 rounded-md text-sm border border-blue-200">
+                                        ℹ️ Valor calculado mensalmente baseado no uso real
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div className="grid gap-2">
+                                            <Label htmlFor="dia_fechamento">
+                                                Dia de Fechamento <span className="text-red-500">*</span>
+                                            </Label>
+                                            <Input
+                                                id="dia_fechamento"
+                                                type="number"
+                                                min="1"
+                                                max="28"
+                                                value={diaFechamento}
+                                                onChange={(e) => setDiaFechamento(e.target.value)}
+                                                placeholder="1-28"
+                                            />
+                                        </div>
+                                        <div className="grid gap-2">
+                                            <Label htmlFor="dia_vencimento">
+                                                Dia de Vencimento <span className="text-red-500">*</span>
+                                            </Label>
+                                            <Input
+                                                id="dia_vencimento"
+                                                type="number"
+                                                min="1"
+                                                max="28"
+                                                value={diaVencimento}
+                                                onChange={(e) => setDiaVencimento(e.target.value)}
+                                                placeholder="1-28"
+                                            />
+                                        </div>
+                                    </div>
+                                </>
+                            ) : null}
 
                             <div className="flex items-center space-x-2">
                                 <Checkbox
@@ -430,12 +481,14 @@ export function DialogNovoConvenio({ open, onOpenChange, onSuccess }: DialogNovo
                                         <dt className="text-muted-foreground">Vagas:</dt>
                                         <dd className="font-medium">{numVagas}</dd>
                                     </div>
-                                    <div className="flex justify-between">
-                                        <dt className="text-muted-foreground">Valor Mensal:</dt>
-                                        <dd className="font-medium">
-                                            R$ {parseFloat(valorMensal || '0').toFixed(2)}
-                                        </dd>
-                                    </div>
+                                    {tipoConvenio === 'pre-pago' && (
+                                        <div className="flex justify-between">
+                                            <dt className="text-muted-foreground">Valor Mensal:</dt>
+                                            <dd className="font-medium">
+                                                R$ {parseFloat(valorMensal || '0').toFixed(2)}
+                                            </dd>
+                                        </div>
+                                    )}
                                 </dl>
                             </div>
                         </>
