@@ -952,6 +952,10 @@ class ApiClient {
     return this.request<any[]>(`/convenios${queryString ? `?${queryString}` : ''}`);
   }
 
+  async getConvenioById(id: string) {
+    return this.request<any>(`/convenios/${id}`);
+  }
+
   async getConvenioStats() {
     return this.request<any>('/convenios/stats');
   }

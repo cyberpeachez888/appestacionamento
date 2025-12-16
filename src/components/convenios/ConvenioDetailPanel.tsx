@@ -30,7 +30,7 @@ import { api } from '@/lib/api';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
+
 
 interface ConvenioDetalhes {
     id: string;
@@ -83,17 +83,8 @@ export function ConvenioDetailPanel({ convenioId, onClose }: ConvenioDetailPanel
     const fetchConvenioDetalhes = async () => {
         try {
             setLoading(true);
-            const token = localStorage.getItem('token');
-            const response = await fetch(`${API_URL}/convenios/${convenioId}`, {
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                },
-            });
-
-            if (response.ok) {
-                const data = await response.json();
-                setConvenio(data);
-            }
+            const data = await api.getConvenioById(convenioId);
+            setConvenio(data);
         } catch (error) {
             console.error('Erro ao buscar detalhes:', error);
         } finally {
