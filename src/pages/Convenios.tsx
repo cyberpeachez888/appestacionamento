@@ -31,8 +31,7 @@ import { ConvenioDetailPanel } from '@/components/convenios/ConvenioDetailPanel'
 import { ConveniosRelatoriosPanel } from '@/components/convenios/ConveniosRelatoriosPanel';
 import { DialogNovoConvenio } from '@/components/convenios/dialogs/DialogNovoConvenio';
 import { DialogAdicionarVeiculo } from '@/components/convenios/dialogs/DialogAdicionarVeiculo';
-
-const API_URL = import.meta.env.NEXT_PUBLIC_API_URL || import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
+import { api } from '@/lib/api';
 
 interface ConvenioStats {
     total_ativos: number;
@@ -90,17 +89,8 @@ export default function ConveniosPage() {
 
     const fetchStats = async () => {
         try {
-            const token = localStorage.getItem('token');
-            const response = await fetch(`${API_URL}/convenios/stats`, {
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                },
-            });
-
-            if (response.ok) {
-                const data = await response.json();
-                setStats(data);
-            }
+            const data = await api.getConvenioStats();
+            setStats(data);
         } catch (error) {
             console.error('Erro ao buscar estatísticas:', error);
         }
@@ -109,24 +99,13 @@ export default function ConveniosPage() {
     const fetchConvenios = async () => {
         try {
             setLoading(true);
-            const token = localStorage.getItem('token');
-
-            const params = new URLSearchParams();
-            if (filtroStatus !== 'todos') params.append('status', filtroStatus);
-            if (filtroTipo !== 'todos') params.append('tipo', filtroTipo);
-            if (filtroCategoria !== 'todos') params.append('categoria', filtroCategoria);
-            if (busca) params.append('busca', busca);
-
-            const response = await fetch(`${API_URL}/convenios?${params.toString()}`, {
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                },
+            const data = await api.getConvenios({
+                status: filtroStatus,
+                tipo: filtroTipo,
+                categoria: filtroCategoria,
+                busca: busca
             });
-
-            if (response.ok) {
-                const data = await response.json();
-                setConvenios(data);
-            }
+            setConvenios(data || []);
         } catch (error) {
             console.error('Erro ao buscar convênios:', error);
         } finally {

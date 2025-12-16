@@ -942,8 +942,22 @@ class ApiClient {
   }
 
   // Convenios endpoints
-  async getConvenios() {
-    return this.request<any[]>('/convenios');
+  async getConvenios(filters?: { status?: string; tipo?: string; categoria?: string; busca?: string }) {
+    const query = new URLSearchParams();
+    if (filters?.status && filters.status !== 'todos') query.set('status', filters.status);
+    if (filters?.tipo && filters.tipo !== 'todos') query.set('tipo', filters.tipo);
+    if (filters?.categoria && filters.categoria !== 'todos') query.set('categoria', filters.categoria);
+    if (filters?.busca) query.set('busca', filters.busca);
+    const queryString = query.toString();
+    return this.request<any[]>(`/convenios${queryString ? `?${queryString}` : ''}`);
+  }
+
+  async getConvenioStats() {
+    return this.request<any>('/convenios/stats');
+  }
+
+  async getConveniosRanking() {
+    return this.request<any[]>('/convenios/relatorios/ocupacao');
   }
 
   async createConvenio(convenio: any) {
@@ -988,6 +1002,13 @@ class ApiClient {
 
   async getConvenioDocumentos(convenioId: string) {
     return this.request<any[]>(`/convenios/${convenioId}/documentos`);
+  }
+
+  async addConvenioVeiculo(convenioId: string, veiculo: any) {
+    return this.request<any>(`/convenios/${convenioId}/veiculos`, {
+      method: 'POST',
+      body: JSON.stringify(veiculo),
+    });
   }
 
   async uploadConvenioDocumento(convenioId: string, documento: any) {

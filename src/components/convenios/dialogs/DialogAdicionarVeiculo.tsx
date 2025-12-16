@@ -18,8 +18,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
+import { api } from '@/lib/api';
 
 interface DialogAdicionarVeiculoProps {
     open: boolean;
@@ -59,7 +58,6 @@ export function DialogAdicionarVeiculo({
 
         try {
             setLoading(true);
-            const token = localStorage.getItem('token');
 
             const payload = {
                 placa,
@@ -70,26 +68,13 @@ export function DialogAdicionarVeiculo({
                 observacoes: observacoes || undefined,
             };
 
-            const response = await fetch(`${API_URL}/convenios/${convenioId}/veiculos`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`,
-                },
-                body: JSON.stringify(payload),
-            });
-
-            if (response.ok) {
-                resetForm();
-                onOpenChange(false);
-                onSuccess();
-            } else {
-                const error = await response.json();
-                alert(error.error || 'Erro ao adicionar veículo');
-            }
-        } catch (error) {
+            await api.addConvenioVeiculo(convenioId, payload);
+            resetForm();
+            onOpenChange(false);
+            onSuccess();
+        } catch (error: any) {
             console.error('Erro:', error);
-            alert('Erro ao adicionar veículo');
+            alert(error.message || 'Erro ao adicionar veículo');
         } finally {
             setLoading(false);
         }

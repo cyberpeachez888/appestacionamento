@@ -38,8 +38,7 @@ import {
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
+import { api } from '@/lib/api';
 
 export function ConveniosRelatoriosPanel() {
     const [faturas, setFaturas] = useState<any[]>([]);
@@ -66,21 +65,11 @@ export function ConveniosRelatoriosPanel() {
     const fetchFaturas = async () => {
         try {
             setLoadingFaturas(true);
-            const token = localStorage.getItem('token');
-
-            let url = `${API_URL}/convenios/relatorios/faturas?periodo=${periodoFatura}`;
-            if (statusFatura !== 'todos') {
-                url += `&status=${statusFatura}`;
-            }
-
-            const response = await fetch(url, {
-                headers: { 'Authorization': `Bearer ${token}` }
+            const data = await api.getConveniosRelatoriosFaturas({
+                periodo: periodoFatura,
+                status: statusFatura !== 'todos' ? statusFatura : undefined
             });
-
-            if (response.ok) {
-                const data = await response.json();
-                setFaturas(data);
-            }
+            setFaturas(data || []);
         } catch (error) {
             console.error('Erro ao buscar faturas:', error);
         } finally {
@@ -90,15 +79,8 @@ export function ConveniosRelatoriosPanel() {
 
     const fetchRanking = async () => {
         try {
-            const token = localStorage.getItem('token');
-            const response = await fetch(`${API_URL}/convenios/relatorios/ocupacao`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-
-            if (response.ok) {
-                const data = await response.json();
-                setRanking(data);
-            }
+            const data = await api.getConveniosRanking();
+            setRanking(data || []);
         } catch (error) {
             console.error('Erro ao buscar ranking:', error);
         }
