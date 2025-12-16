@@ -26,8 +26,9 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
+import { api } from '@/lib/api';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
+
 
 interface DialogNovoConvenioProps {
     open: boolean;
@@ -92,8 +93,6 @@ export function DialogNovoConvenio({ open, onOpenChange, onSuccess }: DialogNovo
     const handleSubmit = async () => {
         try {
             setLoading(true);
-            const token = localStorage.getItem('token');
-
             const isPrePago = tipoConvenio === 'pre-pago';
 
             const payload = {
@@ -125,26 +124,13 @@ export function DialogNovoConvenio({ open, onOpenChange, onSuccess }: DialogNovo
                 },
             };
 
-            const response = await fetch(`${API_URL}/convenios`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`,
-                },
-                body: JSON.stringify(payload),
-            });
-
-            if (response.ok) {
-                resetForm();
-                onOpenChange(false);
-                onSuccess();
-            } else {
-                const error = await response.json();
-                alert(error.error || 'Erro ao criar convênio');
-            }
-        } catch (error) {
+            await api.createConvenio(payload);
+            resetForm();
+            onOpenChange(false);
+            onSuccess();
+        } catch (error: any) {
             console.error('Erro:', error);
-            alert('Erro ao criar convênio');
+            alert(error.message || 'Erro ao criar convênio');
         } finally {
             setLoading(false);
         }

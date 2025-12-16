@@ -942,6 +942,30 @@ class ApiClient {
   }
 
   // Convenios endpoints
+  async getConvenios() {
+    return this.request<any[]>('/convenios');
+  }
+
+  async createConvenio(convenio: any) {
+    return this.request<any>('/convenios', {
+      method: 'POST',
+      body: JSON.stringify(convenio),
+    });
+  }
+
+  async updateConvenio(id: string, updates: any) {
+    return this.request<any>(`/convenios/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(updates),
+    });
+  }
+
+  async deleteConvenio(id: string) {
+    return this.request<void>(`/convenios/${id}`, {
+      method: 'DELETE',
+    });
+  }
+
   async getConveniosRelatoriosFaturas(filters?: { status?: string; periodo?: string; data_inicio?: string; data_fim?: string }) {
     const query = new URLSearchParams();
     if (filters?.status) query.set('status', filters.status);
