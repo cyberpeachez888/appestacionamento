@@ -127,14 +127,14 @@ export default function Operacional() {
   const filteredVehicles = vehicles
     .filter((v) => (filter === 'all' ? true : v.status === filter))
     .sort((a, b) => {
-      // Sort by entry date first
+      // Sort by entry date DESCENDING (newest first)
       const dateA = new Date(a.entryDate).getTime();
       const dateB = new Date(b.entryDate).getTime();
-      if (dateA !== dateB) return dateA - dateB;
-      // Then by entry time
+      if (dateA !== dateB) return dateB - dateA;
+      // Then by entry time DESCENDING
       const timeA = a.entryTime || '00:00';
       const timeB = b.entryTime || '00:00';
-      return timeA.localeCompare(timeB);
+      return timeB.localeCompare(timeA);
     });
 
   const calculateRateValue = (vehicle: any, rate: any, exitDate: Date): number => {

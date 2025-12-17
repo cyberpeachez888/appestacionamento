@@ -25,8 +25,13 @@ import {
     FileText,
     Receipt,
     Search,
-    Filter
+    Receipt,
+    Search,
+    Filter,
+    Play,
+    Pause
 } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 import { ConvenioDetailPanel } from '@/components/convenios/ConvenioDetailPanel';
 import { ConveniosRelatoriosPanel } from '@/components/convenios/ConveniosRelatoriosPanel';
 import { DialogNovoConvenio } from '@/components/convenios/dialogs/DialogNovoConvenio';
@@ -135,6 +140,37 @@ export default function ConveniosPage() {
             return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200';
         }
         return 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200';
+    };
+
+    const { toast } = useToast();
+
+    // ... existing functions ...
+
+    const handleStatusChange = async (convenio: Convenio, novoStatus: 'ativo' | 'suspenso') => {
+        const action = novoStatus === 'ativo' ? 'reativar' : 'suspender';
+
+        if (!confirm(`Deseja realmente ${action} o convênio "${convenio.nome_empresa}"?`)) {
+            return;
+        }
+
+        try {
+            await api.updateConvenio(convenio.id, { status: novoStatus });
+
+            toast({
+                title: `Convênio ${novoStatus === 'ativo' ? 'reativado' : 'suspenso'}`,
+                description: `O convênio foi ${novoStatus === 'ativo' ? 'reativado' : 'suspenso'} com sucesso.`,
+            });
+
+            fetchConvenios();
+            fetchStats();
+        } catch (error) {
+            console.error(`Erro ao ${action} convênio:`, error);
+            toast({
+                title: 'Erro ao atualizar status',
+                description: 'Não foi possível completar a operação.',
+                variant: 'destructive',
+            });
+        }
     };
 
     const getStatusText = (convenio: Convenio) => {
@@ -301,45 +337,67 @@ export default function ConveniosPage() {
                                                     </TableCell>
                                                 </TableRow>
                                             ) : (
-                                                convenios.map((convenio) => (
-                                                    <TableRow
-                                                        key={convenio.id}
-                                                        className="cursor-pointer hover:bg-muted/50"
-                                                        onClick={() => setSelectedConvenio(convenio)}
+                                            ): (
+                                                    convenios.map((convenio) => (
+                                            <TableRow
+                                                key={convenio.id}
+                                                className={`cursor-pointer hover:bg-muted/50 transition-all duration-200 ${convenio.status === 'suspenso' ? 'opacity-50 grayscale-[0.5]' : ''
+                                                    }`}
+                                                onClick={() => setSelectedConvenio(convenio)}
+                                            >
+                                                <TableCell>
+                                                    <span
+                                                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusBadge(
+                                                            convenio
+                                                        )}`}
                                                     >
-                                                        <TableCell>
-                                                            <span
-                                                                className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusBadge(
-                                                                    convenio
-                                                                )}`}
-                                                            >
-                                                                {getStatusText(convenio)}
-                                                            </span>
-                                                        </TableCell>
-                                                        <TableCell className="font-medium">{convenio.nome_empresa}</TableCell>
-                                                        <TableCell className="text-muted-foreground">
-                                                            {formatarCNPJ(convenio.cnpj)}
-                                                        </TableCell>
-                                                        <TableCell className="capitalize">{convenio.tipo_convenio}</TableCell>
-                                                        <TableCell>
-                                                            {convenio.vagas_ocupadas} / {convenio.plano_ativo?.num_vagas_contratadas || 0}
-                                                            <span className="text-xs text-muted-foreground ml-1">
-                                                                ({convenio.taxa_ocupacao.toFixed(0)}%)
-                                                            </span>
-                                                        </TableCell>
-                                                        <TableCell className="font-medium">
-                                                            {formatarValor(convenio.plano_ativo?.valor_mensal || 0)}
-                                                        </TableCell>
-                                                        <TableCell>
-                                                            Dia {convenio.plano_ativo?.dia_vencimento_pagamento || '-'}
-                                                        </TableCell>
-                                                        <TableCell>
-                                                            <Button variant="ghost" size="icon">
+                                                        {getStatusText(convenio)}
+                                                    </span>
+                                                </TableCell>
+                                                <TableCell className="font-medium">{convenio.nome_empresa}</TableCell>
+                                                <TableCell className="text-muted-foreground">
+                                                    {formatarCNPJ(convenio.cnpj)}
+                                                </TableCell>
+                                                <TableCell className="capitalize">{convenio.tipo_convenio}</TableCell>
+                                                <TableCell>
+                                                    {convenio.vagas_ocupadas} / {convenio.plano_ativo?.num_vagas_contratadas || 0}
+                                                    <span className="text-xs text-muted-foreground ml-1">
+                                                        ({convenio.taxa_ocupacao.toFixed(0)}%)
+                                                    </span>
+                                                </TableCell>
+                                                <TableCell className="font-medium">
+                                                    {formatarValor(convenio.plano_ativo?.valor_mensal || 0)}
+                                                </TableCell>
+                                                <TableCell>
+                                                    Dia {convenio.plano_ativo?.dia_vencimento_pagamento || '-'}
+                                                </TableCell>
+                                                <TableCell
+                                                    className="flex gap-1"
+                                                    onClick={(e) => e.stopPropagation()} // Prevent row selection when clicking actions
+                                                >
+                                                    {convenio.status === 'suspenso' ? (
+                                                        <Button
+                                                            variant="outline"
+                                                            size="sm"
+                                                            className="h-8 border-green-200 hover:bg-green-50 text-green-700 w-full"
+                                                            onClick={() => handleStatusChange(convenio, 'ativo')}
+                                                        >
+                                                            <Play className="h-3.5 w-3.5 mr-1" />
+                                                            Reativar
+                                                        </Button>
+                                                    ) : (
+                                                        <>
+                                                            <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground">
                                                                 <FileText className="h-4 w-4" />
                                                             </Button>
-                                                        </TableCell>
-                                                    </TableRow>
-                                                ))
+                                                            <Button variant="ghost" size="icon" className="h-8 w-8 text-amber-600 hover:text-amber-700 hover:bg-amber-50" onClick={() => handleStatusChange(convenio, 'suspenso')}>
+                                                                <Pause className="h-4 w-4" />
+                                                            </Button>
+                                                        </>
+                                                    )}
+                                                </TableCell>
+                                            </TableRow>
+                                            ))
                                             )}
                                         </TableBody>
                                     </Table>

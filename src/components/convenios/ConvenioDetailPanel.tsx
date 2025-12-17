@@ -6,6 +6,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
@@ -79,6 +80,32 @@ export function ConvenioDetailPanel({ convenioId, onClose }: ConvenioDetailPanel
             fetchDocumentos();
         }
     }, [activeTab, convenioId]);
+
+    const { toast } = useToast();
+
+    // ... useEffects ...
+
+    const handleStatusChange = async (novoStatus: string) => {
+        const action = novoStatus === 'ativo' ? 'reativar' : 'suspender';
+
+        if (!confirm(`Deseja realmente ${action} este convênio?`)) {
+            return;
+        }
+
+        try {
+            await api.updateConvenio(convenioId, { status: novoStatus });
+
+            toast({
+                title: `Convênio ${novoStatus === 'ativo' ? 'reativado' : 'suspenso'}`,
+                description: `O status foi atualizado com sucesso.`,
+            });
+
+            fetchConvenioDetalhes();
+        } catch (error) {
+            console.error(`Erro ao ${action} convênio:`, error);
+            alert('Erro ao atualizar status');
+        }
+    };
 
     const fetchConvenioDetalhes = async () => {
         try {
@@ -221,12 +248,12 @@ export function ConvenioDetailPanel({ convenioId, onClose }: ConvenioDetailPanel
                             Editar
                         </Button>
                         {convenio.status === 'ativo' ? (
-                            <Button variant="outline" size="sm">
+                            <Button variant="outline" size="sm" onClick={() => handleStatusChange('suspenso')}>
                                 <Pause className="h-4 w-4 mr-2" />
                                 Suspender
                             </Button>
                         ) : (
-                            <Button variant="outline" size="sm">
+                            <Button variant="outline" size="sm" onClick={() => handleStatusChange('ativo')}>
                                 <Play className="h-4 w-4 mr-2" />
                                 Reativar
                             </Button>
