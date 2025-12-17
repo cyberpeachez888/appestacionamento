@@ -973,7 +973,7 @@ class ApiClient {
 
   async updateConvenio(id: string, updates: any) {
     return this.request<any>(`/convenios/${id}`, {
-      method: 'PUT',
+      method: 'PATCH',
       body: JSON.stringify(updates),
     });
   }
