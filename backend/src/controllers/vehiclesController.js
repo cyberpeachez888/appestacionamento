@@ -56,6 +56,7 @@ export default {
         amount: req.body.totalValue || 0,
         metadata: {
           rateId: req.body.rateId,
+          paymentMethod: req.body.paymentMethod, // Save payment method in metadata
           contractedDays: req.body.contractedDays,
           contractedEndDate: req.body.contractedEndDate,
           contractedEndTime: req.body.contractedEndTime,
@@ -74,7 +75,7 @@ export default {
             target_id: id,
             date: payload.exit_time,
             value: payload.amount,
-            method: req.body.paymentMethod || 'cash',
+            method: req.body.paymentMethod || 'Dinheiro',
           });
         } catch (paymentErr) {
           console.error('Failed to create payment for simultaneous ticket creation', id, paymentErr);
@@ -92,6 +93,7 @@ export default {
         exitTime: data.exit_time ? new Date(data.exit_time).toTimeString().slice(0, 5) : undefined,
         status: data.status === 'closed' ? 'Concluído' : 'Em andamento',
         totalValue: data.amount || 0,
+        paymentMethod: data.metadata?.paymentMethod,
         rateId: req.body.rateId,
         contractedDays: req.body.contractedDays,
         contractedEndDate: req.body.contractedEndDate,
@@ -217,7 +219,7 @@ export default {
               target_id: id,
               date: data.exit_time || new Date().toISOString(),
               value: vehicle.totalValue || 0,
-              method: vehicle.paymentMethod || 'cash',
+              method: vehicle.paymentMethod || 'Dinheiro',
             });
           }
         } catch (paymentErr) {

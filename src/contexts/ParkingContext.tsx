@@ -6,7 +6,7 @@ import { useAuth } from '@/contexts/AuthContext';
 export type VehicleType = 'Carro' | 'Moto' | 'Caminhonete' | 'Van' | 'Ônibus';
 export type RateType = 'Hora/Fração' | 'Diária' | 'Pernoite' | 'Semanal' | 'Quinzenal' | 'Mensal';
 export type VehicleStatus = 'Em andamento' | 'Concluído';
-export type PaymentMethod = 'Dinheiro' | 'Pix' | 'Cartão Débito' | 'Cartão Crédito';
+export type PaymentMethod = 'Dinheiro' | 'Pix' | 'Cartão Débito' | 'Cartão Crédito' | 'Convênio';
 
 export interface RateConfig {
   courtesyMinutes?: number;

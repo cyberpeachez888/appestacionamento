@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useParking, Vehicle, VehicleType, RateType } from '@/contexts/ParkingContext';
+import { useParking, Vehicle, VehicleType, RateType, PaymentMethod } from '@/contexts/ParkingContext';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -34,6 +34,7 @@ export const VehicleDialog = ({ open, onOpenChange, vehicle, onSaved }: VehicleD
   const [exitDate, setExitDate] = useState('');
   const [exitTime, setExitTime] = useState('');
   const [contractedDays, setContractedDays] = useState('');
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod | ''>('');
 
   // Estados para Convênio
   const [convenioData, setConvenioData] = useState<any>(null);
@@ -94,6 +95,7 @@ export const VehicleDialog = ({ open, onOpenChange, vehicle, onSaved }: VehicleD
       setExitDate(vehicle.exitDate || '');
       setExitTime(vehicle.exitTime || '');
       setContractedDays(vehicle.contractedDays?.toString() || '');
+      setPaymentMethod(vehicle.paymentMethod || '');
     } else {
       const now = new Date();
       setPlate('');
@@ -104,6 +106,7 @@ export const VehicleDialog = ({ open, onOpenChange, vehicle, onSaved }: VehicleD
       setExitDate('');
       setExitTime('');
       setContractedDays('');
+      setPaymentMethod('');
       setConvenioData(null);
     }
   }, [vehicle, open]);
@@ -139,6 +142,16 @@ export const VehicleDialog = ({ open, onOpenChange, vehicle, onSaved }: VehicleD
       return;
     }
 
+    // Validação de Forma de Pagamento para registro simultâneo
+    if (exitTime && !paymentMethod && !convenioData) {
+      toast({
+        title: 'Forma de Pagamento obrigatória',
+        description: 'Por favor, selecione a forma de pagamento para este registro.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     // Validação temporal para registro simultâneo
     if (exitDate && exitTime) {
       const entry = new Date(`${entryDate}T${entryTime}`);
@@ -163,6 +176,9 @@ export const VehicleDialog = ({ open, onOpenChange, vehicle, onSaved }: VehicleD
       exitTime: exitTime || undefined,
       status: (exitDate && exitTime ? 'Concluído' : 'Em andamento') as 'Em andamento' | 'Concluído',
       totalValue: exitDate && exitTime && selectedRate ? calculateCurrentValue() : 0,
+      paymentMethod: (exitDate && exitTime)
+        ? (convenioData ? 'Convênio' : (paymentMethod as PaymentMethod))
+        : undefined,
       contractedDays: contractedDays ? parseInt(contractedDays) : undefined,
       contractedEndDate: undefined as string | undefined,
       contractedEndTime: undefined as string | undefined,
@@ -375,13 +391,30 @@ export const VehicleDialog = ({ open, onOpenChange, vehicle, onSaved }: VehicleD
             </div>
           </div>
 
-          {exitTime && !vehicle && (
+          {exitTime && (!vehicle || vehicle.status === 'Em andamento') && (
             <div className="bg-blue-50 border-blue-200 border p-3 rounded-md flex items-center gap-2 animate-in fade-in slide-in-from-top-1 duration-500">
               <span className="text-blue-600">ℹ️</span>
               <p className="text-sm text-blue-800">
                 Ao informar a hora de saída, você está registrando entrada e saída simultâneas.
                 O valor será calculado automaticamente.
               </p>
+            </div>
+          )}
+
+          {exitTime && !convenioData && (
+            <div className="animate-in fade-in slide-in-from-top-1 duration-500">
+              <Label htmlFor="paymentMethod">Forma de Pagamento *</Label>
+              <Select value={paymentMethod} onValueChange={(v) => setPaymentMethod(v as PaymentMethod)}>
+                <SelectTrigger id="paymentMethod">
+                  <SelectValue placeholder="Selecione a forma de pagamento" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Dinheiro">Dinheiro</SelectItem>
+                  <SelectItem value="Pix">Pix</SelectItem>
+                  <SelectItem value="Cartão Débito">Cartão Débito</SelectItem>
+                  <SelectItem value="Cartão Crédito">Cartão Crédito</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           )}
 
@@ -398,7 +431,7 @@ export const VehicleDialog = ({ open, onOpenChange, vehicle, onSaved }: VehicleD
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancelar
             </Button>
-            <Button type="submit" disabled={convenioData?.bloqueado}>
+            <Button type="submit" disabled={convenioData?.bloqueado || (!!exitTime && !paymentMethod && !convenioData)}>
               {vehicle ? 'Atualizar' : 'Adicionar'}
             </Button>
           </div>
