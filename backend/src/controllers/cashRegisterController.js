@@ -8,6 +8,61 @@ import reportGenerationService from '../services/reportGenerationService.js';
  * Handles cash register opening and closing operations
  */
 
+/**
+ * Internal Helper to get report data
+ */
+async function _getReportDataInternal(id) {
+  const { data: session, error: sessionError } = await supabase
+    .from('cash_register_sessions')
+    .select('*')
+    .eq('id', id)
+    .single();
+
+  if (sessionError || !session) return null;
+
+  const startTime = session.opened_at;
+  const endTime = session.is_open ? new Date().toISOString() : session.closed_at;
+
+  const { data: payments } = await supabase.from('payments').select('*').gte('date', startTime).lte('date', endTime);
+  const { data: transactions } = await supabase.from('cash_transactions').select('*').eq('session_id', id);
+  const { data: tickets } = await supabase.from('tickets').select('*').gte('exit_time', startTime).lte('exit_time', endTime).eq('status', 'closed');
+  const { data: company } = await supabase.from('company_config').select('*').eq('id', 'default').single();
+
+  const totals = {
+    saldoInicial: Number(session.opening_amount),
+    receitas: (payments || []).reduce((sum, p) => sum + Number(p.value), 0),
+    suprimentos: (transactions || []).filter(t => t.type === 'suprimento').reduce((sum, t) => sum + Number(t.amount), 0),
+    sangrias: (transactions || []).filter(t => t.type === 'sangria').reduce((sum, t) => sum + Number(t.amount), 0),
+    porMetodo: (payments || []).reduce((acc, p) => {
+      acc[p.method] = (acc[p.method] || 0) + Number(p.value);
+      return acc;
+    }, {}),
+    porCategoria: {
+      mensalista: (payments || []).filter(p => p.target_type === 'monthly_customer').reduce((sum, p) => sum + Number(p.value), 0),
+      avulso: (tickets || []).filter(t => !t.metadata?.isConvenio).reduce((sum, t) => sum + Number(t.amount), 0),
+      convenio: (tickets || []).filter(t => t.metadata?.isConvenio).reduce((sum, t) => sum + Number(t.amount), 0)
+    }
+  };
+
+  totals.saldoFinalEsperado = totals.saldoInicial + totals.receitas + totals.suprimentos - totals.sangrias;
+
+  const stats = {
+    totalVeiculos: tickets?.length || 0,
+    ticketMedio: tickets?.length > 0 ? (tickets.reduce((sum, t) => sum + Number(t.amount), 0) / tickets.length) : 0,
+    tempoMedio: tickets?.length > 0 ? (tickets.reduce((sum, t) => sum + (t.duration_minutes || 0), 0) / tickets.length) : 0,
+    picoMovimento: 'N/A'
+  };
+
+  if (tickets && tickets.length > 0) {
+    const hours = tickets.map(t => new Date(t.entry_time).getHours());
+    const counts = hours.reduce((acc, h) => { acc[h] = (acc[h] || 0) + 1; return acc; }, {});
+    const peakHour = Object.keys(counts).reduce((a, b) => counts[a] > counts[b] ? a : b);
+    stats.picoMovimento = `${peakHour}:00 - ${Number(peakHour) + 1}:00`;
+  }
+
+  return { session, payments, transactions, tickets, company, totals, stats };
+}
+
 export default {
   /**
    * Open Cash Register
@@ -82,7 +137,7 @@ export default {
       if (sessionError) return res.status(500).json({ error: sessionError.message });
       if (!session) return res.status(404).json({ error: 'Nenhum caixa aberto' });
 
-      const statsData = await this._getReportDataInternal(session.id);
+      const statsData = await _getReportDataInternal(session.id);
       res.json(statsData);
     } catch (error) {
       res.status(500).json({ error: error.message });
@@ -105,7 +160,7 @@ export default {
 
       if (sessError || !session) return res.status(404).json({ error: 'Caixa aberto não encontrado' });
 
-      const data = await this._getReportDataInternal(session.id);
+      const data = await _getReportDataInternal(session.id);
       const expectedAmount = data.totals.saldoFinalEsperado;
       const difference = actualAmount - expectedAmount;
       const endTime = new Date().toISOString();
@@ -209,67 +264,12 @@ export default {
   async getReportData(req, res) {
     try {
       const { id } = req.params;
-      const data = await this._getReportDataInternal(id);
+      const data = await _getReportDataInternal(id);
       if (!data) return res.status(404).json({ error: 'Relatório não encontrado' });
       res.json(data);
     } catch (error) {
       res.status(500).json({ error: error.message });
     }
-  },
-
-  /**
-   * Internal Helper to get report data
-   */
-  async _getReportDataInternal(id) {
-    const { data: session, error: sessionError } = await supabase
-      .from('cash_register_sessions')
-      .select('*')
-      .eq('id', id)
-      .single();
-
-    if (sessionError || !session) return null;
-
-    const startTime = session.opened_at;
-    const endTime = session.is_open ? new Date().toISOString() : session.closed_at;
-
-    const { data: payments } = await supabase.from('payments').select('*').gte('date', startTime).lte('date', endTime);
-    const { data: transactions } = await supabase.from('cash_transactions').select('*').eq('session_id', id);
-    const { data: tickets } = await supabase.from('tickets').select('*').gte('exit_time', startTime).lte('exit_time', endTime).eq('status', 'closed');
-    const { data: company } = await supabase.from('company_config').select('*').eq('id', 'default').single();
-
-    const totals = {
-      saldoInicial: Number(session.opening_amount),
-      receitas: (payments || []).reduce((sum, p) => sum + Number(p.value), 0),
-      suprimentos: (transactions || []).filter(t => t.type === 'suprimento').reduce((sum, t) => sum + Number(t.amount), 0),
-      sangrias: (transactions || []).filter(t => t.type === 'sangria').reduce((sum, t) => sum + Number(t.amount), 0),
-      porMetodo: (payments || []).reduce((acc, p) => {
-        acc[p.method] = (acc[p.method] || 0) + Number(p.value);
-        return acc;
-      }, {}),
-      porCategoria: {
-        mensalista: (payments || []).filter(p => p.target_type === 'monthly_customer').reduce((sum, p) => sum + Number(p.value), 0),
-        avulso: (tickets || []).filter(t => !t.metadata?.isConvenio).reduce((sum, t) => sum + Number(t.amount), 0),
-        convenio: (tickets || []).filter(t => t.metadata?.isConvenio).reduce((sum, t) => sum + Number(t.amount), 0)
-      }
-    };
-
-    totals.saldoFinalEsperado = totals.saldoInicial + totals.receitas + totals.suprimentos - totals.sangrias;
-
-    const stats = {
-      totalVeiculos: tickets?.length || 0,
-      ticketMedio: tickets?.length > 0 ? (tickets.reduce((sum, t) => sum + Number(t.amount), 0) / tickets.length) : 0,
-      tempoMedio: tickets?.length > 0 ? (tickets.reduce((sum, t) => sum + (t.duration_minutes || 0), 0) / tickets.length) : 0,
-      picoMovimento: 'N/A'
-    };
-
-    if (tickets && tickets.length > 0) {
-      const hours = tickets.map(t => new Date(t.entry_time).getHours());
-      const counts = hours.reduce((acc, h) => { acc[h] = (acc[h] || 0) + 1; return acc; }, {});
-      const peakHour = Object.keys(counts).reduce((a, b) => counts[a] > counts[b] ? a : b);
-      stats.picoMovimento = `${peakHour}:00 - ${Number(peakHour) + 1}:00`;
-    }
-
-    return { session, payments, transactions, tickets, company, totals, stats };
   },
 
   /**
@@ -279,7 +279,7 @@ export default {
   async downloadReport(req, res) {
     try {
       const { id, format } = req.params;
-      const data = await this._getReportDataInternal(id);
+      const data = await _getReportDataInternal(id);
       if (!data) return res.status(404).json({ error: 'Relatório não encontrado' });
 
       let content;
