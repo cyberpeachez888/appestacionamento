@@ -80,6 +80,23 @@ BEGIN
     END LOOP;
 END $$;
 
--- 3. COMMENTS
+-- 3. FIXING FUNCTION SEARCH_PATH (PG Linter Warn 0011)
+-- Setting explicit search_path prevents search path hijacking
+
+ALTER FUNCTION update_updated_at_column() SET search_path = public;
+ALTER FUNCTION get_operational_status() SET search_path = public;
+ALTER FUNCTION update_monthly_reports_updated_at() SET search_path = public;
+ALTER FUNCTION update_pricing_rules_updated_at() SET search_path = public;
+ALTER FUNCTION cleanup_old_login_attempts() SET search_path = public;
+ALTER FUNCTION is_account_locked(uuid) SET search_path = public;
+ALTER FUNCTION unlock_account(uuid) SET search_path = public;
+ALTER FUNCTION add_password_to_history() SET search_path = public;
+ALTER FUNCTION cleanup_old_notification_logs() SET search_path = public;
+ALTER FUNCTION update_company_settings_updated_at() SET search_path = public;
+ALTER FUNCTION is_currently_open() SET search_path = public;
+ALTER FUNCTION update_analytics_updated_at() SET search_path = public;
+ALTER FUNCTION calculate_next_report_send(varchar, time, integer, integer) SET search_path = public;
+
+-- 4. COMMENTS
 COMMENT ON VIEW convenios_com_plano_ativo IS 'Security fixed: now uses security_invoker to respect RLS';
 COMMENT ON VIEW convenios_ocupacao IS 'Security fixed: now uses security_invoker to respect RLS';
