@@ -721,7 +721,7 @@ export default function Financeiro() {
             )}
             {cashIsOpen && hasPermission('openCloseCash') && (
               <Button onClick={() => setCloseDialogOpen(true)} variant="destructive">
-                Fechar Caixa
+                Finalizar Turno
               </Button>
             )}
           </div>
