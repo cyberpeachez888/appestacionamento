@@ -97,6 +97,32 @@ ALTER FUNCTION is_currently_open() SET search_path = public;
 ALTER FUNCTION update_analytics_updated_at() SET search_path = public;
 ALTER FUNCTION calculate_next_report_send(varchar, time, integer, integer) SET search_path = public;
 
--- 4. COMMENTS
+-- 4. PERFORMANCE OPTIMIZATIONS (Duplicate Indexes & Redundant Policies)
+
+-- 4.1. Drop Duplicate Indexes (PG Linter Warn 0009)
+DROP INDEX IF EXISTS idx_planos_ativo;
+DROP INDEX IF EXISTS idx_planos_convenio;
+DROP INDEX IF EXISTS idx_pricing_rules_rate;
+
+-- 4.2. Clean up Redundant/Conflicting Policies (PG Linter Warn 0006)
+-- Dropping older policies that overlap with the new "Allow all for authenticated users" policy
+-- or are redundant with each other.
+
+-- company_settings
+DROP POLICY IF EXISTS "Allow anyone to manage company settings" ON company_settings;
+DROP POLICY IF EXISTS "Allow anyone to read company settings" ON company_settings;
+DROP POLICY IF EXISTS "Allow authenticated users to read company settings" ON company_settings;
+
+-- convenios tables
+DROP POLICY IF EXISTS "Allow all access to convenios" ON convenios;
+DROP POLICY IF EXISTS "Allow all access to convenios_planos" ON convenios_planos;
+DROP POLICY IF EXISTS "Allow all access to convenios_veiculos" ON convenios_veiculos;
+DROP POLICY IF EXISTS "Allow all access to convenios_movimentacoes" ON convenios_movimentacoes;
+DROP POLICY IF EXISTS "Allow all access to convenios_faturas" ON convenios_faturas;
+DROP POLICY IF EXISTS "Allow all access to convenios_historico" ON convenios_historico;
+DROP POLICY IF EXISTS "Allow all access to convenios_documentos" ON convenios_documentos;
+DROP POLICY IF EXISTS "Allow all access to notificacoes" ON notificacoes;
+
+-- 5. COMMENTS
 COMMENT ON VIEW convenios_com_plano_ativo IS 'Security fixed: now uses security_invoker to respect RLS';
 COMMENT ON VIEW convenios_ocupacao IS 'Security fixed: now uses security_invoker to respect RLS';
