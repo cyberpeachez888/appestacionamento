@@ -298,7 +298,7 @@ export default function Financeiro() {
       }
     };
     load();
-  }, [startDate, endDate, toast]);
+  }, [startDate, endDate, toast, cashIsOpen, cashSession]);
 
   // Warn and attempt to force a close flow when trying to leave with cash open
   useEffect(() => {
@@ -711,18 +711,23 @@ export default function Financeiro() {
               <FileText className="h-4 w-4 mr-2" />
               Gerar Relatório Mensal
             </Button>
-            {!cashIsOpen && hasPermission('openCloseCash') && (
-              <Button
-                onClick={() => setOpenDialogOpen(true)}
-                className="bg-green-600 hover:bg-green-700"
-              >
-                Abrir Caixa
-              </Button>
-            )}
-            {cashIsOpen && hasPermission('openCloseCash') && (
-              <Button onClick={() => setCloseDialogOpen(true)} variant="destructive">
-                Finalizar Turno
-              </Button>
+            {hasPermission('openCloseCash') && (
+              <div className="flex gap-2">
+                <Button
+                  onClick={() => setOpenDialogOpen(true)}
+                  className="bg-green-600 hover:bg-green-700"
+                  disabled={cashIsOpen}
+                >
+                  Abrir Caixa
+                </Button>
+                <Button
+                  onClick={() => setCloseDialogOpen(true)}
+                  variant="destructive"
+                  disabled={!cashIsOpen}
+                >
+                  Finalizar Turno
+                </Button>
+              </div>
             )}
           </div>
         </div>

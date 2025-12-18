@@ -18,6 +18,7 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { SangriaSuprimentoDialog } from '@/components/cash/SangriaSuprimentoDialog';
 import { DialogFechamento } from '@/components/cash/DialogFechamento';
+import { OpenCashRegisterDialog } from '@/components/OpenCashRegisterDialog';
 
 interface ShiftOperationsProps {
     onSessionClose?: () => void;
@@ -30,6 +31,7 @@ export const ShiftOperations = ({ onSessionClose }: ShiftOperationsProps) => {
     const [isTxDialogOpen, setIsTxDialogOpen] = useState(false);
     const [txType, setTxType] = useState<'sangria' | 'suprimento'>('sangria');
     const [isCloseDialogOpen, setIsCloseDialogOpen] = useState(false);
+    const [isOpenDialogOpen, setIsOpenDialogOpen] = useState(false);
 
     const fetchData = async () => {
         try {
@@ -39,7 +41,7 @@ export const ShiftOperations = ({ onSessionClose }: ShiftOperationsProps) => {
         } catch (error: any) {
             console.error('Error fetching summary:', error);
             // We don't toast 404 here because it might just mean the cash is closed
-            if (error.message?.includes('404')) {
+            if (error.status === 404 || error.message?.includes('404')) {
                 setData(null);
             } else {
                 toast({
@@ -68,6 +70,11 @@ export const ShiftOperations = ({ onSessionClose }: ShiftOperationsProps) => {
         if (onSessionClose) onSessionClose();
     };
 
+    const handleOpenSuccess = () => {
+        setIsOpenDialogOpen(false);
+        fetchData();
+    };
+
     if (loading) return <div className="p-8 text-center bg-card rounded-lg border border-dashed">Carregando resumo financeiro...</div>;
 
     if (!data) return (
@@ -78,7 +85,10 @@ export const ShiftOperations = ({ onSessionClose }: ShiftOperationsProps) => {
                 </div>
                 <div className="max-w-xs">
                     <h3 className="font-bold text-lg">Caixa Fechado</h3>
-                    <p className="text-sm text-muted-foreground">Não há um turno aberto no momento. Abra o caixa para gerenciar operações.</p>
+                    <p className="text-sm text-muted-foreground mb-4">Não há um turno aberto no momento. Abra o caixa para gerenciar operações.</p>
+                    <Button onClick={() => setIsOpenDialogOpen(true)} className="bg-emerald-600 hover:bg-emerald-700 w-full">
+                        <DollarSign className="mr-2 h-4 w-4" /> Abrir Caixa
+                    </Button>
                 </div>
             </CardContent>
         </Card>
@@ -106,7 +116,10 @@ export const ShiftOperations = ({ onSessionClose }: ShiftOperationsProps) => {
                         <span className="font-semibold">Status:</span>
                         <span className="px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full text-xs font-bold uppercase tracking-wider">Aberto</span>
                     </div>
-                    <div className="ml-auto">
+                    <div className="ml-auto flex gap-2">
+                        <Button onClick={() => setIsOpenDialogOpen(true)} variant="outline" size="sm" className="border-emerald-600 text-emerald-600 hover:bg-emerald-50" disabled={!!session}>
+                            <DollarSign className="mr-2 h-4 w-4" /> Abrir Caixa
+                        </Button>
                         <Button onClick={() => setIsCloseDialogOpen(true)} variant="default" size="sm" className="bg-emerald-600 hover:bg-emerald-700">
                             <Calculator className="mr-2 h-4 w-4" /> Finalizar Turno
                         </Button>
@@ -279,6 +292,12 @@ export const ShiftOperations = ({ onSessionClose }: ShiftOperationsProps) => {
                 onClose={() => setIsCloseDialogOpen(false)}
                 summaryData={data}
                 onSuccess={handleCloseSuccess}
+            />
+
+            <OpenCashRegisterDialog
+                open={isOpenDialogOpen}
+                onOpenChange={setIsOpenDialogOpen}
+                onSuccess={handleOpenSuccess}
             />
         </div>
     );

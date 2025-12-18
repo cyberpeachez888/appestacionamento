@@ -223,7 +223,7 @@ export const ParkingProvider: React.FC<{ children: ReactNode }> = ({ children })
 
         // Auth-dependent resources
         if (token) {
-          const [customersData, configData, cashSessionData] = await Promise.all([
+          const [customersData, configData, cashSessionData, historyData] = await Promise.all([
             api.getMonthlyCustomers().catch((err) => {
               console.error('Error loading monthly customers:', err);
               return [];
@@ -235,6 +235,10 @@ export const ParkingProvider: React.FC<{ children: ReactNode }> = ({ children })
             api.getCurrentCashRegisterSession().catch((err) => {
               console.error('Error loading cash register session:', err);
               return { isOpen: false, session: null };
+            }),
+            api.getCashRegisterHistory().catch((err) => {
+              console.error('Error loading cash register history:', err);
+              return [];
             }),
           ]);
           setMonthlyCustomers(customersData || []);
@@ -254,6 +258,13 @@ export const ParkingProvider: React.FC<{ children: ReactNode }> = ({ children })
             if (!cashSessionData?.isOpen) {
               setCashSession(undefined);
             }
+          }
+
+          // Atualizar último valor de fechamento se houver histórico
+          if (historyData && historyData.length > 0) {
+            const lastSession = historyData[0]; // history is sorted by closed_at DESC in backend
+            const closingAmount = Number(lastSession.actual_amount || lastSession.closing_amount || 0);
+            setLastClosingAmount(closingAmount);
           }
         } else {
           // If logged out, clear auth-bound data

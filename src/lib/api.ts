@@ -60,7 +60,7 @@ class ApiClient {
     this.authToken = token || null;
   }
 
-  private async request<T>(endpoint: string, options?: RequestInit): Promise<T> {
+  private async request<T>(endpoint: string, options?: RequestInit & { responseType?: 'json' | 'blob' }): Promise<T> {
     const url = `${this.baseUrl}${endpoint}`;
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
@@ -127,11 +127,17 @@ class ApiClient {
         if (response.status === 401) {
           throw new Error(message || 'Unauthorized');
         }
-        throw new Error(message || `HTTP ${response.status}: ${response.statusText}`);
+        const error = new Error(message || `HTTP ${response.status}: ${response.statusText}`);
+        (error as any).status = response.status;
+        throw error;
       }
 
       if (response.status === 204) {
         return null as T;
+      }
+
+      if (options?.responseType === 'blob') {
+        return await response.blob() as any;
       }
 
       // Verify response is JSON before parsing
@@ -1097,6 +1103,10 @@ class ApiClient {
         operatorId?: string;
       } | null;
     }>('/cash-register/current');
+  }
+
+  async getCashRegisterHistory() {
+    return this.request<any[]>('/cash-register/history');
   }
 }
 
