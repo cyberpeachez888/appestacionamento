@@ -876,7 +876,7 @@ export default function ModelosRecibos() {
     const isCustomType = !['parking_ticket', 'monthly_payment', 'general_receipt'].includes(template.templateType);
     setIsCreatingCustomType(isCustomType);
     setCustomTypeName(isCustomType ? template.templateType : '');
-    
+
     // Se não tiver customTemplateText, gerar o padrão baseado no tipo
     const templateData = { ...template };
     if (template.templateType === 'parking_ticket') {
@@ -910,7 +910,7 @@ export default function ModelosRecibos() {
       });
       return;
     }
-    
+
     if (!formData.templateName || !formData.templateType || formData.templateType.trim() === '') {
       toast({
         title: 'Erro',
@@ -1039,6 +1039,8 @@ export default function ModelosRecibos() {
               <SelectItem value="parking_ticket">Ticket de Estacionamento</SelectItem>
               <SelectItem value="monthly_payment">Mensalista</SelectItem>
               <SelectItem value="general_receipt">Recibo de Reembolso</SelectItem>
+              <SelectItem value="cash_closing_thermal">Fechamento de Caixa (Térmico)</SelectItem>
+              <SelectItem value="cash_closing_pdf">Fechamento de Caixa (PDF)</SelectItem>
             </SelectContent>
           </Select>
 
@@ -1064,13 +1066,12 @@ export default function ModelosRecibos() {
             filteredTemplates.map((template) => (
               <div
                 key={template.id}
-                className={`bg-card border rounded-lg p-6 hover:shadow-md transition-shadow ${
-                  template.id === previewTemplate?.id
+                className={`bg-card border rounded-lg p-6 hover:shadow-md transition-shadow ${template.id === previewTemplate?.id
                     ? 'border-primary ring-1 ring-primary/30'
                     : template.isDefault
                       ? 'border-primary'
                       : ''
-                }`}
+                  }`}
               >
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex-1">
@@ -1083,11 +1084,10 @@ export default function ModelosRecibos() {
                     </p>
                   </div>
                   <div
-                    className={`px-2 py-1 rounded text-xs ${
-                      template.isActive
+                    className={`px-2 py-1 rounded text-xs ${template.isActive
                         ? 'bg-success/10 text-success'
                         : 'bg-muted text-muted-foreground'
-                    }`}
+                      }`}
                   >
                     {template.isActive ? 'Ativo' : 'Inativo'}
                   </div>
@@ -1298,9 +1298,9 @@ export default function ModelosRecibos() {
                 <div>
                   <Label>Tipo *</Label>
                   {!isCreatingCustomType ? (
-                  <Select
+                    <Select
                       value={formData.templateType || ''}
-                    onValueChange={(v: any) => {
+                      onValueChange={(v: any) => {
                         if (v === '__create_new__') {
                           // Usuário quer criar tipo customizado
                           setIsCreatingCustomType(true);
@@ -1314,41 +1314,41 @@ export default function ModelosRecibos() {
                           });
                         } else {
                           // Tipo padrão selecionado
-                      const newType = v as 'parking_ticket' | 'monthly_payment' | 'general_receipt';
-                      if (newType === 'parking_ticket') {
-                        // Para parking_ticket, usar templates separados
-                        const defaultParking = generateDefaultTemplateTextParking(companyConfig);
-                        setFormData({
-                          ...formData,
-                          templateType: newType,
-                          customTemplateText: undefined,
-                          customTemplateTextEntry: formData.customTemplateTextEntry || defaultParking.entry,
-                          customTemplateTextExit: formData.customTemplateTextExit || defaultParking.exit,
-                        });
-                      } else {
-                        // Para outros tipos, usar template único
-                        const shouldUpdateTemplate =
-                          !formData.customTemplateText || formData.customTemplateText.trim() === '';
-                        const newTemplateText = shouldUpdateTemplate
-                          ? generateDefaultTemplateText(newType, companyConfig)
-                          : formData.customTemplateText;
-                        setFormData({
-                          ...formData,
-                          templateType: newType,
-                          customTemplateText: newTemplateText,
-                          customTemplateTextEntry: undefined,
-                          customTemplateTextExit: undefined,
-                        });
+                          const newType = v as 'parking_ticket' | 'monthly_payment' | 'general_receipt';
+                          if (newType === 'parking_ticket') {
+                            // Para parking_ticket, usar templates separados
+                            const defaultParking = generateDefaultTemplateTextParking(companyConfig);
+                            setFormData({
+                              ...formData,
+                              templateType: newType,
+                              customTemplateText: undefined,
+                              customTemplateTextEntry: formData.customTemplateTextEntry || defaultParking.entry,
+                              customTemplateTextExit: formData.customTemplateTextExit || defaultParking.exit,
+                            });
+                          } else {
+                            // Para outros tipos, usar template único
+                            const shouldUpdateTemplate =
+                              !formData.customTemplateText || formData.customTemplateText.trim() === '';
+                            const newTemplateText = shouldUpdateTemplate
+                              ? generateDefaultTemplateText(newType, companyConfig)
+                              : formData.customTemplateText;
+                            setFormData({
+                              ...formData,
+                              templateType: newType,
+                              customTemplateText: newTemplateText,
+                              customTemplateTextEntry: undefined,
+                              customTemplateTextExit: undefined,
+                            });
                           }
-                      }
-                    }}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="parking_ticket">Ticket de Estacionamento</SelectItem>
-                      <SelectItem value="monthly_payment">Mensalista</SelectItem>
+                        }
+                      }}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="parking_ticket">Ticket de Estacionamento</SelectItem>
+                        <SelectItem value="monthly_payment">Mensalista</SelectItem>
                         <SelectItem value="general_receipt">Recibo de Reembolso</SelectItem>
                         <SelectItem value="__create_new__">
                           <span className="flex items-center gap-2">
@@ -1356,8 +1356,8 @@ export default function ModelosRecibos() {
                             Criar Novo +
                           </span>
                         </SelectItem>
-                    </SelectContent>
-                  </Select>
+                      </SelectContent>
+                    </Select>
                   ) : (
                     <div className="space-y-2">
                       <div className="flex gap-2">
@@ -2125,14 +2125,14 @@ export default function ModelosRecibos() {
                         ? `{{receiptNumber}}, {{recipientName}}, {{recipientCpf}}, {{plate}}, {{value}}, {{date}}, {{time}}, {{paymentMethod}}, {{description}}, {{issuedBy}}, {{companyName}}, etc.`
                         : `{{receiptNumber}}, {{date}}, {{time}}, {{plate}}, {{value}}, {{paymentMethod}}, {{companyName}}, etc.`}
                   </p>
-                  
+
                   {/* Tabs para Editor e Preview */}
                   <Tabs defaultValue="editor" className="w-full">
                     <TabsList className="grid w-full grid-cols-2">
                       <TabsTrigger value="editor">Editor HTML</TabsTrigger>
                       <TabsTrigger value="preview">Preview</TabsTrigger>
                     </TabsList>
-                    
+
                     <TabsContent value="editor" className="space-y-2">
                       <Textarea
                         value={formData.emailBodyHtml || ''}
@@ -2145,7 +2145,7 @@ export default function ModelosRecibos() {
                         💡 Dica: Use variáveis entre chaves duplas, ex: {`{{receiptNumber}}`}
                       </p>
                     </TabsContent>
-                    
+
                     <TabsContent value="preview" className="space-y-2">
                       <div className="border rounded-lg p-4 bg-white max-h-[600px] overflow-auto">
                         {formData.emailBodyHtml ? (

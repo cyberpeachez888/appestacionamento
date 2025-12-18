@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<fechamento_caixa>
+  <identificacao>
+    <numero>123</numero>
+    <data>2025-12-18</data>
+    <abertura>2025-12-18T13:26:06.281Z</abertura>
+    <fechamento>2025-12-18T14:26:06.281Z</fechamento>
+    <operador>Operador Teste</operador>
+  </identificacao>
+  <financeiro>
+    <saldo_inicial>100</saldo_inicial>
+    <receitas>150</receitas>
+    <suprimentos>20</suprimentos>
+    <sangrias>20</sangrias>
+    <saldo_final>250</saldo_final>
+    <diferenca>0</diferenca>
+  </financeiro>
+  <metodos_pagamento>
+    <metodo>
+      <nome>cash</nome>
+      <valor>100</valor>
+    </metodo>
+    <metodo>
+      <nome>credit</nome>
+      <valor>50</valor>
+    </metodo>
+  </metodos_pagamento>
+</fechamento_caixa>

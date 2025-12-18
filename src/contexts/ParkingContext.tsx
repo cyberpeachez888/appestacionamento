@@ -307,6 +307,7 @@ export const ParkingProvider: React.FC<{ children: ReactNode }> = ({ children })
           const response = await api.openCashRegister({
             openingAmount,
             operatorName: trimmedOperatorName,
+            openedAt: nowIso,
           });
 
           // Sucesso: atualizar estado local com dados do servidor

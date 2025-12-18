@@ -165,7 +165,7 @@ export function generateThermalPreview(
   center('       2025');
   center('════════════════════');
   push('');
-  
+
   if (template.showLogo) {
     center('[ LOGO ]');
   }
@@ -230,6 +230,24 @@ export function generateThermalPreview(
     if (sample.slot) {
       push(`Vaga: ${sample.slot}`);
     }
+  }
+
+  if (template.templateType === 'cash_closing_thermal' || template.templateType === 'cash_closing_pdf') {
+    center('=== FECHAMENTO DE CAIXA ===');
+    if (sample.receiptNumber) push(`Relatório Nº: ${sample.receiptNumber}`);
+    push(`Data: ${formatDateBR(baseDate)}`);
+    if (sample.payment?.receivedBy) push(`Operador: ${sample.payment.receivedBy}`);
+    push(separator);
+    push('RESUMO FINANCEIRO');
+    push(`Saldo Inicial: ${formatCurrencyBR(100)}`);
+    push(`Receitas (+): R$ 150,00`);
+    push(`Sangrias (-): R$ 20,00`);
+    push(`Saldo Final: R$ 230,00`);
+    push(separator);
+    push('ESTATÍSTICAS');
+    push(`Veículos: 12`);
+    push(`Ticket Médio: R$ 15,00`);
+    push(`Permanência: 1h 45m`);
   }
 
   if (template.showValue) {

@@ -739,6 +739,38 @@ router.get(
   requireAuth,
   cashRegisterController.getCurrent
 );
+router.get(
+  '/cash-register/summary',
+  requireAuth,
+  cashRegisterController.getSummary
+);
+router.post(
+  '/cash-register/transaction',
+  requireAuth,
+  requirePermission('openCloseCash'),
+  cashRegisterController.addTransaction
+);
+router.post(
+  '/cash-register/close',
+  requireAuth,
+  requirePermission('openCloseCash'),
+  cashRegisterController.close
+);
+router.get(
+  '/cash-register/history',
+  requireAuth,
+  cashRegisterController.history
+);
+router.get(
+  '/cash-register/report/:id',
+  requireAuth,
+  cashRegisterController.getReportData
+);
+router.get(
+  '/cash-register/report/:id/:format',
+  requireAuth,
+  cashRegisterController.downloadReport
+);
 
 // Convenios (Corporate Agreements Management)
 router.use('/convenios', conveniosRoutes);

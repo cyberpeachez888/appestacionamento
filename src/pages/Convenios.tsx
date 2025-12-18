@@ -168,6 +168,12 @@ export default function ConveniosPage() {
             });
         }
     };
+    const handleGenerateContract = (convenio: Convenio) => {
+        toast({
+            title: 'Gerar Contrato',
+            description: `Funcionalidade em desenvolvimento para: ${convenio.nome_empresa}`,
+        });
+    };
 
     const getStatusText = (convenio: Convenio) => {
         if (convenio.inadimplente) return 'Inadimplente';
@@ -382,7 +388,13 @@ export default function ConveniosPage() {
                                                                 </Button>
                                                             ) : (
                                                                 <>
-                                                                    <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground">
+                                                                    <Button
+                                                                        variant="ghost"
+                                                                        size="icon"
+                                                                        className="h-8 w-8 text-muted-foreground"
+                                                                        onClick={() => handleGenerateContract(convenio)}
+                                                                        title="Gerar Contrato"
+                                                                    >
                                                                         <FileText className="h-4 w-4" />
                                                                     </Button>
                                                                     <Button variant="ghost" size="icon" className="h-8 w-8 text-amber-600 hover:text-amber-700 hover:bg-amber-50" onClick={() => handleStatusChange(convenio, 'suspenso')}>

@@ -148,6 +148,24 @@ class ApiClient {
     }
   }
 
+  // Generic methods for simple calls
+  async get<T>(endpoint: string, options?: any) {
+    const fetchOptions: RequestInit = {
+      ...(options || {}),
+      method: 'GET'
+    };
+    return this.request<T>(endpoint, fetchOptions);
+  }
+
+  async post<T>(endpoint: string, data?: any, options?: any) {
+    const fetchOptions: RequestInit = {
+      ...(options || {}),
+      method: 'POST',
+      body: data ? JSON.stringify(data) : undefined
+    };
+    return this.request<T>(endpoint, fetchOptions);
+  }
+
   // Rates endpoints
   async getRates() {
     return this.request<Rate[]>('/rates');
@@ -1058,15 +1076,10 @@ class ApiClient {
   }
 
   // Cash Register endpoints
-  async openCashRegister(data: { openingAmount: number; operatorName: string }) {
+  async openCashRegister(data: { openingAmount: number; operatorName: string; openedAt?: string }) {
     return this.request<{
       success: boolean;
-      session: {
-        id: string;
-        openedAt: string;
-        openingAmount: number;
-        operatorName: string;
-      };
+      session: { id: string; openedAt: string; openingAmount: number; operatorName: string };
     }>('/cash-register/open', {
       method: 'POST',
       body: JSON.stringify(data),

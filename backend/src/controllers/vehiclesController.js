@@ -51,7 +51,9 @@ export default {
         vehicle_plate: req.body.plate,
         vehicle_type: req.body.vehicleType,
         entry_time: entryDateTime.toISOString(),
-        status: 'open',
+        status: req.body.exitDate && req.body.exitTime ? 'closed' : 'open',
+        exit_time: req.body.exitDate && req.body.exitTime ? new Date(`${req.body.exitDate}T${req.body.exitTime}`).toISOString() : null,
+        amount: req.body.totalValue || 0,
         metadata: {
           rateId: req.body.rateId,
           contractedDays: req.body.contractedDays,
@@ -63,6 +65,22 @@ export default {
       const { data, error } = await supabase.from(ticketsTable).insert(payload).select().single();
       if (error) return res.status(500).json({ error });
 
+      // If registered with exit, create payment record
+      if (payload.status === 'closed') {
+        try {
+          await supabase.from('payments').insert({
+            id: uuid(),
+            target_type: 'ticket',
+            target_id: id,
+            date: payload.exit_time,
+            value: payload.amount,
+            method: req.body.paymentMethod || 'cash',
+          });
+        } catch (paymentErr) {
+          console.error('Failed to create payment for simultaneous ticket creation', id, paymentErr);
+        }
+      }
+
       // Return in vehicle format
       const vehicle = {
         id: data.id,
@@ -70,8 +88,10 @@ export default {
         vehicleType: data.vehicle_type,
         entryDate: req.body.entryDate,
         entryTime: req.body.entryTime,
-        status: 'Em andamento',
-        totalValue: 0,
+        exitDate: data.exit_time ? new Date(data.exit_time).toISOString().split('T')[0] : undefined,
+        exitTime: data.exit_time ? new Date(data.exit_time).toTimeString().slice(0, 5) : undefined,
+        status: data.status === 'closed' ? 'Concluído' : 'Em andamento',
+        totalValue: data.amount || 0,
         rateId: req.body.rateId,
         contractedDays: req.body.contractedDays,
         contractedEndDate: req.body.contractedEndDate,

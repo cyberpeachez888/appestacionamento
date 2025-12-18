@@ -114,8 +114,17 @@ export const VehicleDialog = ({ open, onOpenChange, vehicle, onSaved }: VehicleD
   const calculateCurrentValue = () => {
     // Se for convênio, valor é zero ou calculado depois
     if (convenioData) return 0;
-    if (!vehicle || !exitDate || !exitTime || !selectedRate) return 0;
-    return calculateRate(vehicle, selectedRate, exitDate, exitTime);
+
+    // Suporte para cálculo em novos veículos (registro simultâneo)
+    const currentVehicle = vehicle || {
+      entryDate,
+      entryTime,
+      vehicleType,
+      rateId,
+    } as Vehicle;
+
+    if (!exitDate || !exitTime || !selectedRate) return 0;
+    return calculateRate(currentVehicle, selectedRate, exitDate, exitTime);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -128,6 +137,20 @@ export const VehicleDialog = ({ open, onOpenChange, vehicle, onSaved }: VehicleD
         variant: 'destructive',
       });
       return;
+    }
+
+    // Validação temporal para registro simultâneo
+    if (exitDate && exitTime) {
+      const entry = new Date(`${entryDate}T${entryTime}`);
+      const exit = new Date(`${exitDate}T${exitTime}`);
+      if (exit <= entry) {
+        toast({
+          title: 'Erro na data/hora',
+          description: 'A hora de saída deve ser posterior à hora de entrada',
+          variant: 'destructive',
+        });
+        return;
+      }
     }
 
     const vehicleData = {
@@ -342,13 +365,28 @@ export const VehicleDialog = ({ open, onOpenChange, vehicle, onSaved }: VehicleD
                 id="exitTime"
                 type="time"
                 value={exitTime}
-                onChange={(e) => setExitTime(e.target.value)}
+                onChange={(e) => {
+                  setExitTime(e.target.value);
+                  if (e.target.value && !exitDate) {
+                    setExitDate(entryDate);
+                  }
+                }}
               />
             </div>
           </div>
 
-          {exitDate && exitTime && vehicle && selectedRate && (
-            <div className="bg-muted p-4 rounded-lg">
+          {exitTime && !vehicle && (
+            <div className="bg-blue-50 border-blue-200 border p-3 rounded-md flex items-center gap-2 animate-in fade-in slide-in-from-top-1 duration-500">
+              <span className="text-blue-600">ℹ️</span>
+              <p className="text-sm text-blue-800">
+                Ao informar a hora de saída, você está registrando entrada e saída simultâneas.
+                O valor será calculado automaticamente.
+              </p>
+            </div>
+          )}
+
+          {exitDate && exitTime && (vehicle || plate) && selectedRate && (
+            <div className="bg-muted p-4 rounded-lg animate-in zoom-in-95 duration-300">
               <p className="text-sm text-muted-foreground">Valor calculado:</p>
               <p className="text-2xl font-bold text-primary">
                 R$ {calculateCurrentValue().toFixed(2)}

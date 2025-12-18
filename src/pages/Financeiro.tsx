@@ -8,7 +8,9 @@ import { useParking } from '@/contexts/ParkingContext';
 import { useAuth } from '@/contexts/AuthContext';
 import api from '@/lib/api';
 import OpenCashRegisterDialog from '@/components/OpenCashRegisterDialog';
-import CloseCashRegisterDialog from '@/components/CloseCashRegisterDialog';
+import { DialogFechamento as CloseCashRegisterDialog } from '@/components/cash/DialogFechamento';
+import { ShiftOperations } from '@/components/cash/ShiftOperations';
+import { ShiftHistory } from '@/components/cash/ShiftHistory';
 import { MonthlyReportDialog } from '@/components/MonthlyReportDialog';
 import { Input } from '@/components/ui/input';
 import {
@@ -804,11 +806,21 @@ export default function Financeiro() {
           </div>
         </div>
 
-        <Tabs defaultValue="expenses" className="space-y-6">
-          <TabsList>
+        <Tabs defaultValue="shift-ops" className="space-y-6">
+          <TabsList className="grid w-full grid-cols-2 md:w-auto md:flex">
+            <TabsTrigger value="shift-ops">Operações de Turno</TabsTrigger>
+            <TabsTrigger value="shift-history">Histórico de Turnos</TabsTrigger>
             <TabsTrigger value="expenses">Despesas</TabsTrigger>
             <TabsTrigger value="revenues">Receitas Manuais</TabsTrigger>
           </TabsList>
+
+          <TabsContent value="shift-ops">
+            <ShiftOperations onSessionClose={() => { }} />
+          </TabsContent>
+
+          <TabsContent value="shift-history">
+            <ShiftHistory />
+          </TabsContent>
 
           <TabsContent value="expenses" className="space-y-4">
             <div className="flex items-center justify-between">
@@ -1248,7 +1260,12 @@ export default function Financeiro() {
         onOpenChange={setOpenDialogOpen}
         totalRevenue={totalRevenue}
       />
-      <CloseCashRegisterDialog open={closeDialogOpen} onOpenChange={setCloseDialogOpen} />
+      <CloseCashRegisterDialog
+        isOpen={closeDialogOpen}
+        onClose={() => setCloseDialogOpen(false)}
+        summaryData={null} // DialogFechamento will fetch if null? Actually ShiftOperations handles its own dialog
+        onSuccess={() => { }}
+      />
       <MonthlyReportDialog
         open={monthlyReportDialogOpen}
         onOpenChange={setMonthlyReportDialogOpen}

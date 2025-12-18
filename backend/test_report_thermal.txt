@@ -1,0 +1,51 @@
+========================================
+          Estacionamento Teste
+           00.000.000/0001-91
+          Rua de Exemplo, 123
+========================================
+       FECHAMENTO DE CAIXA DIÁRIO
+           Relatório Nº: 123
+========================================
+Data: 18/12/2025
+Abertura: 10:26
+Fechamento: 11:26
+Operador: Operador Teste
+========================================
+
+RESUMO FINANCEIRO
+----------------------------------------
+Saldo Inicial:        R$ 100,00
+(+) Total Entradas:   R$ 150,00
+(+) Suprimentos:      R$ 20,00
+(-) Total Saídas:     R$ 20,00
+(=) Saldo Final:      R$ 250,00
+----------------------------------------
+Diferença Esp. x Real: R$ 0,00
+========================================
+
+TOTAIS POR CATEGORIA
+----------------------------------------
+Mensalistas:          R$ 50,00
+Avulsos:              R$ 100,00
+Convênios:            R$ 0,00
+========================================
+
+FORMAS DE PAGAMENTO
+----------------------------------------
+Dinheiro                       R$ 100,00
+Cartão Crédito                  R$ 50,00
+========================================
+
+DADOS IMPORTANTES
+----------------------------------------
+Total de Veículos: 5
+Ticket Médio: R$ 30,00
+Tempo Médio: 2h 0min
+========================================
+
+Assinatura: _______________________
+
+========================================
+        Sistema ProParking v1.0
+      Gerado em: 18/12/2025 11:26
+========================================
