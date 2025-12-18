@@ -45,7 +45,7 @@ GROUP BY c.id, c.nome_empresa, p.num_vagas_contratadas;
 
 DO $$
 DECLARE
-    table_name TEXT;
+    t_name TEXT;
     target_tables TEXT[] := ARRAY[
         'kpi_thresholds', 'rates', 'payments', 'vehicle_types', 'monthly_reports', 
         'monthly_customers', 'archived_tickets', 'company_config', 'integration_configs', 
@@ -63,19 +63,19 @@ DECLARE
         'convenios_documentos', 'notificacoes'
     ];
 BEGIN
-    FOREACH table_name IN ARRAY target_tables
+    FOREACH t_name IN ARRAY target_tables
     LOOP
         -- Check if table exists
-        IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = table_name AND table_schema = 'public') THEN
+        IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = t_name AND table_schema = 'public') THEN
             -- Enable RLS
-            EXECUTE format('ALTER TABLE public.%I ENABLE ROW LEVEL SECURITY', table_name);
+            EXECUTE format('ALTER TABLE public.%I ENABLE ROW LEVEL SECURITY', t_name);
             
             -- Create "Allow All for Authenticated" policy
             -- First drop if exists to be idempotent
-            EXECUTE format('DROP POLICY IF EXISTS "Allow all for authenticated users" ON public.%I', table_name);
-            EXECUTE format('CREATE POLICY "Allow all for authenticated users" ON public.%I FOR ALL TO authenticated USING (true) WITH CHECK (true)', table_name);
+            EXECUTE format('DROP POLICY IF EXISTS "Allow all for authenticated users" ON public.%I', t_name);
+            EXECUTE format('CREATE POLICY "Allow all for authenticated users" ON public.%I FOR ALL TO authenticated USING (true) WITH CHECK (true)', t_name);
             
-            RAISE NOTICE 'RLS enabled and policy created for table: %', table_name;
+            RAISE NOTICE 'RLS enabled and policy created for table: %', t_name;
         END IF;
     END LOOP;
 END $$;
