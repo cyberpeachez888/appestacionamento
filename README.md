@@ -195,14 +195,3 @@ Frontend integration:
 - Use the Login page at `/login`.
 - Admin-only Users page: `/users`.
 
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/21c797df-ffb2-41a2-8f2b-0897f99d7ffb) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
