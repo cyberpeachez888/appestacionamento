@@ -411,6 +411,12 @@ export function ConvenioDetailPanel({ convenioId, onClose }: ConvenioDetailPanel
                                             <dt className="text-sm text-muted-foreground">Horário Especial</dt>
                                             <dd className="font-medium">{planoAtivo.permite_horario_especial ? 'Sim' : 'Não'}</dd>
                                         </div>
+                                        {planoAtivo.porcentagem_desconto && Number(planoAtivo.porcentagem_desconto) > 0 && (
+                                            <div>
+                                                <dt className="text-sm text-muted-foreground">Desconto</dt>
+                                                <dd className="font-medium text-green-600">{Number(planoAtivo.porcentagem_desconto).toFixed(2)}%</dd>
+                                            </div>
+                                        )}
                                     </dl>
                                 </div>
                             </div>

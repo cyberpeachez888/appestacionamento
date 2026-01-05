@@ -62,6 +62,7 @@ export function DialogNovoConvenio({ open, onOpenChange, onSuccess }: DialogNovo
     const [permiteVagasExtras, setPermiteVagasExtras] = useState(false);
     const [valorVagaExtra, setValorVagaExtra] = useState('');
     const [diaFechamento, setDiaFechamento] = useState(''); // New state for pos-pago
+    const [porcentagemDesconto, setPorcentagemDesconto] = useState(''); // Discount percentage
 
     // Passo 4: Contrato
     const [dataInicio, setDataInicio] = useState('');
@@ -86,6 +87,7 @@ export function DialogNovoConvenio({ open, onOpenChange, onSuccess }: DialogNovo
         setDiaFechamento('');
         setPermiteVagasExtras(false);
         setValorVagaExtra('');
+        setPorcentagemDesconto('');
         setDataInicio('');
         setDataVencimentoContrato('');
     };
@@ -121,6 +123,7 @@ export function DialogNovoConvenio({ open, onOpenChange, onSuccess }: DialogNovo
 
                     permite_vagas_extras: permiteVagasExtras,
                     valor_vaga_extra: permiteVagasExtras ? parseFloat(valorVagaExtra) : undefined,
+                    porcentagem_desconto: porcentagemDesconto ? parseFloat(porcentagemDesconto) : undefined,
                 },
             };
 
@@ -397,6 +400,28 @@ export function DialogNovoConvenio({ open, onOpenChange, onSuccess }: DialogNovo
                                     </div>
                                 </>
                             ) : null}
+
+                            {/* Campo de Desconto - Aparece para ambos os tipos */}
+                            {tipoConvenio && (
+                                <div className="grid gap-2">
+                                    <Label htmlFor="porcentagem_desconto">
+                                        Desconto Percentual (Opcional)
+                                    </Label>
+                                    <Input
+                                        id="porcentagem_desconto"
+                                        type="number"
+                                        step="0.01"
+                                        min="0"
+                                        max="100"
+                                        value={porcentagemDesconto}
+                                        onChange={(e) => setPorcentagemDesconto(e.target.value)}
+                                        placeholder="0.00"
+                                    />
+                                    <p className="text-xs text-muted-foreground">
+                                        Desconto aplicado sobre o valor base da fatura (0-100%)
+                                    </p>
+                                </div>
+                            )}
 
                             <div className="flex items-center space-x-2">
                                 <Checkbox

@@ -203,7 +203,15 @@ export default {
             const extras = Number(valor_extras || 0);
             const descontos = Number(valor_descontos || 0);
             const juros = 0; // Juros são calculados apenas após vencimento
-            const valorTotal = valorBase + extras - descontos + juros;
+
+            // Aplicar desconto percentual se configurado no plano
+            let valorBaseComDesconto = valorBase;
+            if (plano.porcentagem_desconto && Number(plano.porcentagem_desconto) > 0) {
+                const descontoPercentual = Number(plano.porcentagem_desconto);
+                valorBaseComDesconto = valorBase * (1 - descontoPercentual / 100);
+            }
+
+            const valorTotal = valorBaseComDesconto + extras - descontos + juros;
 
             // Calcular data de vencimento
             const dataEmissao = data_emissao || new Date().toISOString().split('T')[0];

@@ -219,6 +219,16 @@ export default {
 
             // Criar plano se fornecido
             if (plano) {
+                // Validar porcentagem de desconto se fornecida
+                if (plano.porcentagem_desconto !== undefined && plano.porcentagem_desconto !== null) {
+                    const desconto = Number(plano.porcentagem_desconto);
+                    if (isNaN(desconto) || desconto < 0 || desconto > 100) {
+                        return res.status(400).json({
+                            error: 'Porcentagem de desconto deve estar entre 0 e 100'
+                        });
+                    }
+                }
+
                 const planoData = {
                     id: uuid(),
                     convenio_id: convenioId,
@@ -231,6 +241,7 @@ export default {
                     valor_vaga_extra: plano.valor_vaga_extra || null,
                     permite_horario_especial: plano.permite_horario_especial || false,
                     horarios_permitidos: plano.horarios_permitidos || null,
+                    porcentagem_desconto: plano.porcentagem_desconto || null,
                     data_inicio_vigencia: data_inicio,
                     ativo: true
                 };
