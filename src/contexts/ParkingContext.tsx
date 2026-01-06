@@ -72,7 +72,7 @@ export interface MonthlyCustomer {
   value: number;
   dueDate: string;
   lastPayment?: string;
-  lastPaymentMethod?: string; // Allow any string from backend
+  lastPaymentMethod?: string;
   status: 'Em dia' | 'Próximo do vencimento' | 'Atrasado' | 'Atraso crítico';
   paymentHistory: Payment[];
   contractDate: string;
@@ -88,7 +88,7 @@ export interface CompanyConfig {
   logo?: string;
   primaryColor: string;
   receiptCounter: number;
-  printerConfig?: any; // Printer configuration (optional for backwards compatibility)
+  printerConfig?: any;
 }
 
 interface ParkingContextData {
@@ -100,14 +100,15 @@ interface ParkingContextData {
   cashIsOpen: boolean;
   cashSession?: {
     operatorName?: string;
-    openedAt: string; // ISO
+    openedAt: string;
     openingAmount: number;
-    closedAt?: string; // ISO
+    closedAt?: string;
     closingAmount?: number;
   };
   lastClosingAmount: number;
+  cashLoading: boolean;
   openCashRegister: (openingAmount: number, operatorName?: string) => Promise<void>;
-  closeCashRegister: (closingAmount: number, operatorName?: string) => void;
+  closeCashRegister: (closingAmount: number, operatorName?: string) => Promise<void>;
   // Revenue aggregations
   getAvulsoRevenue: (opts?: { start?: string; end?: string }) => number;
   getMonthlyRevenue: (opts?: { start?: string; end?: string }) => number;
@@ -149,54 +150,12 @@ export const ParkingProvider: React.FC<{ children: ReactNode }> = ({ children })
   });
 
   // =======================
-  // Cash register state (persist to localStorage)
+  // Cash register state (strictly from backend)
   // =======================
-  const [cashIsOpen, setCashIsOpen] = useState<boolean>(() => {
-    try {
-      const raw = localStorage.getItem('cash:isOpen');
-      return raw ? JSON.parse(raw) : false;
-    } catch {
-      return false;
-    }
-  });
-  const [cashSession, setCashSession] = useState<ParkingContextData['cashSession']>(() => {
-    try {
-      const raw = localStorage.getItem('cash:session');
-      return raw ? JSON.parse(raw) : undefined;
-    } catch {
-      return undefined;
-    }
-  });
-  const [lastClosingAmount, setLastClosingAmount] = useState<number>(() => {
-    try {
-      const raw = localStorage.getItem('cash:lastClosingAmount');
-      return raw ? Number(raw) : 0;
-    } catch {
-      return 0;
-    }
-  });
-
-  useEffect(() => {
-    try {
-      localStorage.setItem('cash:isOpen', JSON.stringify(cashIsOpen));
-    } catch (e) {
-      void e;
-    }
-  }, [cashIsOpen]);
-  useEffect(() => {
-    try {
-      localStorage.setItem('cash:session', JSON.stringify(cashSession));
-    } catch (e) {
-      void e;
-    }
-  }, [cashSession]);
-  useEffect(() => {
-    try {
-      localStorage.setItem('cash:lastClosingAmount', String(lastClosingAmount));
-    } catch (e) {
-      void e;
-    }
-  }, [lastClosingAmount]);
+  const [cashIsOpen, setCashIsOpen] = useState<boolean>(false);
+  const [cashSession, setCashSession] = useState<ParkingContextData['cashSession']>(undefined);
+  const [lastClosingAmount, setLastClosingAmount] = useState<number>(0);
+  const [cashLoading, setCashLoading] = useState<boolean>(true);
 
   // =======================
   // Carregar dados do backend
@@ -208,6 +167,7 @@ export const ParkingProvider: React.FC<{ children: ReactNode }> = ({ children })
 
     const fetchData = async () => {
       try {
+        setCashLoading(true);
         const [vehiclesData, ratesData] = await Promise.all([
           api.getVehicles().catch((err) => {
             console.error('Error loading vehicles:', err);
@@ -234,6 +194,7 @@ export const ParkingProvider: React.FC<{ children: ReactNode }> = ({ children })
             }),
             api.getCurrentCashRegisterSession().catch((err) => {
               console.error('Error loading cash register session:', err);
+              // Important: if error, we assume closed to avoid false positives
               return { isOpen: false, session: null };
             }),
             api.getCashRegisterHistory().catch((err) => {
@@ -253,16 +214,13 @@ export const ParkingProvider: React.FC<{ children: ReactNode }> = ({ children })
             });
             setCashIsOpen(true);
           } else {
-            // Se servidor diz que está fechado, garantir que local também está
             setCashIsOpen(false);
-            if (!cashSessionData?.isOpen) {
-              setCashSession(undefined);
-            }
+            setCashSession(undefined);
           }
 
           // Atualizar último valor de fechamento se houver histórico
           if (historyData && historyData.length > 0) {
-            const lastSession = historyData[0]; // history is sorted by closed_at DESC in backend
+            const lastSession = historyData[0];
             const closingAmount = Number(lastSession.actual_amount || lastSession.closing_amount || 0);
             setLastClosingAmount(closingAmount);
           }
@@ -278,12 +236,16 @@ export const ParkingProvider: React.FC<{ children: ReactNode }> = ({ children })
             primaryColor: '#2563eb',
             receiptCounter: 1,
           });
+          setCashIsOpen(false);
+          setCashSession(undefined);
         }
       } catch (err) {
         console.error('Erro ao carregar dados:', err);
         setVehicles([]);
         setRates([]);
         setMonthlyCustomers([]);
+      } finally {
+        setCashLoading(false);
       }
     };
 
@@ -303,7 +265,6 @@ export const ParkingProvider: React.FC<{ children: ReactNode }> = ({ children })
       throw new Error('Nome do operador é obrigatório');
     }
 
-    // Verificar se já está aberto (local)
     if (cashIsOpen) {
       throw new Error('Caixa já está aberto');
     }
@@ -312,70 +273,44 @@ export const ParkingProvider: React.FC<{ children: ReactNode }> = ({ children })
     const trimmedOperatorName = operatorName.trim();
 
     try {
-      // Tentar salvar no banco de dados (se autenticado)
       if (token) {
-        try {
-          const response = await api.openCashRegister({
-            openingAmount,
-            operatorName: trimmedOperatorName,
-            openedAt: nowIso,
-          });
+        const response = await api.openCashRegister({
+          openingAmount,
+          operatorName: trimmedOperatorName,
+          openedAt: nowIso,
+        });
 
-          // Sucesso: atualizar estado local com dados do servidor
-          setCashSession({
-            openedAt: response.session.openedAt,
-            openingAmount: response.session.openingAmount,
-            operatorName: response.session.operatorName,
-          });
-          setCashIsOpen(true);
-          return; // Sucesso, sair
-        } catch (apiError: any) {
-          // Se erro for "já está aberto", verificar no servidor
-          if (apiError.message?.includes('já está aberto') || apiError.message?.includes('Caixa já está aberto')) {
-            // Sincronizar com servidor
-            try {
-              const current = await api.getCurrentCashRegisterSession();
-              if (current.isOpen && current.session) {
-                setCashSession({
-                  openedAt: current.session.openedAt,
-                  openingAmount: current.session.openingAmount,
-                  operatorName: current.session.operatorName,
-                });
-                setCashIsOpen(true);
-                throw new Error('Caixa já está aberto no servidor');
-              }
-            } catch (syncError) {
-              // Ignorar erro de sincronização, continuar com fallback
-            }
-          }
-          // Se erro de API mas não é "já aberto", fazer fallback para localStorage
-          console.warn('Erro ao abrir caixa no servidor, usando localStorage:', apiError);
-        }
+        // Sucesso: atualizar estado local com dados do servidor
+        setCashSession({
+          openedAt: response.session.openedAt,
+          openingAmount: response.session.openingAmount,
+          operatorName: response.session.operatorName,
+        });
+        setCashIsOpen(true);
+      } else {
+        throw new Error('Usuário não autenticado. Impossível abrir caixa.');
       }
-
-      // Fallback: salvar apenas no localStorage (modo offline ou sem autenticação)
-      setCashSession({ openedAt: nowIso, openingAmount, operatorName: trimmedOperatorName });
-      setCashIsOpen(true);
     } catch (error) {
-      // Re-throw erros de validação
+      console.error('Erro ao abrir caixa:', error);
       throw error;
     }
   };
 
-  const closeCashRegister = (closingAmount: number, operatorName?: string) => {
-    const nowIso = new Date().toISOString();
-    setCashSession((prev) =>
-      prev
-        ? {
-          ...prev,
-          closedAt: nowIso,
-          closingAmount,
-          operatorName: operatorName || prev.operatorName,
-        }
-        : undefined
-    );
-    setCashIsOpen(false);
-    setLastClosingAmount(closingAmount);
+  const closeCashRegister = async (closingAmount: number, operatorName?: string) => {
+    try {
+      if (token) {
+        await api.closeCashRegister({
+          actualAmount: closingAmount,
+          notes: `Fechamento por ${operatorName}`
+        });
+      }
+      setCashSession(undefined);
+      setCashIsOpen(false);
+      setLastClosingAmount(closingAmount);
+    } catch (err) {
+      console.error('Erro ao fechar caixa:', err);
+      throw err;
+    }
   };
 
   // =======================
@@ -430,7 +365,6 @@ export const ParkingProvider: React.FC<{ children: ReactNode }> = ({ children })
         if (!d) return false;
         if (start && d < start) return false;
         if (end) {
-          // Include end day fully
           const endDay = new Date(end);
           endDay.setHours(23, 59, 59, 999);
           if (d > endDay) return false;
@@ -575,7 +509,6 @@ export const ParkingProvider: React.FC<{ children: ReactNode }> = ({ children })
         value: payment.value,
         method: payment.method,
       });
-      // Update customer with new payment info
       setMonthlyCustomers((prev) => prev.map((c) => (c.id === customerId ? response.customer : c)));
       setCompanyConfig((prev) => ({ ...prev, receiptCounter: prev.receiptCounter + 1 }));
       const receiptId = Number(response.payment?.id) || Date.now();
@@ -606,6 +539,7 @@ export const ParkingProvider: React.FC<{ children: ReactNode }> = ({ children })
         cashIsOpen,
         cashSession,
         lastClosingAmount,
+        cashLoading,
         openCashRegister,
         closeCashRegister,
         getAvulsoRevenue,

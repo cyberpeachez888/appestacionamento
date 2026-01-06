@@ -1108,6 +1108,25 @@ class ApiClient {
   async getCashRegisterHistory() {
     return this.request<any[]>('/cash-register/history');
   }
+
+  async closeCashRegister(data: { actualAmount: number; notes?: string }) {
+    return this.request<{ success: boolean; session: any }>('/cash-register/close', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async addCashTransaction(data: {
+    sessionId: string;
+    type: 'sangria' | 'suprimento';
+    amount: number;
+    description: string;
+  }) {
+    return this.request<any>('/cash-register/transaction', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
 }
 
 export const api = new ApiClient(API_BASE_URL);
