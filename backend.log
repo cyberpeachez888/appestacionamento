@@ -5,3 +5,15 @@
 ✅ Connecting to Supabase: https://nnpvazzeomwklugawceg.supabase.co
 Backend running on http://localhost:3000
 Scheduled backup service initialized
+Inicializando Cron Jobs...
+Cron Jobs inicializados: 2 tarefas agendadas.
+❌ Request Error: {
+  method: 'POST',
+  path: '/auth/login',
+  status: 401,
+  duration: '168ms',
+  ip: '::ffff:127.0.0.1',
+  userAgent: 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:146.0) Gecko/20100101 Firefox/146.0',
+  body: { login: 'admin', password: '***MASKED***' },
+  query: [Object: null prototype] {}
+}

@@ -38,8 +38,10 @@ const allowedOrigins = [
   // Local development
   'http://localhost:5173',
   'http://localhost:3000',
+  'http://localhost:8080',
   'http://127.0.0.1:5173',
   'http://127.0.0.1:3000',
+  'http://127.0.0.1:8080',
   // TODAS as URLs do Vercel (antigas e novas)
   'https://proparkingapp.vercel.app',
   'https://theproparking.vercel.app',  // ← ADICIONAR ESTA

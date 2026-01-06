@@ -90,6 +90,11 @@ export const ShiftOperations = ({ onSessionClose }: ShiftOperationsProps) => {
                         <DollarSign className="mr-2 h-4 w-4" /> Abrir Caixa
                     </Button>
                 </div>
+                <OpenCashRegisterDialog
+                    open={isOpenDialogOpen}
+                    onOpenChange={setIsOpenDialogOpen}
+                    onSuccess={handleOpenSuccess}
+                />
             </CardContent>
         </Card>
     );

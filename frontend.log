@@ -2,35 +2,9 @@
 > theproparking-app@1.0.0 dev
 > vite
 
-10:36:41 [vite] (client) Re-optimizing dependencies because lockfile has changed
 
-  VITE v7.1.12  ready in 137 ms
+  VITE v7.1.12  ready in 117 ms
 
   ➜  Local:   http://localhost:8080/
   ➜  Network: http://192.168.0.107:8080/
-10:47:43 [vite] (client) hmr update /src/pages/SetupWizard.tsx, /src/index.css
-10:48:01 [vite] (client) hmr update /src/pages/SetupWizard.tsx, /src/index.css
-11:09:13 [vite] (client) hmr update /src/index.css, /src/contexts/AuthContext.tsx, /src/contexts/ParkingContext.tsx, /src/pages/Configuracoes.tsx, /src/pages/RelatoriosMensais.tsx, /src/pages/Financeiro.tsx, /src/pages/Users.tsx, /src/pages/ModelosRecibos.tsx, /src/components/BackupSettingsSection.tsx, /src/components/VehicleTypeSelect.tsx, /src/components/ChangePasswordDialog.tsx, /src/components/AuditLogDialog.tsx, /src/components/RateAdvancedSettings.tsx, /src/components/PricingRulesManager.tsx
-11:09:16 [vite] (client) hmr update /src/index.css, /src/contexts/AuthContext.tsx, /src/contexts/ParkingContext.tsx, /src/pages/Configuracoes.tsx, /src/pages/RelatoriosMensais.tsx, /src/pages/Financeiro.tsx, /src/pages/Users.tsx, /src/pages/ModelosRecibos.tsx, /src/components/BackupSettingsSection.tsx, /src/components/VehicleTypeSelect.tsx, /src/components/ChangePasswordDialog.tsx, /src/components/AuditLogDialog.tsx, /src/components/RateAdvancedSettings.tsx, /src/components/PricingRulesManager.tsx
-11:09:23 [vite] (client) hmr update /src/index.css, /src/contexts/AuthContext.tsx, /src/contexts/ParkingContext.tsx, /src/pages/Configuracoes.tsx, /src/pages/RelatoriosMensais.tsx, /src/pages/Financeiro.tsx, /src/pages/Users.tsx, /src/pages/ModelosRecibos.tsx, /src/components/BackupSettingsSection.tsx, /src/components/VehicleTypeSelect.tsx, /src/components/ChangePasswordDialog.tsx, /src/components/AuditLogDialog.tsx, /src/components/RateAdvancedSettings.tsx, /src/components/PricingRulesManager.tsx
-11:09:28 [vite] (client) hmr update /src/pages/Configuracoes.tsx, /src/index.css
-11:09:30 [vite] (client) hmr update /src/pages/Configuracoes.tsx, /src/index.css
-11:09:41 [vite] (client) hmr update /src/pages/Configuracoes.tsx, /src/index.css
-11:10:05 [vite] (client) hmr update /src/pages/Configuracoes.tsx, /src/index.css
-11:10:05 [vite] (client) hmr update /src/index.css, /src/contexts/AuthContext.tsx, /src/contexts/ParkingContext.tsx, /src/pages/Configuracoes.tsx, /src/pages/RelatoriosMensais.tsx, /src/pages/Financeiro.tsx, /src/pages/Users.tsx, /src/pages/ModelosRecibos.tsx, /src/components/BackupSettingsSection.tsx, /src/components/VehicleTypeSelect.tsx, /src/components/ChangePasswordDialog.tsx, /src/components/AuditLogDialog.tsx, /src/components/RateAdvancedSettings.tsx, /src/components/PricingRulesManager.tsx
-12:35:24 [vite] (client) hmr update /src/pages/ModelosRecibos.tsx, /src/index.css
-12:35:25 [vite] (client) hmr update /src/pages/ModelosRecibos.tsx, /src/index.css
-12:35:40 [vite] (client) hmr update /src/pages/ModelosRecibos.tsx, /src/index.css
-12:35:51 [vite] (client) hmr update /src/pages/ModelosRecibos.tsx, /src/index.css
-12:36:11 [vite] (client) hmr update /src/pages/ModelosRecibos.tsx, /src/index.css
-12:36:22 [vite] (client) hmr update /src/pages/ModelosRecibos.tsx, /src/index.css
-12:36:25 [vite] (client) hmr update /src/pages/ModelosRecibos.tsx, /src/index.css
-12:36:31 [vite] (client) hmr update /src/pages/ModelosRecibos.tsx, /src/index.css
-12:36:58 [vite] (client) hmr update /src/pages/ModelosRecibos.tsx, /src/index.css
-12:37:15 [vite] (client) hmr update /src/pages/ModelosRecibos.tsx, /src/index.css
-12:37:49 [vite] (client) hmr update /src/index.css, /src/pages/ModelosRecibos.tsx, /src/components/ExitConfirmationDialog.tsx
-12:37:54 [vite] (client) hmr update /src/pages/ModelosRecibos.tsx, /src/index.css
-12:38:20 [vite] (client) hmr update /src/pages/ModelosRecibos.tsx, /src/index.css
-12:38:32 [vite] (client) hmr update /src/pages/ModelosRecibos.tsx, /src/index.css
-12:38:41 [vite] (client) hmr update /src/index.css, /src/pages/ModelosRecibos.tsx, /src/components/ExitConfirmationDialog.tsx
-12:38:41 [vite] (client) hmr update /src/pages/ModelosRecibos.tsx, /src/index.css
+[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
