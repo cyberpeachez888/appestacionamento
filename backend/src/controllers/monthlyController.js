@@ -121,6 +121,37 @@ export default {
         });
       }
 
+      // Determine if this is a retroactive customer
+      const isRetroactive = req.body.isRetroactive || false;
+
+      // Calculate dates based on whether customer is retroactive
+      let actualContractDate, actualLastPayment, actualDueDate;
+
+      if (isRetroactive && req.body.contractDate) {
+        // Retroactive customer: use provided dates
+        actualContractDate = new Date(req.body.contractDate).toISOString();
+
+        // If due date is provided, use it; otherwise calculate from contract date
+        if (req.body.dueDate) {
+          actualDueDate = new Date(req.body.dueDate).toISOString();
+        } else {
+          actualDueDate = addMonthsISO(actualContractDate, 1);
+        }
+
+        // Last payment is 1 month before due date (for retroactive customers)
+        actualLastPayment = addMonthsISO(actualDueDate, -1);
+
+        console.log('[Retroactive Customer] Dates calculated:');
+        console.log('- Contract Date:', actualContractDate);
+        console.log('- Due Date:', actualDueDate);
+        console.log('- Last Payment:', actualLastPayment);
+      } else {
+        // Normal customer: use current date
+        actualContractDate = contractDate;
+        actualLastPayment = contractDate;
+        actualDueDate = addMonthsISO(contractDate, 1);
+      }
+
       const payload = {
         id,
         name: req.body.name,
@@ -130,10 +161,10 @@ export default {
         parking_slot: parseInt(req.body.parkingSlot),
         value: req.body.value,
         operator_name: req.body.operatorName || null,
-        contract_date: contractDate,
+        contract_date: actualContractDate,
         status: 'active',
-        last_payment: contractDate,
-        due_date: addMonthsISO(contractDate, 1),
+        last_payment: actualLastPayment,
+        due_date: actualDueDate,
       };
 
       const { data, error } = await supabase.from(table).insert(payload).select().single();
@@ -149,8 +180,6 @@ export default {
 
       // register initial payment in payments table
       // Skip if retroactive customer
-      const isRetroactive = req.body.isRetroactive || false;
-
       if (!isRetroactive) {
         await supabase.from('payments').insert({
           id: uuid(),
