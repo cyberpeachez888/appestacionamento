@@ -99,7 +99,26 @@ export const ShiftOperations = ({ onSessionClose }: ShiftOperationsProps) => {
         </Card>
     );
 
-    const { session, totals, stats } = data;
+    // Safely destructure data with fallbacks
+    const session = data?.session || {};
+    const totals = data?.totals || {
+        saldoInicial: 0,
+        receitas: 0,
+        suprimentos: 0,
+        sangrias: 0,
+        saldoFinalEsperado: 0,
+        porCategoria: {
+            mensalista: 0,
+            avulso: 0,
+            convenio: 0
+        }
+    };
+    const stats = data?.stats || {
+        totalVeiculos: 0,
+        ticketMedio: 0,
+        tempoMedio: 0,
+        picoMovimento: 'N/A'
+    };
 
     return (
         <div className="space-y-8 animate-in fade-in duration-500">
