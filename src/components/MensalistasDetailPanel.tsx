@@ -114,14 +114,16 @@ export function MensalistasDetailPanel({ customer, statusInfo }: MensalistasDeta
                     <div className="space-y-1">
                         <p className="text-sm text-muted-foreground">Próximo Vencimento</p>
                         <p className="font-medium">
-                            {format(new Date(customer.dueDate), 'dd/MM/yyyy', { locale: ptBR })}
+                            {customer.dueDate && !isNaN(new Date(customer.dueDate).getTime())
+                                ? format(new Date(customer.dueDate), 'dd/MM/yyyy', { locale: ptBR })
+                                : '—'}
                         </p>
                     </div>
 
                     <div className="space-y-1">
                         <p className="text-sm text-muted-foreground">Último Pagamento</p>
                         <p className="font-medium">
-                            {customer.lastPayment
+                            {customer.lastPayment && !isNaN(new Date(customer.lastPayment).getTime())
                                 ? format(new Date(customer.lastPayment), 'dd/MM/yyyy', { locale: ptBR })
                                 : '—'}
                         </p>
@@ -149,7 +151,7 @@ export function MensalistasDetailPanel({ customer, statusInfo }: MensalistasDeta
                     <div className="space-y-1">
                         <p className="text-sm text-muted-foreground">Data de Contratação</p>
                         <p className="font-medium">
-                            {customer.contractDate
+                            {customer.contractDate && !isNaN(new Date(customer.contractDate).getTime())
                                 ? format(new Date(customer.contractDate), 'dd/MM/yyyy', { locale: ptBR })
                                 : '—'}
                         </p>
@@ -195,7 +197,9 @@ export function MensalistasDetailPanel({ customer, statusInfo }: MensalistasDeta
                                     {sortedHistory.map((payment, idx) => (
                                         <tr key={payment.id} className={idx % 2 === 0 ? 'bg-background' : 'bg-muted/10'}>
                                             <td className="px-3 py-2">
-                                                {format(new Date(payment.date), 'dd/MM/yyyy', { locale: ptBR })}
+                                                {payment.date && !isNaN(new Date(payment.date).getTime())
+                                                    ? format(new Date(payment.date), 'dd/MM/yyyy', { locale: ptBR })
+                                                    : '—'}
                                             </td>
                                             <td className="px-3 py-2 font-medium">
                                                 R$ {payment.value.toFixed(2)}
