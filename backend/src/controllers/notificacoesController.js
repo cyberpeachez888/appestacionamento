@@ -31,13 +31,16 @@ export default {
             const { data, error } = await query;
 
             if (error) {
-                return res.status(500).json({ error: error.message });
+                // Se a tabela não existe ou há erro de RLS, retornar array vazio
+                console.warn('[Notificacoes] Erro ao listar (retornando vazio):', error.message);
+                return res.json([]);
             }
 
-            res.json(data);
+            res.json(data || []);
         } catch (err) {
             console.error('Erro ao listar notificações:', err);
-            res.status(500).json({ error: err.message });
+            // Retornar array vazio em vez de erro para não quebrar o frontend
+            res.json([]);
         }
     },
 
@@ -53,13 +56,14 @@ export default {
                 .eq('lida', false);
 
             if (error) {
-                return res.status(500).json({ error: error.message });
+                console.warn('[Notificacoes] Erro ao contar (retornando 0):', error.message);
+                return res.json({ count: 0 });
             }
 
-            res.json({ count });
+            res.json({ count: count || 0 });
         } catch (err) {
             console.error('Erro ao contar notificações:', err);
-            res.status(500).json({ error: err.message });
+            res.json({ count: 0 });
         }
     },
 
