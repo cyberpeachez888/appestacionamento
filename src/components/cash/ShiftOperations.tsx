@@ -114,7 +114,7 @@ export const ShiftOperations = ({ onSessionClose }: ShiftOperationsProps) => {
                     <div className="flex items-center gap-2">
                         <FileText className="h-4 w-4 text-blue-500" />
                         <span className="font-semibold">Operador:</span>
-                        <span>{session.operator_name}</span>
+                        <span>{session?.operator_name || 'N/A'}</span>
                     </div>
                     <div className="flex items-center gap-2">
                         <AlertCircle className="h-4 w-4 text-blue-500" />

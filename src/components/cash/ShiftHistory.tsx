@@ -70,7 +70,7 @@ export const ShiftHistory = () => {
     };
 
     const filtered = closings.filter(c =>
-        c.operator_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (c.operator_name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
         format(new Date(c.closed_at), 'dd/MM/yyyy').includes(searchTerm)
     );
 
@@ -137,9 +137,9 @@ export const ShiftHistory = () => {
                                         <TableCell>
                                             <div className="flex items-center gap-2">
                                                 <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 text-xs font-black ring-2 ring-white">
-                                                    {closing.operator_name[0]}
+                                                    {closing?.operator_name?.[0] || '?'}
                                                 </div>
-                                                <span className="text-sm font-medium">{closing.operator_name}</span>
+                                                <span className="text-sm font-medium">{closing?.operator_name || 'N/A'}</span>
                                             </div>
                                         </TableCell>
                                         <TableCell>
