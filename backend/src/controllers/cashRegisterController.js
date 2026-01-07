@@ -3,11 +3,7 @@
 // VERSÃO: 2.0 - Usando funções utilitárias globais
 // ============================================
 
-import {
-  supabase,
-  getScopedSupabaseClient,
-  getAuthenticatedUser
-} from '../config/supabase.js';
+import { supabase } from '../config/supabase.js';
 
 import { logEvent } from '../services/auditLogger.js';
 import { triggerCashRegisterOpened } from '../services/webhookService.js';
@@ -105,12 +101,14 @@ export default {
     try {
       console.log('[Cash Register] Iniciando abertura de caixa');
 
-      // 1. Autenticar usuário
-      const user = await getAuthenticatedUser(req);
-      console.log(`[Cash Register] Usuário autenticado: ${user.id}`);
+      // 1. Autenticar usuário via middleware JWT
+      // req.user já foi populado pelo requireAuth middleware
+      const user = req.user;
+      if (!user || !user.id) {
+        return res.status(401).json({ error: 'Usuário não autenticado' });
+      }
 
-      // 2. Obter cliente escopado
-      const scopedSupabase = getScopedSupabaseClient(req);
+      console.log(`[Cash Register] Usuário autenticado: ${user.id}`);
 
       const { openingAmount, operatorName, openedAt } = req.body;
 
@@ -126,7 +124,7 @@ export default {
       // 4. Verificar se já existe caixa aberto
       console.log(`[Cash Register] Verificando caixa aberto para operador: ${user.id}`);
 
-      const { data: openSession, error: checkError } = await scopedSupabase
+      const { data: openSession, error: checkError } = await supabase
         .from('cash_register_sessions')
         .select('id, opened_at, operator_name')
         .is('closed_at', null)  // ✅ CORRETO: usa .is() para NULL
@@ -148,7 +146,7 @@ export default {
       // 5. Criar nova sessão
       console.log('[Cash Register] Criando nova sessão de caixa');
 
-      const { data: session, error: insertError } = await scopedSupabase
+      const { data: session, error: insertError } = await supabase
         .from('cash_register_sessions')
         .insert({
           opening_amount: openingAmount,
@@ -212,15 +210,15 @@ export default {
     try {
       console.log('[Cash Register] Buscando resumo do caixa');
 
-      // 1. Autenticar usuário
-      const user = await getAuthenticatedUser(req);
+      // 1. Autenticar usuário via middleware JWT
+      const user = req.user;
+      if (!user || !user.id) {
+        return res.status(401).json({ error: 'Usuário não autenticado' });
+      }
       console.log(`[Cash Register] Buscando resumo para operador: ${user.id}`);
 
-      // 2. Obter cliente escopado
-      const scopedSupabase = getScopedSupabaseClient(req);
-
       // 3. Buscar sessão aberta
-      const { data: session, error: sessionError } = await scopedSupabase
+      const { data: session, error: sessionError } = await supabase
         .from('cash_register_sessions')
         .select('*')
         .is('closed_at', null)  // ✅ CORRETO
@@ -246,7 +244,7 @@ export default {
       console.log(`[Cash Register] Caixa aberto encontrado: ${session.id}`);
 
       // 5. Buscar dados do relatório
-      const statsData = await _getReportDataInternal(session.id, scopedSupabase);
+      const statsData = await _getReportDataInternal(session.id, supabase);
 
       res.json({
         ...statsData,
@@ -271,15 +269,15 @@ export default {
 
       const { actualAmount, notes } = req.body;
 
-      // 1. Autenticar usuário
-      const user = await getAuthenticatedUser(req);
+      // 1. Autenticar usuário via middleware JWT
+      const user = req.user;
+      if (!user || !user.id) {
+        return res.status(401).json({ error: 'Usuário não autenticado' });
+      }
       console.log(`[Cash Register] Fechando caixa para operador: ${user.id}`);
 
-      // 2. Obter cliente escopado
-      const scopedSupabase = getScopedSupabaseClient(req);
-
       // 3. Buscar sessão aberta
-      const { data: session, error: sessError } = await scopedSupabase
+      const { data: session, error: sessError } = await supabase
         .from('cash_register_sessions')
         .select('*')
         .is('closed_at', null)  // ✅ CORRETO
@@ -294,13 +292,13 @@ export default {
       console.log(`[Cash Register] Fechando sessão: ${session.id}`);
 
       // 4. Calcular valores
-      const data = await _getReportDataInternal(session.id, scopedSupabase);
+      const data = await _getReportDataInternal(session.id, supabase);
       const expectedAmount = data.totals.saldoFinalEsperado;
       const difference = actualAmount - expectedAmount;
       const endTime = new Date().toISOString();
 
       // 5. Atualizar sessão
-      const { data: closedSession, error: updateError } = await scopedSupabase
+      const { data: closedSession, error: updateError } = await supabase
         .from('cash_register_sessions')
         .update({
           is_open: false,
@@ -358,14 +356,14 @@ export default {
         return res.status(400).json({ error: 'Tipo inválido' });
       }
 
-      // 2. Autenticar usuário
-      const user = await getAuthenticatedUser(req);
-
-      // 3. Obter cliente escopado
-      const scopedSupabase = getScopedSupabaseClient(req);
+      // 2. Autenticar usuário via middleware JWT
+      const user = req.user;
+      if (!user || !user.id) {
+        return res.status(401).json({ error: 'Usuário não autenticado' });
+      }
 
       // 4. Inserir transação
-      const { data, error } = await scopedSupabase
+      const { data, error } = await supabase
         .from('cash_transactions')
         .insert({
           session_id: sessionId,
@@ -412,15 +410,15 @@ export default {
     try {
       console.log('[Cash Register] Buscando histórico');
 
-      // 1. Autenticar usuário (opcional - depende se quer filtrar por usuário)
-      const user = await getAuthenticatedUser(req);
-
-      // 2. Obter cliente escopado
-      const scopedSupabase = getScopedSupabaseClient(req);
+      // 1. Autenticar usuário via middleware JWT
+      const user = req.user;
+      if (!user || !user.id) {
+        return res.status(401).json({ error: 'Usuário não autenticado' });
+      }
 
       // 3. Buscar histórico
       // Opção A: Todos os fechamentos (se RLS SELECT permite)
-      const { data, error } = await scopedSupabase
+      const { data, error } = await supabase
         .from('cash_register_sessions')
         .select('*')
         .not('closed_at', 'is', null)  // ✅ Apenas fechados
@@ -454,14 +452,14 @@ export default {
       const { id } = req.params;
       console.log(`[Cash Register] Buscando relatório: ${id}`);
 
-      // 1. Autenticar usuário
-      const user = await getAuthenticatedUser(req);
+      // 1. Autenticar usuário via middleware JWT
+      const user = req.user;
+      if (!user || !user.id) {
+        return res.status(401).json({ error: 'Usuário não autenticado' });
+      }
 
-      // 2. Obter cliente escopado
-      const scopedSupabase = getScopedSupabaseClient(req);
-
-      // 3. Buscar dados do relatório
-      const data = await _getReportDataInternal(id, scopedSupabase);
+      // 2. Buscar dados do relatório
+      const data = await _getReportDataInternal(id, supabase);
 
       if (!data) {
         console.log(`[Cash Register] Relatório não encontrado: ${id}`);
@@ -488,14 +486,14 @@ export default {
       const { id, format } = req.params;
       console.log(`[Cash Register] Download de relatório: ${id} (${format})`);
 
-      // 1. Autenticar usuário
-      const user = await getAuthenticatedUser(req);
+      // 1. Autenticar usuário via middleware JWT
+      const user = req.user;
+      if (!user || !user.id) {
+        return res.status(401).json({ error: 'Usuário não autenticado' });
+      }
 
-      // 2. Obter cliente escopado
-      const scopedSupabase = getScopedSupabaseClient(req);
-
-      // 3. Buscar dados
-      const data = await _getReportDataInternal(id, scopedSupabase);
+      // 2. Buscar dados
+      const data = await _getReportDataInternal(id, supabase);
 
       if (!data) {
         return res.status(404).json({ error: 'Relatório não encontrado' });
@@ -550,14 +548,14 @@ export default {
     try {
       console.log('[Cash Register] Buscando sessão atual');
 
-      // 1. Autenticar usuário
-      const user = await getAuthenticatedUser(req);
+      // 1. Autenticar usuário via middleware JWT
+      const user = req.user;
+      if (!user || !user.id) {
+        return res.status(401).json({ error: 'Usuário não autenticado' });
+      }
 
-      // 2. Obter cliente escopado
-      const scopedSupabase = getScopedSupabaseClient(req);
-
-      // 3. Buscar sessão aberta
-      const { data: session, error } = await scopedSupabase
+      // 2. Buscar sessão aberta
+      const { data: session, error } = await supabase
         .from('cash_register_sessions')
         .select('*')
         .is('closed_at', null)  // ✅ CORRETO
