@@ -134,6 +134,18 @@ export function MensalistasDetailPanel({ customer, statusInfo }: MensalistasDeta
                         <p className="font-bold text-lg text-primary">R$ {customer.value.toFixed(2)}</p>
                     </div>
 
+                    {customer.lastPayment && !isNaN(new Date(customer.lastPayment).getTime()) && (
+                        <div className="space-y-1">
+                            <p className="text-sm text-muted-foreground flex items-center gap-1">
+                                <Clock className="h-3 w-3" />
+                                Hora da Baixa do Pagamento
+                            </p>
+                            <p className="font-medium">
+                                {format(new Date(customer.lastPayment), 'HH:mm', { locale: ptBR })}
+                            </p>
+                        </div>
+                    )}
+
                     {statusInfo.daysOverdue !== undefined && statusInfo.daysOverdue > 0 && (
                         <div className="space-y-1">
                             <p className="text-sm text-muted-foreground">Dias de Atraso</p>
