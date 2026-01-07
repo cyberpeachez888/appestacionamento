@@ -35,6 +35,8 @@ interface MonthlyCustomer {
   value: number;
   operatorName?: string;
   contractDate?: string;
+  dueDate?: string;
+  lastPayment?: string;
 }
 
 interface CustomerDialogProps {
@@ -72,6 +74,7 @@ export function CustomerDialog({ open, onOpenChange, customer, onSaved }: Custom
   const [operatorName, setOperatorName] = useState('');
   const [contractDate, setContractDate] = useState<Date>(new Date());
   const [dueDate, setDueDate] = useState('');
+  const [lastPayment, setLastPayment] = useState('');
   const [selectedRetroactiveMonths, setSelectedRetroactiveMonths] = useState<string[]>([]);
   const [isRetroactive, setIsRetroactive] = useState(false);
 
@@ -96,6 +99,15 @@ export function CustomerDialog({ open, onOpenChange, customer, onSaved }: Custom
       if (customer.contractDate) {
         setContractDate(new Date(customer.contractDate));
       }
+      // Initialize dates for editing
+      if (customer.dueDate) {
+        const dueDateObj = new Date(customer.dueDate);
+        setDueDate(dueDateObj.toISOString().split('T')[0]);
+      }
+      if (customer.lastPayment) {
+        const lastPaymentObj = new Date(customer.lastPayment);
+        setLastPayment(lastPaymentObj.toISOString().split('T')[0]);
+      }
     } else {
       setName('');
       setCpf('');
@@ -112,6 +124,7 @@ export function CustomerDialog({ open, onOpenChange, customer, onSaved }: Custom
       setIsAddingPlate(false);
       setNewPlateValue('');
       setDueDate('');
+      setLastPayment('');
       setSelectedRetroactiveMonths([]);
       setIsRetroactive(false);
     }
@@ -303,6 +316,8 @@ export function CustomerDialog({ open, onOpenChange, customer, onSaved }: Custom
           plates: plates.map((p) => p.value),
           value: parseFloat(value),
           operatorName: operatorName.trim() || undefined,
+          dueDate: dueDate || undefined,
+          lastPayment: lastPayment || undefined,
         };
         await updateMonthlyCustomer(customer.id, patch);
       } else {
