@@ -208,9 +208,9 @@ export const ParkingProvider: React.FC<{ children: ReactNode }> = ({ children })
           // Sincronizar estado do caixa com servidor
           if (cashSessionData?.isOpen && cashSessionData?.session) {
             setCashSession({
-              openedAt: cashSessionData.session.openedAt,
-              openingAmount: cashSessionData.session.openingAmount,
-              operatorName: cashSessionData.session.operatorName,
+              openedAt: cashSessionData.session.openedAt || new Date().toISOString(),
+              openingAmount: cashSessionData.session.openingAmount || 0,
+              operatorName: cashSessionData.session.operatorName || 'Operador',
             });
             setCashIsOpen(true);
           } else {
@@ -281,12 +281,16 @@ export const ParkingProvider: React.FC<{ children: ReactNode }> = ({ children })
         });
 
         // Sucesso: atualizar estado local com dados do servidor
-        setCashSession({
-          openedAt: response.session.openedAt,
-          openingAmount: response.session.openingAmount,
-          operatorName: response.session.operatorName,
-        });
-        setCashIsOpen(true);
+        if (response?.session) {
+          setCashSession({
+            openedAt: response.session.openedAt,
+            openingAmount: response.session.openingAmount,
+            operatorName: response.session.operatorName,
+          });
+          setCashIsOpen(true);
+        } else {
+          throw new Error('Resposta inválida do servidor ao abrir caixa');
+        }
       } else {
         throw new Error('Usuário não autenticado. Impossível abrir caixa.');
       }
