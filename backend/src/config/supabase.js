@@ -11,7 +11,9 @@ dotenv.config({ path: join(__dirname, '..', '..', '.env') });
 import { createClient } from '@supabase/supabase-js';
 
 const SUPABASE_URL = process.env.SUPABASE_URL;
-const SUPABASE_KEY = process.env.SUPABASE_ANON_KEY || process.env.SUPABASE_KEY; // Support both names
+// IMPORTANTE: Backend deve usar SERVICE_ROLE_KEY para bypassar RLS
+// Se não existir, usa ANON_KEY (mas operações podem falhar por RLS)
+const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY || process.env.SUPABASE_KEY;
 
 let supabase;
 
@@ -150,7 +152,15 @@ if (!SUPABASE_URL || !SUPABASE_KEY) {
 
   supabase = { from: (table) => makeQuery(table) };
 } else {
-  console.log('✅ Connecting to Supabase:', SUPABASE_URL);
+  const keyType = process.env.SUPABASE_SERVICE_ROLE_KEY ? 'SERVICE_ROLE' : 'ANON';
+  console.log(`✅ Connecting to Supabase: ${SUPABASE_URL}`);
+  console.log(`🔑 Using ${keyType} key`);
+
+  if (keyType === 'ANON') {
+    console.warn('⚠️  WARNING: Using ANON key - RLS policies will be enforced!');
+    console.warn('⚠️  Set SUPABASE_SERVICE_ROLE_KEY in .env to bypass RLS');
+  }
+
   supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 }
 
