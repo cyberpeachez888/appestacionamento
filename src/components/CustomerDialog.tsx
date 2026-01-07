@@ -316,8 +316,9 @@ export function CustomerDialog({ open, onOpenChange, customer, onSaved }: Custom
           plates: plates.map((p) => p.value),
           value: parseFloat(value),
           operatorName: operatorName.trim() || undefined,
-          dueDate: dueDate ? new Date(dueDate).toISOString() : undefined,
-          lastPayment: lastPayment ? new Date(lastPayment).toISOString() : undefined,
+          contractDate: contractDate ? new Date(format(contractDate, 'yyyy-MM-dd') + 'T12:00:00').toISOString() : undefined,
+          dueDate: dueDate ? new Date(dueDate + 'T12:00:00').toISOString() : undefined,
+          lastPayment: lastPayment ? new Date(lastPayment + 'T12:00:00').toISOString() : undefined,
         };
         await updateMonthlyCustomer(customer.id, patch);
       } else {
@@ -857,6 +858,19 @@ export function CustomerDialog({ open, onOpenChange, customer, onSaved }: Custom
             {/* Date Fields - Only for editing existing customers */}
             {customer && (
               <>
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="editContractDate" className="text-right">
+                    Data de Contratação
+                  </Label>
+                  <Input
+                    id="editContractDate"
+                    type="date"
+                    value={contractDate ? format(contractDate, 'yyyy-MM-dd') : ''}
+                    onChange={(e) => setContractDate(new Date(e.target.value))}
+                    className="col-span-3"
+                  />
+                </div>
+
                 <div className="grid grid-cols-4 items-center gap-4">
                   <Label htmlFor="editDueDate" className="text-right">
                     Vencimento
