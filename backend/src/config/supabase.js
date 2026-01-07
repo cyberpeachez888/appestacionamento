@@ -154,4 +154,84 @@ if (!SUPABASE_URL || !SUPABASE_KEY) {
   supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 }
 
+// ============================================
+// FUNÇÕES UTILITÁRIAS - ADICIONE AQUI
+// ============================================
+
+export function getScopedSupabaseClient(req) {
+  if (!SUPABASE_URL || !SUPABASE_KEY) {
+    console.warn('[Supabase] Usando cliente in-memory (sem RLS)');
+    return supabase;
+  }
+
+  const authHeader = req.headers.authorization;
+
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    const error = new Error('Token de autenticação não fornecido');
+    error.statusCode = 401;
+    error.code = 'AUTH_TOKEN_MISSING';
+    throw error;
+  }
+
+  const token = authHeader.replace('Bearer ', '').trim();
+
+  if (!token) {
+    const error = new Error('Token vazio ou inválido');
+    error.statusCode = 401;
+    error.code = 'AUTH_TOKEN_INVALID';
+    throw error;
+  }
+
+  const scopedClient = createClient(SUPABASE_URL, SUPABASE_KEY, {
+    global: {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    }
+  });
+
+  console.log(`[Supabase] Cliente escopado criado (token: ${token.substring(0, 15)}...)`);
+
+  return scopedClient;
+}
+
+export async function getAuthenticatedUser(req) {
+  if (req.user) {
+    console.log(`[Auth] Usando usuário do middleware: ${req.user.id}`);
+    return req.user;
+  }
+
+  const scopedClient = getScopedSupabaseClient(req);
+
+  const { data: { user }, error } = await scopedClient.auth.getUser();
+
+  if (error || !user) {
+    const authError = new Error('Falha ao autenticar usuário');
+    authError.statusCode = 401;
+    authError.code = 'AUTH_USER_INVALID';
+    authError.details = error;
+    throw authError;
+  }
+
+  console.log(`[Auth] Usuário autenticado via Supabase: ${user.id} (${user.email})`);
+
+  return user;
+}
+
+export function attachScopedSupabase(req, res, next) {
+  try {
+    req.supabase = getScopedSupabaseClient(req);
+    next();
+  } catch (error) {
+    res.status(error.statusCode || 401).json({
+      error: error.message,
+      code: error.code,
+      hint: 'Certifique-se de incluir o header: Authorization: Bearer <token>'
+    });
+  }
+}
+
+// ============================================
+// EXPORT FINAL
+// ============================================
 export { supabase };

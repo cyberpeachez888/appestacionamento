@@ -11,26 +11,29 @@ ALTER TABLE monthly_reports ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Enable read access for authenticated users" ON cash_register_sessions;
 DROP POLICY IF EXISTS "Enable insert access for authenticated users" ON cash_register_sessions;
 DROP POLICY IF EXISTS "Enable update access for authenticated users" ON cash_register_sessions;
+DROP POLICY IF EXISTS "cash_register_select" ON cash_register_sessions;
+DROP POLICY IF EXISTS "cash_register_insert" ON cash_register_sessions;
+DROP POLICY IF EXISTS "cash_register_update" ON cash_register_sessions;
+DROP POLICY IF EXISTS "cash_register_select_policy" ON cash_register_sessions;
+DROP POLICY IF EXISTS "cash_register_insert_policy" ON cash_register_sessions;
+DROP POLICY IF EXISTS "cash_register_update_policy" ON cash_register_sessions;
 
--- ALLOW SELECT for authenticated users (own sessions or all if needed - sticking to own for consistency or all for operational visibility)
--- Allowing all authenticated users to see sessions is usually required for handover/managers, but let's stick to simple authenticated check.
-CREATE POLICY "Enable read access for authenticated users" 
+-- Criar políticas corretas (CORREÇÃO 4)
+CREATE POLICY "cash_register_select_policy" 
 ON cash_register_sessions FOR SELECT 
-TO authenticated 
-USING (true);
+TO authenticated
+USING (auth.uid() = operator_id);
 
--- ALLOW INSERT for authenticated users (Opening a session)
--- We ensure the operator_id matches the auth.uid()
-CREATE POLICY "Enable insert access for authenticated users" 
+CREATE POLICY "cash_register_insert_policy" 
 ON cash_register_sessions FOR INSERT 
-TO authenticated 
+TO authenticated
 WITH CHECK (auth.uid() = operator_id);
 
--- ALLOW UPDATE for authenticated users (Closing a session)
-CREATE POLICY "Enable update access for authenticated users" 
+CREATE POLICY "cash_register_update_policy" 
 ON cash_register_sessions FOR UPDATE 
-TO authenticated 
-USING (auth.uid() = operator_id);
+TO authenticated
+USING (auth.uid() = operator_id)
+WITH CHECK (auth.uid() = operator_id);
 
 -- 3. Policies for monthly_reports
 

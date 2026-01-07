@@ -1,4 +1,14 @@
-import { supabase } from '../config/supabase.js';
+// ============================================
+// ARQUIVO: backend/src/controllers/cashRegisterController.js
+// VERSÃO: 2.0 - Usando funções utilitárias globais
+// ============================================
+
+import {
+  supabase,
+  getScopedSupabaseClient,
+  getAuthenticatedUser
+} from '../config/supabase.js';
+
 import { logEvent } from '../services/auditLogger.js';
 import { triggerCashRegisterOpened } from '../services/webhookService.js';
 import reportGenerationService from '../services/reportGenerationService.js';
@@ -10,9 +20,13 @@ import reportGenerationService from '../services/reportGenerationService.js';
 
 /**
  * Internal Helper to get report data
+ * VERSÃO 2.0: Agora aceita cliente escopado como parâmetro
  */
-async function _getReportDataInternal(id) {
-  const { data: session, error: sessionError } = await supabase
+async function _getReportDataInternal(id, scopedClient = null) {
+  // Use o cliente fornecido ou fallback para global (queries públicas)
+  const client = scopedClient || supabase;
+
+  const { data: session, error: sessionError } = await client
     .from('cash_register_sessions')
     .select('*')
     .eq('id', id)
@@ -23,10 +37,29 @@ async function _getReportDataInternal(id) {
   const startTime = session.opened_at;
   const endTime = session.is_open ? new Date().toISOString() : session.closed_at;
 
-  const { data: payments } = await supabase.from('payments').select('*').gte('date', startTime).lte('date', endTime);
-  const { data: transactions } = await supabase.from('cash_transactions').select('*').eq('session_id', id);
-  const { data: tickets } = await supabase.from('tickets').select('*').gte('exit_time', startTime).lte('exit_time', endTime).eq('status', 'closed');
-  const { data: company } = await supabase.from('company_config').select('*').eq('id', 'default').single();
+  const { data: payments } = await client
+    .from('payments')
+    .select('*')
+    .gte('date', startTime)
+    .lte('date', endTime);
+
+  const { data: transactions } = await client
+    .from('cash_transactions')
+    .select('*')
+    .eq('session_id', id);
+
+  const { data: tickets } = await client
+    .from('tickets')
+    .select('*')
+    .gte('exit_time', startTime)
+    .lte('exit_time', endTime)
+    .eq('status', 'closed');
+
+  const { data: company } = await client
+    .from('company_config')
+    .select('*')
+    .eq('id', 'default')
+    .single();
 
   const totals = {
     saldoInicial: Number(session.opening_amount),
@@ -70,11 +103,18 @@ export default {
    */
   async open(req, res) {
     try {
-      const user = req.user;
-      if (!user) return res.status(401).json({ error: 'Não autorizado' });
+      console.log('[Cash Register] Iniciando abertura de caixa');
+
+      // 1. Autenticar usuário
+      const user = await getAuthenticatedUser(req);
+      console.log(`[Cash Register] Usuário autenticado: ${user.id}`);
+
+      // 2. Obter cliente escopado
+      const scopedSupabase = getScopedSupabaseClient(req);
 
       const { openingAmount, operatorName, openedAt } = req.body;
 
+      // 3. Validações
       if (typeof openingAmount !== 'number' || openingAmount < 0) {
         return res.status(400).json({ error: 'Valor de abertura inválido' });
       }
@@ -83,42 +123,84 @@ export default {
         return res.status(400).json({ error: 'Nome do operador é obrigatório' });
       }
 
-      const { data: openSession, error: checkError } = await supabase
+      // 4. Verificar se já existe caixa aberto
+      console.log(`[Cash Register] Verificando caixa aberto para operador: ${user.id}`);
+
+      const { data: openSession, error: checkError } = await scopedSupabase
         .from('cash_register_sessions')
         .select('id, opened_at, operator_name')
-        .eq('is_open', true)
+        .is('closed_at', null)  // ✅ CORRETO: usa .is() para NULL
+        .eq('operator_id', user.id)
         .maybeSingle();
 
-      if (openSession) {
-        return res.status(400).json({ error: 'Caixa já está aberto' });
+      if (checkError) {
+        console.error('[Cash Register] Erro ao verificar caixa aberto:', checkError);
       }
 
-      const { data: session, error: insertError } = await supabase
+      if (openSession) {
+        console.log(`[Cash Register] Caixa já está aberto: ${openSession.id}`);
+        return res.status(400).json({
+          error: 'Caixa já está aberto',
+          session: openSession
+        });
+      }
+
+      // 5. Criar nova sessão
+      console.log('[Cash Register] Criando nova sessão de caixa');
+
+      const { data: session, error: insertError } = await scopedSupabase
         .from('cash_register_sessions')
         .insert({
           opening_amount: openingAmount,
-          operator_id: user.id,
+          operator_id: user.id,  // ✅ Corresponde a auth.uid()
           operator_name: operatorName.trim(),
           is_open: true,
+          closed_at: null,
           opened_at: openedAt || new Date().toISOString()
         })
         .select()
         .single();
 
-      if (insertError) return res.status(500).json({ error: insertError.message });
+      if (insertError) {
+        console.error('[Cash Register] ❌ Erro ao inserir sessão:', insertError);
+        console.error('[Cash Register] Código:', insertError.code);
+        console.error('[Cash Register] Detalhes:', insertError.details);
+        console.error('[Cash Register] Mensagem:', insertError.message);
 
+        return res.status(500).json({
+          error: insertError.message,
+          code: insertError.code,
+          details: insertError.details
+        });
+      }
+
+      console.log(`[Cash Register] ✅ Caixa aberto com sucesso: ${session.id}`);
+
+      // 6. Log de auditoria
       await logEvent({
         userId: user.id,
-        userLogin: user.login,
+        userLogin: user.email || user.id,
         action: 'cash_register.opened',
         targetType: 'cash_register_session',
         targetId: session.id,
         details: { openingAmount, operatorName: operatorName.trim() }
       });
 
+      // 7. Trigger webhook
+      try {
+        await triggerCashRegisterOpened(session);
+      } catch (webhookError) {
+        console.warn('[Cash Register] Webhook falhou:', webhookError.message);
+        // Não bloqueia a resposta se webhook falhar
+      }
+
       res.status(201).json({ success: true, session });
     } catch (error) {
-      res.status(500).json({ error: error.message });
+      console.error('[Cash Register] ❌ Exceção ao abrir caixa:', error);
+      res.status(error.statusCode || 500).json({
+        error: error.message,
+        code: error.code
+      });
     }
   },
 
@@ -128,19 +210,54 @@ export default {
    */
   async getSummary(req, res) {
     try {
-      const { data: session, error: sessionError } = await supabase
+      console.log('[Cash Register] Buscando resumo do caixa');
+
+      // 1. Autenticar usuário
+      const user = await getAuthenticatedUser(req);
+      console.log(`[Cash Register] Buscando resumo para operador: ${user.id}`);
+
+      // 2. Obter cliente escopado
+      const scopedSupabase = getScopedSupabaseClient(req);
+
+      // 3. Buscar sessão aberta
+      const { data: session, error: sessionError } = await scopedSupabase
         .from('cash_register_sessions')
         .select('*')
-        .eq('is_open', true)
+        .is('closed_at', null)  // ✅ CORRETO
+        .eq('operator_id', user.id)
+        .order('opened_at', { ascending: false })
+        .limit(1)
         .maybeSingle();
 
-      if (sessionError) return res.status(500).json({ error: sessionError.message });
-      if (!session) return res.status(404).json({ error: 'Nenhum caixa aberto' });
+      if (sessionError) {
+        console.error('[Cash Register] Erro ao buscar sessão:', sessionError);
+        return res.status(500).json({ error: sessionError.message });
+      }
 
-      const statsData = await _getReportDataInternal(session.id);
-      res.json(statsData);
+      // 4. Retornar resposta apropriada
+      if (!session) {
+        console.log('[Cash Register] Nenhum caixa aberto');
+        return res.status(200).json({
+          hasOpenCashRegister: false,
+          message: 'Nenhum caixa aberto'
+        });
+      }
+
+      console.log(`[Cash Register] Caixa aberto encontrado: ${session.id}`);
+
+      // 5. Buscar dados do relatório
+      const statsData = await _getReportDataInternal(session.id, scopedSupabase);
+
+      res.json({
+        ...statsData,
+        hasOpenCashRegister: true
+      });
     } catch (error) {
-      res.status(500).json({ error: error.message });
+      console.error('[Cash Register] ❌ Exceção ao buscar resumo:', error);
+      res.status(error.statusCode || 500).json({
+        error: error.message,
+        code: error.code
+      });
     }
   },
 
@@ -150,22 +267,40 @@ export default {
    */
   async close(req, res) {
     try {
+      console.log('[Cash Register] Iniciando fechamento de caixa');
+
       const { actualAmount, notes } = req.body;
 
-      const { data: session, error: sessError } = await supabase
+      // 1. Autenticar usuário
+      const user = await getAuthenticatedUser(req);
+      console.log(`[Cash Register] Fechando caixa para operador: ${user.id}`);
+
+      // 2. Obter cliente escopado
+      const scopedSupabase = getScopedSupabaseClient(req);
+
+      // 3. Buscar sessão aberta
+      const { data: session, error: sessError } = await scopedSupabase
         .from('cash_register_sessions')
         .select('*')
-        .eq('is_open', true)
+        .is('closed_at', null)  // ✅ CORRETO
+        .eq('operator_id', user.id)
         .single();
 
-      if (sessError || !session) return res.status(404).json({ error: 'Caixa aberto não encontrado' });
+      if (sessError || !session) {
+        console.error('[Cash Register] Caixa aberto não encontrado:', sessError);
+        return res.status(404).json({ error: 'Caixa aberto não encontrado' });
+      }
 
-      const data = await _getReportDataInternal(session.id);
+      console.log(`[Cash Register] Fechando sessão: ${session.id}`);
+
+      // 4. Calcular valores
+      const data = await _getReportDataInternal(session.id, scopedSupabase);
       const expectedAmount = data.totals.saldoFinalEsperado;
       const difference = actualAmount - expectedAmount;
       const endTime = new Date().toISOString();
 
-      const { data: closedSession, error: updateError } = await supabase
+      // 5. Atualizar sessão
+      const { data: closedSession, error: updateError } = await scopedSupabase
         .from('cash_register_sessions')
         .update({
           is_open: false,
@@ -177,14 +312,21 @@ export default {
           notes: notes
         })
         .eq('id', session.id)
+        .eq('operator_id', user.id)  // ✅ Segurança adicional via RLS
         .select()
         .single();
 
-      if (updateError) return res.status(500).json({ error: updateError.message });
+      if (updateError) {
+        console.error('[Cash Register] Erro ao fechar caixa:', updateError);
+        return res.status(500).json({ error: updateError.message });
+      }
 
+      console.log(`[Cash Register] ✅ Caixa fechado: ${session.id}`);
+
+      // 6. Log de auditoria
       await logEvent({
-        userId: req.user.id,
-        userLogin: req.user.login,
+        userId: user.id,
+        userLogin: user.email || user.id,
         action: 'cash_register.closed',
         targetType: 'cash_register_session',
         targetId: session.id,
@@ -193,7 +335,11 @@ export default {
 
       res.json({ success: true, session: closedSession });
     } catch (error) {
-      res.status(500).json({ error: error.message });
+      console.error('[Cash Register] ❌ Exceção ao fechar caixa:', error);
+      res.status(error.statusCode || 500).json({
+        error: error.message,
+        code: error.code
+      });
     }
   },
 
@@ -203,29 +349,45 @@ export default {
    */
   async addTransaction(req, res) {
     try {
+      console.log('[Cash Register] Adicionando transação');
+
       const { sessionId, type, amount, description } = req.body;
 
+      // 1. Validações
       if (!['sangria', 'suprimento'].includes(type)) {
         return res.status(400).json({ error: 'Tipo inválido' });
       }
 
-      const { data, error } = await supabase
+      // 2. Autenticar usuário
+      const user = await getAuthenticatedUser(req);
+
+      // 3. Obter cliente escopado
+      const scopedSupabase = getScopedSupabaseClient(req);
+
+      // 4. Inserir transação
+      const { data, error } = await scopedSupabase
         .from('cash_transactions')
         .insert({
           session_id: sessionId,
           type,
           amount,
           description,
-          operator_id: req.user.id
+          operator_id: user.id
         })
         .select()
         .single();
 
-      if (error) return res.status(500).json({ error: error.message });
+      if (error) {
+        console.error('[Cash Register] Erro ao inserir transação:', error);
+        return res.status(500).json({ error: error.message });
+      }
 
+      console.log(`[Cash Register] ✅ Transação criada: ${data.id}`);
+
+      // 5. Log de auditoria
       await logEvent({
-        userId: req.user.id,
-        userLogin: req.user.login,
+        userId: user.id,
+        userLogin: user.email || user.id,
         action: `cash_register.${type}`,
         targetType: 'cash_transaction',
         targetId: data.id,
@@ -234,7 +396,11 @@ export default {
 
       res.status(201).json(data);
     } catch (error) {
-      res.status(500).json({ error: error.message });
+      console.error('[Cash Register] ❌ Exceção ao adicionar transação:', error);
+      res.status(error.statusCode || 500).json({
+        error: error.message,
+        code: error.code
+      });
     }
   },
 
@@ -244,16 +410,38 @@ export default {
    */
   async history(req, res) {
     try {
-      const { data, error } = await supabase
+      console.log('[Cash Register] Buscando histórico');
+
+      // 1. Autenticar usuário (opcional - depende se quer filtrar por usuário)
+      const user = await getAuthenticatedUser(req);
+
+      // 2. Obter cliente escopado
+      const scopedSupabase = getScopedSupabaseClient(req);
+
+      // 3. Buscar histórico
+      // Opção A: Todos os fechamentos (se RLS SELECT permite)
+      const { data, error } = await scopedSupabase
         .from('cash_register_sessions')
         .select('*')
-        .eq('is_open', false)
+        .not('closed_at', 'is', null)  // ✅ Apenas fechados
         .order('closed_at', { ascending: false });
 
-      if (error) return res.status(500).json({ error: error.message });
+      // Opção B: Apenas do operador atual (mais restritivo)
+      // .eq('operator_id', user.id)
+
+      if (error) {
+        console.error('[Cash Register] Erro ao buscar histórico:', error);
+        return res.status(500).json({ error: error.message });
+      }
+
+      console.log(`[Cash Register] Histórico encontrado: ${data?.length || 0} registros`);
       res.json(data);
     } catch (error) {
-      res.status(500).json({ error: error.message });
+      console.error('[Cash Register] ❌ Exceção ao buscar histórico:', error);
+      res.status(error.statusCode || 500).json({
+        error: error.message,
+        code: error.code
+      });
     }
   },
 
@@ -264,11 +452,30 @@ export default {
   async getReportData(req, res) {
     try {
       const { id } = req.params;
-      const data = await _getReportDataInternal(id);
-      if (!data) return res.status(404).json({ error: 'Relatório não encontrado' });
+      console.log(`[Cash Register] Buscando relatório: ${id}`);
+
+      // 1. Autenticar usuário
+      const user = await getAuthenticatedUser(req);
+
+      // 2. Obter cliente escopado
+      const scopedSupabase = getScopedSupabaseClient(req);
+
+      // 3. Buscar dados do relatório
+      const data = await _getReportDataInternal(id, scopedSupabase);
+
+      if (!data) {
+        console.log(`[Cash Register] Relatório não encontrado: ${id}`);
+        return res.status(404).json({ error: 'Relatório não encontrado' });
+      }
+
+      console.log(`[Cash Register] ✅ Relatório encontrado: ${id}`);
       res.json(data);
     } catch (error) {
-      res.status(500).json({ error: error.message });
+      console.error('[Cash Register] ❌ Exceção ao buscar relatório:', error);
+      res.status(error.statusCode || 500).json({
+        error: error.message,
+        code: error.code
+      });
     }
   },
 
@@ -279,12 +486,26 @@ export default {
   async downloadReport(req, res) {
     try {
       const { id, format } = req.params;
-      const data = await _getReportDataInternal(id);
-      if (!data) return res.status(404).json({ error: 'Relatório não encontrado' });
+      console.log(`[Cash Register] Download de relatório: ${id} (${format})`);
+
+      // 1. Autenticar usuário
+      const user = await getAuthenticatedUser(req);
+
+      // 2. Obter cliente escopado
+      const scopedSupabase = getScopedSupabaseClient(req);
+
+      // 3. Buscar dados
+      const data = await _getReportDataInternal(id, scopedSupabase);
+
+      if (!data) {
+        return res.status(404).json({ error: 'Relatório não encontrado' });
+      }
 
       let content;
       let contentType;
-      const datePart = data.session.closed_at ? data.session.closed_at.split('T')[0] : new Date().toISOString().split('T')[0];
+      const datePart = data.session.closed_at
+        ? data.session.closed_at.split('T')[0]
+        : new Date().toISOString().split('T')[0];
       let filename = `fechamento_${datePart}`;
 
       switch (format) {
@@ -307,12 +528,17 @@ export default {
           return res.status(400).json({ error: 'Formato inválido' });
       }
 
+      console.log(`[Cash Register] ✅ Relatório gerado: ${filename}`);
+
       res.setHeader('Content-Type', contentType);
       res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
       res.send(content);
     } catch (error) {
-      console.error('Download error:', error);
-      res.status(500).json({ error: error.message });
+      console.error('[Cash Register] ❌ Erro no download:', error);
+      res.status(error.statusCode || 500).json({
+        error: error.message,
+        code: error.code
+      });
     }
   },
 
@@ -322,15 +548,33 @@ export default {
    */
   async getCurrent(req, res) {
     try {
-      const { data: session, error } = await supabase
+      console.log('[Cash Register] Buscando sessão atual');
+
+      // 1. Autenticar usuário
+      const user = await getAuthenticatedUser(req);
+
+      // 2. Obter cliente escopado
+      const scopedSupabase = getScopedSupabaseClient(req);
+
+      // 3. Buscar sessão aberta
+      const { data: session, error } = await scopedSupabase
         .from('cash_register_sessions')
         .select('*')
-        .eq('is_open', true)
+        .is('closed_at', null)  // ✅ CORRETO
+        .eq('operator_id', user.id)
         .maybeSingle();
 
-      if (error && error.code !== 'PGRST116') return res.status(500).json({ error: 'Erro ao buscar estado do caixa' });
+      if (error && error.code !== 'PGRST116') {
+        console.error('[Cash Register] Erro ao buscar sessão atual:', error);
+        return res.status(500).json({ error: 'Erro ao buscar estado do caixa' });
+      }
 
-      if (!session) return res.status(200).json({ isOpen: false, session: null });
+      if (!session) {
+        console.log('[Cash Register] Nenhuma sessão aberta');
+        return res.status(200).json({ isOpen: false, session: null });
+      }
+
+      console.log(`[Cash Register] Sessão atual: ${session.id}`);
 
       res.status(200).json({
         isOpen: true,
@@ -343,7 +587,11 @@ export default {
         }
       });
     } catch (error) {
-      res.status(500).json({ error: 'Erro interno do servidor' });
+      console.error('[Cash Register] ❌ Exceção ao buscar sessão atual:', error);
+      res.status(error.statusCode || 500).json({
+        error: error.message || 'Erro interno do servidor',
+        code: error.code
+      });
     }
   }
 };
