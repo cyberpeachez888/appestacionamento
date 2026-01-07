@@ -266,22 +266,33 @@ export default {
       // === STEP 8: Clear Operational Tables ===
       let clearedTickets = 0;
       let clearedPayments = 0;
+      const cleanupErrors = [];
 
       if (clearOperational) {
+        console.log('🧹 Starting operational cleanup...');
+
         // Clear tickets for the period
         if (tickets && tickets.length > 0) {
           const ticketIds = tickets.map((t) => t.id);
+          console.log(`🧹 Attempting to delete ${ticketIds.length} tickets...`);
 
-          const { error: deleteTicketsError } = await supabase
+          const { error: deleteTicketsError, count } = await supabase
             .from('tickets')
             .delete()
             .in('id', ticketIds);
 
           if (deleteTicketsError) {
-            console.error('Error clearing tickets:', deleteTicketsError);
+            console.error('❌ Error clearing tickets:', deleteTicketsError);
+            console.error('❌ Error code:', deleteTicketsError.code);
+            console.error('❌ Error details:', deleteTicketsError.details);
+            console.error('❌ Error message:', deleteTicketsError.message);
+            cleanupErrors.push({ table: 'tickets', error: deleteTicketsError.message });
           } else {
             clearedTickets = ticketIds.length;
+            console.log(`✅ Successfully deleted ${clearedTickets} tickets`);
           }
+        } else {
+          console.log('ℹ️  No tickets to clear');
         }
 
         // Clear payments for the period (avulsos only - don't clear monthly customer payments)
@@ -291,18 +302,37 @@ export default {
             .map((p) => p.id);
 
           if (paymentIds.length > 0) {
-            const { error: deletePaymentsError } = await supabase
+            console.log(`🧹 Attempting to delete ${paymentIds.length} payments...`);
+
+            const { error: deletePaymentsError, count } = await supabase
               .from('payments')
               .delete()
               .in('id', paymentIds);
 
             if (deletePaymentsError) {
-              console.error('Error clearing payments:', deletePaymentsError);
+              console.error('❌ Error clearing payments:', deletePaymentsError);
+              console.error('❌ Error code:', deletePaymentsError.code);
+              console.error('❌ Error details:', deletePaymentsError.details);
+              console.error('❌ Error message:', deletePaymentsError.message);
+              cleanupErrors.push({ table: 'payments', error: deletePaymentsError.message });
             } else {
               clearedPayments = paymentIds.length;
+              console.log(`✅ Successfully deleted ${clearedPayments} payments`);
             }
+          } else {
+            console.log('ℹ️  No avulso payments to clear (all are monthly customer payments)');
           }
+        } else {
+          console.log('ℹ️  No payments to clear');
         }
+
+        console.log(`🧹 Cleanup complete: ${clearedTickets} tickets, ${clearedPayments} payments deleted`);
+
+        if (cleanupErrors.length > 0) {
+          console.error('⚠️  Cleanup completed with errors:', cleanupErrors);
+        }
+      } else {
+        console.log('ℹ️  Operational cleanup skipped (clearOperational = false)');
       }
 
       // === STEP 9: Log Audit Event ===
@@ -320,9 +350,11 @@ export default {
       });
 
       // === STEP 10: Return Success Response ===
+      const responseMessage = `Relatório mensal de ${reportMonth}/${reportYear} gerado com sucesso!${clearOperational ? ` ${clearedTickets} tickets e ${clearedPayments} pagamentos foram arquivados e removidos.` : ''}${cleanupErrors.length > 0 ? ` ⚠️ Alguns erros ocorreram durante a limpeza.` : ''}`;
+
       res.status(201).json({
         success: true,
-        message: `Relatório mensal de ${reportMonth}/${reportYear} gerado com sucesso!${clearOperational ? ` ${clearedTickets} tickets e ${clearedPayments} pagamentos foram arquivados e removidos.` : ''}`,
+        message: responseMessage,
         report: {
           id: savedReport.id,
           month: reportMonth,
@@ -335,6 +367,7 @@ export default {
           operationalCleared: clearOperational,
           clearedTickets,
           clearedPayments,
+          cleanupErrors: cleanupErrors.length > 0 ? cleanupErrors : undefined,
           generatedAt: savedReport.generated_at,
         },
       });
