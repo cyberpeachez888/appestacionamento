@@ -854,6 +854,37 @@ export function CustomerDialog({ open, onOpenChange, customer, onSaved }: Custom
               />
             </div>
 
+            {/* Date Fields - Only for editing existing customers */}
+            {customer && (
+              <>
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="editDueDate" className="text-right">
+                    Vencimento
+                  </Label>
+                  <Input
+                    id="editDueDate"
+                    type="date"
+                    value={dueDate}
+                    onChange={(e) => setDueDate(e.target.value)}
+                    className="col-span-3"
+                  />
+                </div>
+
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="editLastPayment" className="text-right">
+                    Último Pagamento
+                  </Label>
+                  <Input
+                    id="editLastPayment"
+                    type="date"
+                    value={lastPayment}
+                    onChange={(e) => setLastPayment(e.target.value)}
+                    className="col-span-3"
+                  />
+                </div>
+              </>
+            )}
+
             {/* Payment Section (only for creation and NOT retroactive) */}
             {!customer && !isRetroactive && (
               <div className="border-t pt-4 mt-2">
