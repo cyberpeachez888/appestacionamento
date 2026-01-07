@@ -1,0 +1,23 @@
+#!/bin/bash
+# Monitorar deploy do Render e verificar logs
+
+echo "🚀 Deploy iniciado no Render..."
+echo ""
+echo "📋 O que esperar nos logs do Render:"
+echo ""
+echo "✅ Mensagens esperadas:"
+echo "   ✅ Connecting to Supabase: https://nnpvazzeomwklugawceg.supabase.co"
+echo "   🔑 Using SERVICE_ROLE key"
+echo ""
+echo "❌ Se aparecer isso, a variável não está configurada:"
+echo "   🔑 Using ANON key"
+echo "   ⚠️  WARNING: Using ANON key - RLS policies will be enforced!"
+echo ""
+echo "⏱️  Tempo estimado de deploy: 2-3 minutos"
+echo ""
+echo "🔗 Acompanhe em: https://dashboard.render.com/"
+echo ""
+echo "Após o deploy, teste:"
+echo "1. Fazer login no app"
+echo "2. Abrir o caixa"
+echo "3. Verificar se não há mais erro de RLS"
