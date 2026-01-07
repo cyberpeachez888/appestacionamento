@@ -316,8 +316,8 @@ export function CustomerDialog({ open, onOpenChange, customer, onSaved }: Custom
           plates: plates.map((p) => p.value),
           value: parseFloat(value),
           operatorName: operatorName.trim() || undefined,
-          dueDate: dueDate || undefined,
-          lastPayment: lastPayment || undefined,
+          dueDate: dueDate ? new Date(dueDate).toISOString() : undefined,
+          lastPayment: lastPayment ? new Date(lastPayment).toISOString() : undefined,
         };
         await updateMonthlyCustomer(customer.id, patch);
       } else {
