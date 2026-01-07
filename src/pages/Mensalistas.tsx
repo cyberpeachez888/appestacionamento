@@ -120,7 +120,7 @@ export default function Mensalistas() {
     const term = searchTerm.toLowerCase();
     return customersWithStatus.filter(customer =>
       customer.name.toLowerCase().includes(term) ||
-      customer.plates.some(plate => plate.toLowerCase().includes(term)) ||
+      (Array.isArray(customer.plates) ? customer.plates : []).some(plate => plate.toLowerCase().includes(term)) ||
       customer.parkingSlot?.toString().includes(term)
     );
   }, [customersWithStatus, searchTerm]);
@@ -248,7 +248,7 @@ export default function Mensalistas() {
                             <td className="px-4 py-3 font-medium">{customer.name}</td>
                             <td className="px-4 py-3">
                               <div className="flex flex-wrap gap-1">
-                                {customer.plates.map((plate: string, idx: number) => (
+                                {(Array.isArray(customer.plates) ? customer.plates : []).map((plate: string, idx: number) => (
                                   <span key={idx} className="text-xs bg-muted px-2 py-1 rounded">
                                     {plate}
                                   </span>

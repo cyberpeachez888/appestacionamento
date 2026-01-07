@@ -56,7 +56,7 @@ export function MensalistasDetailPanel({ customer, statusInfo }: MensalistasDeta
                             Placa(s)
                         </p>
                         <div className="flex flex-wrap gap-1">
-                            {customer.plates.map((plate, idx) => (
+                            {(Array.isArray(customer.plates) ? customer.plates : []).map((plate, idx) => (
                                 <span key={idx} className="text-xs bg-muted px-2 py-1 rounded font-medium">
                                     {plate}
                                 </span>

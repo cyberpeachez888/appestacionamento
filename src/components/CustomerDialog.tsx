@@ -313,7 +313,7 @@ export function CustomerDialog({ open, onOpenChange, customer, onSaved }: Custom
           cpf: cpf.trim() || null,
           phone: phone.trim() || null,
           parkingSlot: parkingSlot ? parseInt(parkingSlot) : null,
-          plates: plates.map((p) => p.value),
+          plates: (Array.isArray(plates) ? plates : []).map((p) => p.value),
           value: parseFloat(value),
           operatorName: operatorName.trim() || undefined,
           contractDate: contractDate ? new Date(format(contractDate, 'yyyy-MM-dd') + 'T12:00:00').toISOString() : undefined,
@@ -328,7 +328,7 @@ export function CustomerDialog({ open, onOpenChange, customer, onSaved }: Custom
           cpf: cpf.trim() || null, // Optional for all customers
           phone: phone.trim() || null, // Optional for all customers
           parkingSlot: parkingSlot ? parseInt(parkingSlot) : null, // Optional for all customers
-          plates: plates.map((p) => p.value),
+          plates: (Array.isArray(plates) ? plates : []).map((p) => p.value),
           value: parseFloat(value),
           paymentMethod: isRetroactive ? null : paymentMethod,
           paidAmount: isRetroactive ? null : (paymentMethod === 'Dinheiro' ? parseFloat(paidAmount) : undefined),
@@ -474,10 +474,10 @@ export function CustomerDialog({ open, onOpenChange, customer, onSaved }: Custom
                 <span class="field-label">Placas Cadastradas:</span>
               </div>
               <div class="plates">
-                ${receiptData.customer.plates.map((plate: string) => `<span class="plate-badge">${plate}</span>`).join('')}
+                ${(Array.isArray(receiptData.customer.plates) ? receiptData.customer.plates : []).map((plate: string) => `<span class="plate-badge">${plate}</span>`).join('')}
               </div>
               <p style="font-size: 11px; margin-top: 8px; color: #666;">
-                * O cliente possui ${receiptData.customer.plates.length} veículo(s) cadastrado(s) para esta vaga.
+                * O cliente possui ${(Array.isArray(receiptData.customer.plates) ? receiptData.customer.plates : []).length} veículo(s) cadastrado(s) para esta vaga.
               </p>
             </div>
 
@@ -670,7 +670,7 @@ export function CustomerDialog({ open, onOpenChange, customer, onSaved }: Custom
               </Label>
               <div className="col-span-3 space-y-2">
                 {/* Display added plates */}
-                {plates.map((plate) => (
+                {(Array.isArray(plates) ? plates : []).map((plate) => (
                   <div key={plate.id} className="flex gap-2 items-center">
                     {plate.isEditing ? (
                       <Input
