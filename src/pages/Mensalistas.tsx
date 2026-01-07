@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
 import { CustomerDialog } from '@/components/CustomerDialog';
@@ -13,7 +13,7 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { useParking } from '@/contexts/ParkingContext';
+import { useParking, MonthlyCustomer } from '@/contexts/ParkingContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { Badge } from '@/components/ui/badge';
 import { calculateCustomerStatus, getRowBackgroundColor } from '@/types/mensalistas';
@@ -42,7 +42,8 @@ export default function Mensalistas() {
   const { hasPermission } = useAuth();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
-  const [selectedCustomer, setSelectedCustomer] = useState<any>();
+  const [selectedCustomer, setSelectedCustomer] = useState<MonthlyCustomer>();
+  const [searchTerm, setSearchTerm] = useState('');
   const [selectedCustomerId, setSelectedCustomerId] = useState<string | null>(null);
 
   // --- AÇÕES ---
@@ -52,27 +53,36 @@ export default function Mensalistas() {
     setDialogOpen(true);
   };
 
-  const handleEdit = (customer: any) => {
+  const handleEdit = (customer: MonthlyCustomer) => {
     if (!hasPermission('manageMonthlyCustomers')) return;
     setSelectedCustomer(customer);
     setDialogOpen(true);
   };
 
-  const handleRegisterPayment = (customer: any) => {
+  const handleRegisterPayment = (customer: MonthlyCustomer) => {
     if (!hasPermission('manageMonthlyCustomers')) return;
     setSelectedCustomer(customer);
     setPaymentDialogOpen(true);
   };
 
-  const handleDelete = async (customer: any) => {
+  const handleDelete = async (customer: MonthlyCustomer) => {
     if (!hasPermission('manageMonthlyCustomers')) return;
     if (!confirm(`Deseja realmente remover o cliente ${customer.name}?`)) return;
 
     try {
-      await deleteMonthlyCustomer(customer.id); // Usar função do contexto
-      toast({ title: 'Cliente removido', description: 'O cliente foi excluído com sucesso' });
+      await deleteMonthlyCustomer(customer.id);
+      toast({
+        title: 'Cliente removido',
+        description: 'O cliente foi excluído com sucesso',
+        variant: 'default'
+      });
     } catch (err) {
       console.error('Erro ao remover cliente:', err);
+      toast({
+        title: 'Erro ao remover',
+        description: 'Não foi possível remover o cliente',
+        variant: 'destructive'
+      });
     }
   };
 
@@ -93,6 +103,39 @@ export default function Mensalistas() {
   };
 
   const canManage = hasPermission('manageMonthlyCustomers');
+
+  // Performance: Calculate status with useMemo to avoid re-calculation on every render
+  const customersWithStatus = useMemo(() =>
+    monthlyCustomers.map(customer => ({
+      ...customer,
+      statusInfo: calculateCustomerStatus(customer.dueDate)
+    })),
+    [monthlyCustomers]
+  );
+
+  // Filter customers based on search term
+  const filteredCustomers = useMemo(() => {
+    if (!searchTerm.trim()) return customersWithStatus;
+
+    const term = searchTerm.toLowerCase();
+    return customersWithStatus.filter(customer =>
+      customer.name.toLowerCase().includes(term) ||
+      customer.plates.some(plate => plate.toLowerCase().includes(term)) ||
+      customer.parkingSlot?.toString().includes(term)
+    );
+  }, [customersWithStatus, searchTerm]);
+
+  // Calculate summary statistics
+  const summary = useMemo(() => {
+    const total = customersWithStatus.length;
+    const emDia = customersWithStatus.filter(c => c.statusInfo.status === 'Em dia').length;
+    const atrasados = customersWithStatus.filter(c =>
+      c.statusInfo.status === 'Atrasado' || c.statusInfo.status === 'Atraso crítico'
+    ).length;
+    const totalRevenue = customersWithStatus.reduce((sum, c) => sum + c.value, 0);
+
+    return { total, emDia, atrasados, totalRevenue };
+  }, [customersWithStatus]);
 
   return (
     <div className="flex-1 p-8">
@@ -115,6 +158,37 @@ export default function Mensalistas() {
               Adicionar Cliente
             </Button>
           )}
+        </div>
+
+        {/* Summary Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+          <div className="bg-card rounded-lg border p-4">
+            <div className="text-sm text-muted-foreground">Total de Clientes</div>
+            <div className="text-2xl font-bold mt-1">{summary.total}</div>
+          </div>
+          <div className="bg-card rounded-lg border p-4">
+            <div className="text-sm text-muted-foreground">Em Dia</div>
+            <div className="text-2xl font-bold mt-1 text-green-600">{summary.emDia}</div>
+          </div>
+          <div className="bg-card rounded-lg border p-4">
+            <div className="text-sm text-muted-foreground">Atrasados</div>
+            <div className="text-2xl font-bold mt-1 text-red-600">{summary.atrasados}</div>
+          </div>
+          <div className="bg-card rounded-lg border p-4">
+            <div className="text-sm text-muted-foreground">Receita Mensal</div>
+            <div className="text-2xl font-bold mt-1">R$ {summary.totalRevenue.toFixed(2)}</div>
+          </div>
+        </div>
+
+        {/* Search Bar */}
+        <div className="mb-4">
+          <input
+            type="text"
+            placeholder="Buscar por nome, placa ou vaga..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary bg-background"
+          />
         </div>
 
         <div className="bg-card rounded-lg shadow-sm border overflow-hidden">
@@ -153,17 +227,16 @@ export default function Mensalistas() {
                 </tr>
               </thead>
               <tbody>
-                {monthlyCustomers.length === 0 ? ( // Usar monthlyCustomers do contexto
+                {filteredCustomers.length === 0 ? (
                   <tr>
                     <td colSpan={10} className="px-4 py-8 text-center text-muted-foreground">
-                      Nenhum cliente cadastrado
+                      {searchTerm ? 'Nenhum cliente encontrado' : 'Nenhum cliente cadastrado'}
                     </td>
                   </tr>
                 ) : (
-                  monthlyCustomers.map((customer, index) => {
-                    const statusInfo = calculateCustomerStatus(customer.dueDate);
+                  filteredCustomers.map((customer, index) => {
                     const isSelected = selectedCustomerId === customer.id;
-                    const rowBgColor = getRowBackgroundColor(statusInfo.status, isSelected, index);
+                    const rowBgColor = getRowBackgroundColor(customer.statusInfo.status, isSelected, index);
 
                     return (
                       <ContextMenu key={customer.id}>
@@ -191,17 +264,19 @@ export default function Mensalistas() {
                               R$ {customer.value.toFixed(2)}
                             </td>
                             <td className="px-4 py-3 text-sm">
-                              {customer.contractDate
+                              {customer.contractDate && !isNaN(new Date(customer.contractDate).getTime())
                                 ? format(new Date(customer.contractDate), 'dd/MM/yyyy', {
                                   locale: ptBR,
                                 })
                                 : '-'}
                             </td>
                             <td className="px-4 py-3 text-sm">
-                              {format(new Date(customer.dueDate), 'dd/MM/yyyy', { locale: ptBR })}
+                              {customer.dueDate && !isNaN(new Date(customer.dueDate).getTime())
+                                ? format(new Date(customer.dueDate), 'dd/MM/yyyy', { locale: ptBR })
+                                : '-'}
                             </td>
                             <td className="px-4 py-3 text-sm">
-                              {customer.lastPayment
+                              {customer.lastPayment && !isNaN(new Date(customer.lastPayment).getTime())
                                 ? format(new Date(customer.lastPayment), 'dd/MM/yyyy', {
                                   locale: ptBR,
                                 })
@@ -218,9 +293,9 @@ export default function Mensalistas() {
                             </td>
                             <td className="px-4 py-3">
                               <span
-                                className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusInfo.bgColor} ${statusInfo.textColor}`}
+                                className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${customer.statusInfo.bgColor} ${customer.statusInfo.textColor}`}
                               >
-                                {statusInfo.status}
+                                {customer.statusInfo.status}
                               </span>
                             </td>
                             <td className="px-4 py-3 text-right space-x-2">
