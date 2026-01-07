@@ -109,7 +109,7 @@ export const ShiftOperations = ({ onSessionClose }: ShiftOperationsProps) => {
                     <div className="flex items-center gap-2">
                         <Clock className="h-4 w-4 text-blue-500" />
                         <span className="font-semibold">Abertura:</span>
-                        <span>{format(new Date(session.opened_at), "dd/MM 'às' HH:mm", { locale: ptBR })}</span>
+                        <span>{session?.opened_at ? format(new Date(session.opened_at), "dd/MM 'às' HH:mm", { locale: ptBR }) : 'N/A'}</span>
                     </div>
                     <div className="flex items-center gap-2">
                         <FileText className="h-4 w-4 text-blue-500" />

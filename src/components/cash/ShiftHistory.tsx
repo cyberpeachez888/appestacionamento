@@ -130,7 +130,7 @@ export const ShiftHistory = () => {
                                             <div className="flex flex-col">
                                                 <span className="font-medium">{format(new Date(closing.closed_at), 'dd/MM/yyyy')}</span>
                                                 <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-tight">
-                                                    {format(new Date(closing.opened_at), 'HH:mm')} ➜ {format(new Date(closing.closed_at), 'HH:mm')}
+                                                    {closing?.opened_at && closing?.closed_at ? `${format(new Date(closing.opened_at), 'HH:mm')} ➜ ${format(new Date(closing.closed_at), 'HH:mm')}` : 'N/A'}
                                                 </span>
                                             </div>
                                         </TableCell>
