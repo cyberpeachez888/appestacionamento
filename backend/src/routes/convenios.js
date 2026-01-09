@@ -48,6 +48,9 @@ router.delete('/:id', conveniosController.delete);
 // PATCH /api/convenios/:id/suspender - Suspender/Reativar
 router.patch('/:id/suspender', conveniosController.toggleSuspensao);
 
+// PUT /api/convenios/:id/plano - Atualizar plano (creates new, deactivates old)
+router.put('/:id/plano', conveniosController.updatePlano);
+
 // =====================================================
 // VEÍCULOS
 // =====================================================

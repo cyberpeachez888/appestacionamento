@@ -240,8 +240,11 @@ export default {
                     tipo_plano: plano.tipo_plano || 'padrao',
                     num_vagas_contratadas: plano.num_vagas_contratadas,
                     num_vagas_reservadas: plano.num_vagas_reservadas || 0,
+                    valor_por_vaga: plano.valor_por_vaga || null,
                     valor_mensal: plano.valor_mensal,
                     dia_vencimento_pagamento: plano.dia_vencimento_pagamento,
+                    dia_vencimento_pos_pago: plano.dia_vencimento_pos_pago || null,
+                    dia_fechamento: plano.dia_fechamento || null,
                     permite_vagas_extras: plano.permite_vagas_extras || false,
                     valor_vaga_extra: plano.valor_vaga_extra || null,
                     permite_horario_especial: plano.permite_horario_especial || false,
@@ -346,6 +349,92 @@ export default {
             res.status(500).json({ error: err.message || err });
         }
     },
+
+    /**
+     * PUT /api/convenios/:id/plano
+     * Atualiza o plano do convênio (desativa antigo, cria novo)
+     */
+    async updatePlano(req, res) {
+        try {
+            const { id: convenioId } = req.params;
+            const planoData = req.body;
+
+            // Buscar plano ativo atual
+            const { data: planoAtual, error: planoError } = await supabase
+                .from(PLANOS_TABLE)
+                .select('*')
+                .eq('convenio_id', convenioId)
+                .eq('ativo', true)
+                .single();
+
+            if (planoError || !planoAtual) {
+                return res.status(404).json({ error: 'Plano ativo não encontrado' });
+            }
+
+            // Desativar plano atual
+            await supabase
+                .from(PLANOS_TABLE)
+                .update({ ativo: false, data_fim_vigencia: new Date().toISOString().split('T')[0] })
+                .eq('id', planoAtual.id);
+
+            // Criar novo plano
+            const novoPlano = {
+                id: uuid(),
+                convenio_id: convenioId,
+                tipo_plano: planoData.tipo_plano || 'padrao',
+                num_vagas_contratadas: planoData.num_vagas_contratadas,
+                num_vagas_reservadas: planoData.num_vagas_reservadas || 0,
+                valor_por_vaga: planoData.valor_por_vaga || null,
+                valor_mensal: planoData.valor_mensal || null,
+                dia_vencimento_pagamento: planoData.dia_vencimento_pagamento || null,
+                dia_vencimento_pos_pago: planoData.dia_vencimento_pos_pago || null,
+                dia_fechamento: planoData.dia_fechamento || null,
+                permite_vagas_extras: planoData.permite_vagas_extras || false,
+                valor_vaga_extra: planoData.valor_vaga_extra || null,
+                porcentagem_desconto: planoData.porcentagem_desconto || null,
+                permite_horario_especial: planoData.permite_horario_especial || false,
+                horarios_permitidos: planoData.horarios_permitidos || null,
+                data_inicio_vigencia: new Date().toISOString().split('T')[0],
+                ativo: true
+            };
+
+            const { data: plano, error } = await supabase
+                .from(PLANOS_TABLE)
+                .insert(novoPlano)
+                .select()
+                .single();
+
+            if (error) {
+                return res.status(500).json({ error: error.message });
+            }
+
+            // Registrar no histórico
+            await supabase.from(HISTORICO_TABLE).insert({
+                id: uuid(),
+                convenio_id: convenioId,
+                usuario_id: req.user?.id,
+                tipo_alteracao: 'alteracao_plano',
+                dados_anteriores: planoAtual,
+                dados_novos: plano,
+                motivo: req.body.motivo || 'Alteração de plano'
+            });
+
+            // Log de auditoria
+            await logEvent({
+                actor: req.user,
+                action: 'convenio.plano.update',
+                targetType: 'convenio',
+                targetId: convenioId,
+                details: { planoAnterior: planoAtual.id, planoNovo: plano.id }
+            });
+
+            res.json(plano);
+        } catch (err) {
+            console.error('Erro no updatePlano:', err);
+            res.status(500).json({ error: err.message || err });
+        }
+    },
+
 
     /**
      * DELETE /api/convenios/:id

@@ -57,11 +57,13 @@ export function DialogNovoConvenio({ open, onOpenChange, onSuccess }: DialogNovo
     const [tipoConvenio, setTipoConvenio] = useState('');
     const [numVagas, setNumVagas] = useState('');
     const [numVagasReservadas, setNumVagasReservadas] = useState('');
+    const [valorPorVaga, setValorPorVaga] = useState(''); // NEW: Price per spot
     const [valorMensal, setValorMensal] = useState('');
     const [diaVencimento, setDiaVencimento] = useState('');
     const [permiteVagasExtras, setPermiteVagasExtras] = useState(false);
     const [valorVagaExtra, setValorVagaExtra] = useState('');
-    const [diaFechamento, setDiaFechamento] = useState(''); // New state for pos-pago
+    const [diaFechamento, setDiaFechamento] = useState(''); // Pós-pago: closing day
+    const [diaVencimentoPosPago, setDiaVencimentoPosPago] = useState(''); // Pós-pago: due day
     const [porcentagemDesconto, setPorcentagemDesconto] = useState(''); // Discount percentage
 
     // Passo 4: Contrato
@@ -82,9 +84,11 @@ export function DialogNovoConvenio({ open, onOpenChange, onSuccess }: DialogNovo
         setTipoConvenio('');
         setNumVagas('');
         setNumVagasReservadas('');
+        setValorPorVaga('');
         setValorMensal('');
         setDiaVencimento('');
         setDiaFechamento('');
+        setDiaVencimentoPosPago('');
         setPermiteVagasExtras(false);
         setValorVagaExtra('');
         setPorcentagemDesconto('');
@@ -114,12 +118,13 @@ export function DialogNovoConvenio({ open, onOpenChange, onSuccess }: DialogNovo
                     tipo_plano: 'padrao',
                     num_vagas_contratadas: parseInt(numVagas),
                     num_vagas_reservadas: parseInt(numVagasReservadas) || 0,
+                    valor_por_vaga: valorPorVaga ? parseFloat(valorPorVaga) : undefined,
                     // Pre-pago fields
-                    valor_mensal: isPrePago ? parseFloat(valorMensal) : null,
+                    valor_mensal: isPrePago && valorMensal ? parseFloat(valorMensal) : null,
                     dia_vencimento_pagamento: isPrePago ? parseInt(diaVencimento) : undefined,
                     // Pos-pago fields
-                    dia_vencimento_pos_pago: !isPrePago ? parseInt(diaVencimento) : undefined,
-                    dia_fechamento: !isPrePago ? parseInt(diaFechamento) : undefined,
+                    dia_vencimento_pos_pago: !isPrePago && diaVencimentoPosPago ? parseInt(diaVencimentoPosPago) : undefined,
+                    dia_fechamento: !isPrePago && diaFechamento ? parseInt(diaFechamento) : undefined,
 
                     permite_vagas_extras: permiteVagasExtras,
                     valor_vaga_extra: permiteVagasExtras ? parseFloat(valorVagaExtra) : undefined,
@@ -338,21 +343,93 @@ export function DialogNovoConvenio({ open, onOpenChange, onSuccess }: DialogNovo
                                 </div>
                             </div>
 
+                            {/* Valor por Vaga - applies to both pre and pos */}
+                            <div className="grid gap-2">
+                                <Label htmlFor="valor_por_vaga">
+                                    Valor por Vaga (R$/vaga)
+                                </Label>
+                                <Input
+                                    id="valor_por_vaga"
+                                    type="number"
+                                    step="0.01"
+                                    value={valorPorVaga}
+                                    onChange={(e) => setValorPorVaga(e.target.value)}
+                                    placeholder="0.00"
+                                />
+                                <p className="text-xs text-muted-foreground">
+                                    Valor unitário por vaga. Usado para calcular o valor total do convênio.
+                                </p>
+                            </div>
+
+                            {/* Desconto Percentual */}
+                            <div className="grid gap-2">
+                                <Label htmlFor="porcentagem_desconto">
+                                    Desconto Percentual (Opcional)
+                                </Label>
+                                <Input
+                                    id="porcentagem_desconto"
+                                    type="number"
+                                    step="0.01"
+                                    min="0"
+                                    max="100"
+                                    value={porcentagemDesconto}
+                                    onChange={(e) => setPorcentagemDesconto(e.target.value)}
+                                    placeholder="0.00"
+                                />
+                                <p className="text-xs text-muted-foreground">
+                                    Desconto aplicado sobre o valor integral (0-100%)
+                                </p>
+                            </div>
+
+                            {/* Preview do Valor Total */}
+                            {valorPorVaga && numVagas && (
+                                <div className="border rounded-lg p-4 bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-200">
+                                    <h4 className="font-semibold text-sm text-blue-900 mb-2">Preview do Valor Total</h4>
+                                    {(() => {
+                                        const vagas = parseInt(numVagas) || 0;
+                                        const valorUnitario = parseFloat(valorPorVaga) || 0;
+                                        const desconto = parseFloat(porcentagemDesconto) || 0;
+
+                                        const valorIntegral = vagas * valorUnitario;
+                                        const valorDesconto = valorIntegral * (desconto / 100);
+                                        const valorFinal = valorIntegral - valorDesconto;
+
+                                        return (
+                                            <div className="space-y-2 text-sm">
+                                                <div className="flex justify-between">
+                                                    <span className="text-gray-700">Valor Integral ({vagas} vagas × R$ {valorUnitario.toFixed(2)}):</span>
+                                                    <span className="font-semibold text-gray-900">R$ {valorIntegral.toFixed(2)}</span>
+                                                </div>
+                                                {desconto > 0 && (
+                                                    <div className="flex justify-between">
+                                                        <span className="text-gray-700">Desconto ({desconto}%):</span>
+                                                        <span className="font-semibold text-red-600">- R$ {valorDesconto.toFixed(2)}</span>
+                                                    </div>
+                                                )}
+                                                <div className="flex justify-between pt-2 border-t border-blue-300">
+                                                    <span className="font-semibold text-blue-900">Valor Final:</span>
+                                                    <span className="font-bold text-lg text-blue-900">R$ {valorFinal.toFixed(2)}</span>
+                                                </div>
+                                            </div>
+                                        );
+                                    })()}
+                                </div>
+                            )}
+
                             {tipoConvenio === 'pre-pago' ? (
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div className="grid gap-2">
-                                        <Label htmlFor="valor_mensal">
-                                            Valor Mensal <span className="text-red-500">*</span>
-                                        </Label>
-                                        <Input
-                                            id="valor_mensal"
-                                            type="number"
-                                            step="0.01"
-                                            value={valorMensal}
-                                            onChange={(e) => setValorMensal(e.target.value)}
-                                            placeholder="0.00"
-                                        />
-                                    </div>
+                                <div className="grid grid-cols-2 gap-4">\n                                    <div className="grid gap-2">
+                                    <Label htmlFor="valor_mensal">
+                                        Valor Mensal <span className="text-red-500">*</span>
+                                    </Label>
+                                    <Input
+                                        id="valor_mensal"
+                                        type="number"
+                                        step="0.01"
+                                        value={valorMensal}
+                                        onChange={(e) => setValorMensal(e.target.value)}
+                                        placeholder="0.00"
+                                    />
+                                </div>
                                     <div className="grid gap-2">
                                         <Label htmlFor="dia_vencimento">
                                             Dia de Vencimento <span className="text-red-500">*</span>

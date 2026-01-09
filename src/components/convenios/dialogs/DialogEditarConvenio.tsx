@@ -31,6 +31,7 @@ interface DialogEditarConvenioProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
     convenioId: string;
+    tipoConvenio: 'pre-pago' | 'pos-pago';
     convenioAtual: {
         nome_empresa: string;
         razao_social: string;
@@ -41,6 +42,11 @@ interface DialogEditarConvenioProps {
         endereco_completo?: string;
         observacoes?: string;
     };
+    planoAtual?: {
+        dia_vencimento_pagamento?: number;
+        dia_fechamento?: number;
+        dia_vencimento_pos_pago?: number;
+    };
     onSuccess: () => void;
 }
 
@@ -48,12 +54,14 @@ export function DialogEditarConvenio({
     open,
     onOpenChange,
     convenioId,
+    tipoConvenio,
     convenioAtual,
+    planoAtual,
     onSuccess,
 }: DialogEditarConvenioProps) {
     const [loading, setLoading] = useState(false);
 
-    // Form fields
+    // Form fields - Convenio
     const [nomeEmpresa, setNomeEmpresa] = useState('');
     const [razaoSocial, setRazaoSocial] = useState('');
     const [categoria, setCategoria] = useState('');
@@ -62,6 +70,10 @@ export function DialogEditarConvenio({
     const [contatoTelefone, setContatoTelefone] = useState('');
     const [endereco, setEndereco] = useState('');
     const [observacoes, setObservacoes] = useState('');
+
+    // Form fields - Plan dates
+    const [diaVencimento, setDiaVencimento] = useState('');
+    const [diaFechamento, setDiaFechamento] = useState('');
 
     // Pre-populate form when dialog opens
     useEffect(() => {
@@ -74,8 +86,18 @@ export function DialogEditarConvenio({
             setContatoTelefone(convenioAtual.contato_telefone || '');
             setEndereco(convenioAtual.endereco_completo || '');
             setObservacoes(convenioAtual.observacoes || '');
+
+            // Plan dates
+            if (planoAtual) {
+                if (tipoConvenio === 'pre-pago') {
+                    setDiaVencimento(planoAtual.dia_vencimento_pagamento?.toString() || '');
+                } else {
+                    setDiaFechamento(planoAtual.dia_fechamento?.toString() || '');
+                    setDiaVencimento(planoAtual.dia_vencimento_pos_pago?.toString() || '');
+                }
+            }
         }
-    }, [open, convenioAtual]);
+    }, [open, convenioAtual, planoAtual, tipoConvenio]);
 
     const handleSubmit = async () => {
         if (!nomeEmpresa || !razaoSocial || !categoria || !contatoNome || !contatoEmail || !contatoTelefone) {
@@ -86,6 +108,7 @@ export function DialogEditarConvenio({
         try {
             setLoading(true);
 
+            // Update convenio data
             const updates = {
                 nome_empresa: nomeEmpresa,
                 razao_social: razaoSocial,
@@ -98,6 +121,23 @@ export function DialogEditarConvenio({
             };
 
             await api.updateConvenio(convenioId, updates);
+
+            // Update plan dates if changed
+            if (planoAtual && (diaVencimento || diaFechamento)) {
+                const planoUpdates: any = {};
+
+                if (tipoConvenio === 'pre-pago' && diaVencimento) {
+                    planoUpdates.dia_vencimento_pagamento = parseInt(diaVencimento);
+                } else if (tipoConvenio === 'pos-pago') {
+                    if (diaFechamento) planoUpdates.dia_fechamento = parseInt(diaFechamento);
+                    if (diaVencimento) planoUpdates.dia_vencimento_pos_pago = parseInt(diaVencimento);
+                }
+
+                if (Object.keys(planoUpdates).length > 0) {
+                    await api.updateConvenioPlano(convenioId, planoUpdates);
+                }
+            }
+
             onOpenChange(false);
             onSuccess();
         } catch (error: any) {
@@ -171,6 +211,68 @@ export function DialogEditarConvenio({
                             placeholder="Nome completo"
                         />
                     </div>
+
+                    {/* Billing Dates Section */}
+                    {planoAtual && (
+                        <div className="border-t pt-4 mt-4">
+                            <h3 className="font-semibold mb-3 text-sm">Datas de Faturamento</h3>
+                            <div className="grid grid-cols-2 gap-4">
+                                {tipoConvenio === 'pre-pago' ? (
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="dia_vencimento">
+                                            Dia de Vencimento <span className="text-red-500">*</span>
+                                        </Label>
+                                        <Input
+                                            id="dia_vencimento"
+                                            type="number"
+                                            min="1"
+                                            max="28"
+                                            value={diaVencimento}
+                                            onChange={(e) => setDiaVencimento(e.target.value)}
+                                            placeholder="1-28"
+                                        />
+                                        <p className="text-xs text-muted-foreground">
+                                            Dia do mês para vencimento da mensalidade
+                                        </p>
+                                    </div>
+                                ) : (
+                                    <>
+                                        <div className="grid gap-2">
+                                            <Label htmlFor="dia_fechamento">
+                                                Dia de Fechamento <span className="text-red-500">*</span>
+                                            </Label>
+                                            <Input
+                                                id="dia_fechamento"
+                                                type="number"
+                                                min="1"
+                                                max="28"
+                                                value={diaFechamento}
+                                                onChange={(e) => setDiaFechamento(e.target.value)}
+                                                placeholder="1-28"
+                                            />
+                                            <p className="text-xs text-muted-foreground">
+                                                Dia para fechar e abrir nova fatura
+                                            </p>
+                                        </div>
+                                        <div className="grid gap-2">
+                                            <Label htmlFor="dia_vencimento">
+                                                Dia de Vencimento <span className="text-red-500">*</span>
+                                            </Label>
+                                            <Input
+                                                id="dia_vencimento"
+                                                type="number"
+                                                min="1"
+                                                max="28"
+                                                value={diaVencimento}
+                                                onChange={(e) => setDiaVencimento(e.target.value)}
+                                                placeholder="1-28"
+                                            />
+                                        </div>
+                                    </>
+                                )}
+                            </div>
+                        </div>
+                    )}
 
                     <div className="grid gap-2">
                         <Label htmlFor="contato_email">
