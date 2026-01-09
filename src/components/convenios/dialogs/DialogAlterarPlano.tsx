@@ -18,6 +18,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Info, ArrowLeftRight } from 'lucide-react';
 import { api } from '@/lib/api';
 
 interface DialogAlterarPlanoProps {
@@ -55,6 +58,7 @@ export function DialogAlterarPlano({
     const [diaVencimento, setDiaVencimento] = useState('');
     const [diaFechamento, setDiaFechamento] = useState('');
     const [permiteVagasExtras, setPermiteVagasExtras] = useState(false);
+    const [cobrancaVagaExtra, setCobrancaVagaExtra] = useState<'gratis' | 'paga'>('gratis');
     const [valorVagaExtra, setValorVagaExtra] = useState('');
     const [porcentagemDesconto, setPorcentagemDesconto] = useState('');
 
@@ -66,7 +70,14 @@ export function DialogAlterarPlano({
             setValorMensal(planoAtual.valor_mensal?.toString() || '');
             setDiaVencimento(planoAtual.dia_vencimento_pagamento?.toString() || '');
             setPermiteVagasExtras(planoAtual.permite_vagas_extras || false);
-            setValorVagaExtra(planoAtual.valor_vaga_extra?.toString() || '');
+            const valorExtra = planoAtual.valor_vaga_extra;
+            if (valorExtra && parseFloat(valorExtra.toString()) > 0) {
+                setCobrancaVagaExtra('paga');
+                setValorVagaExtra(valorExtra.toString());
+            } else {
+                setCobrancaVagaExtra('gratis');
+                setValorVagaExtra('');
+            }
             setPorcentagemDesconto(planoAtual.porcentagem_desconto?.toString() || '');
         }
     }, [open, planoAtual]);
@@ -107,7 +118,7 @@ export function DialogAlterarPlano({
                 dia_vencimento_pos_pago: !isPrePago ? parseInt(diaVencimento) : undefined,
                 dia_fechamento: !isPrePago ? parseInt(diaFechamento) : undefined,
                 permite_vagas_extras: permiteVagasExtras,
-                valor_vaga_extra: permiteVagasExtras && valorVagaExtra ? parseFloat(valorVagaExtra) : undefined,
+                valor_vaga_extra: permiteVagasExtras && cobrancaVagaExtra === 'paga' && valorVagaExtra ? parseFloat(valorVagaExtra) : (permiteVagasExtras && cobrancaVagaExtra === 'gratis' ? 0 : undefined),
                 porcentagem_desconto: porcentagemDesconto ? parseFloat(porcentagemDesconto) : undefined,
             };
 
@@ -132,6 +143,23 @@ export function DialogAlterarPlano({
                         Modifique o plano contratado do convênio
                     </DialogDescription>
                 </DialogHeader>
+
+                {/* Alert mostrando plano atual e opção de troca */}
+                <Alert className="bg-blue-50 border-blue-200">
+                    <Info className="h-4 w-4 text-blue-600" />
+                    <AlertDescription className="text-blue-900">
+                        <div className="flex items-center gap-2 font-medium mb-1">
+                            <span>Plano Atual: <strong className="text-blue-700">{isPrePago ? 'Pré-pago (Mensalidade Fixa)' : 'Pós-pago (Por Uso)'}</strong></span>
+                        </div>
+                        <div className="text-sm text-blue-700 flex items-center gap-1">
+                            <ArrowLeftRight className="h-3 w-3" />
+                            <span>Opção alternativa: <strong>{isPrePago ? 'Pós-pago (Por Uso)' : 'Pré-pago (Mensalidade Fixa)'}</strong></span>
+                        </div>
+                        <p className="text-xs text-blue-600 mt-2">
+                            Para trocar entre Pré-pago ↔ Pós-pago, entre em contato com o suporte.
+                        </p>
+                    </AlertDescription>
+                </Alert>
 
                 <div className="grid gap-4 py-4">
                     <div className="grid grid-cols-2 gap-4">
@@ -247,30 +275,59 @@ export function DialogAlterarPlano({
                         </p>
                     </div>
 
-                    <div className="flex items-center space-x-2">
-                        <Checkbox
-                            id="permite_vagas_extras"
-                            checked={permiteVagasExtras}
-                            onCheckedChange={(checked) => setPermiteVagasExtras(checked as boolean)}
-                        />
-                        <Label htmlFor="permite_vagas_extras" className="cursor-pointer">
-                            Permite Vagas Extras
-                        </Label>
-                    </div>
-
-                    {permiteVagasExtras && (
-                        <div className="grid gap-2">
-                            <Label htmlFor="valor_vaga_extra">Valor por Vaga Extra</Label>
-                            <Input
-                                id="valor_vaga_extra"
-                                type="number"
-                                step="0.01"
-                                value={valorVagaExtra}
-                                onChange={(e) => setValorVagaExtra(e.target.value)}
-                                placeholder="0.00"
+                    {/* Seção de Vagas Extras */}
+                    <div className="border rounded-lg p-4 space-y-3 bg-slate-50">
+                        <div className="flex items-center space-x-2">
+                            <Checkbox
+                                id="permite_vagas_extras"
+                                checked={permiteVagasExtras}
+                                onCheckedChange={(checked) => setPermiteVagasExtras(checked as boolean)}
                             />
+                            <Label htmlFor="permite_vagas_extras" className="cursor-pointer font-medium">
+                                Permitir Vagas Extras
+                            </Label>
                         </div>
-                    )}
+
+                        {permiteVagasExtras && (
+                            <div className="space-y-3 pl-6 border-l-2 border-blue-300">
+                                <p className="text-sm text-muted-foreground">
+                                    Configure se as vagas extras serão gratuitas ou terão cobrança adicional
+                                </p>
+
+                                <RadioGroup value={cobrancaVagaExtra} onValueChange={(value) => setCobrancaVagaExtra(value as 'gratis' | 'paga')}>
+                                    <div className="flex items-center space-x-2">
+                                        <RadioGroupItem value="gratis" id="gratis" />
+                                        <Label htmlFor="gratis" className="cursor-pointer font-normal">
+                                            Gratuitas (sem cobrança adicional)
+                                        </Label>
+                                    </div>
+                                    <div className="flex items-center space-x-2">
+                                        <RadioGroupItem value="paga" id="paga" />
+                                        <Label htmlFor="paga" className="cursor-pointer font-normal">
+                                            Pagas (com cobrança por vaga extra)
+                                        </Label>
+                                    </div>
+                                </RadioGroup>
+
+                                {cobrancaVagaExtra === 'paga' && (
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="valor_vaga_extra">Valor por Vaga Extra <span className="text-red-500">*</span></Label>
+                                        <Input
+                                            id="valor_vaga_extra"
+                                            type="number"
+                                            step="0.01"
+                                            value={valorVagaExtra}
+                                            onChange={(e) => setValorVagaExtra(e.target.value)}
+                                            placeholder="0.00"
+                                        />
+                                        <p className="text-xs text-muted-foreground">
+                                            Este valor será cobrado por cada vaga extra utilizada
+                                        </p>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+                    </div>
                 </div>
 
                 <DialogFooter>
