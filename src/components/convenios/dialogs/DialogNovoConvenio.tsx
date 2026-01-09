@@ -26,6 +26,7 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { api } from '@/lib/api';
 
 
@@ -61,6 +62,8 @@ export function DialogNovoConvenio({ open, onOpenChange, onSuccess }: DialogNovo
     const [valorMensal, setValorMensal] = useState('');
     const [diaVencimento, setDiaVencimento] = useState('');
     const [permiteVagasExtras, setPermiteVagasExtras] = useState(false);
+    const [tipoVagaExtra, setTipoVagaExtra] = useState<'gratis' | 'paga'>('gratis');
+    const [maxVagasExtras, setMaxVagasExtras] = useState('');
     const [valorVagaExtra, setValorVagaExtra] = useState('');
     const [diaFechamento, setDiaFechamento] = useState(''); // Pós-pago: closing day
     const [diaVencimentoPosPago, setDiaVencimentoPosPago] = useState(''); // Pós-pago: due day
@@ -495,16 +498,64 @@ export function DialogNovoConvenio({ open, onOpenChange, onSuccess }: DialogNovo
                             </div>
 
                             {permiteVagasExtras && (
-                                <div className="grid gap-2">
-                                    <Label htmlFor="valor_vaga_extra">Valor por Vaga Extra</Label>
-                                    <Input
-                                        id="valor_vaga_extra"
-                                        type="number"
-                                        step="0.01"
-                                        value={valorVagaExtra}
-                                        onChange={(e) => setValorVagaExtra(e.target.value)}
-                                        placeholder="0.00"
-                                    />
+                                <div className="space-y-4 border-l-2 border-blue-200 pl-4">
+                                    {/* Tipo de Vaga Extra */}
+                                    <div className="grid gap-2">
+                                        <Label>Tipo de Vagas Extras <span className="text-red-500">*</span></Label>
+                                        <RadioGroup value={tipoVagaExtra} onValueChange={(value) => setTipoVagaExtra(value as 'gratis' | 'paga')}>
+                                            <div className="flex items-center space-x-2">
+                                                <RadioGroupItem value="gratis" id="vaga_gratis" />
+                                                <Label htmlFor="vaga_gratis" className="cursor-pointer font-normal">
+                                                    Vagas Extras Gratuitas
+                                                </Label>
+                                            </div>
+                                            <div className="flex items-center space-x-2">
+                                                <RadioGroupItem value="paga" id="vaga_paga" />
+                                                <Label htmlFor="vaga_paga" className="cursor-pointer font-normal">
+                                                    Vagas Extras Pagas
+                                                </Label>
+                                            </div>
+                                        </RadioGroup>
+                                    </div>
+
+                                    {/* Quantidade Máxima */}
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="max_vagas_extras">
+                                            Quantidade Máxima de Vagas Extras <span className="text-red-500">*</span>
+                                        </Label>
+                                        <Input
+                                            id="max_vagas_extras"
+                                            type="number"
+                                            min="1"
+                                            value={maxVagasExtras}
+                                            onChange={(e) => setMaxVagasExtras(e.target.value)}
+                                            placeholder="Ex: 5"
+                                        />
+                                        <p className="text-xs text-muted-foreground">
+                                            Limite de vagas extras permitidas além das contratadas
+                                        </p>
+                                    </div>
+
+                                    {/* Valor (só se paga) */}
+                                    {tipoVagaExtra === 'paga' && (
+                                        <div className="grid gap-2">
+                                            <Label htmlFor="valor_vaga_extra">
+                                                Valor por Vaga Extra <span className="text-red-500">*</span>
+                                            </Label>
+                                            <Input
+                                                id="valor_vaga_extra"
+                                                type="number"
+                                                step="0.01"
+                                                min="0"
+                                                value={valorVagaExtra}
+                                                onChange={(e) => setValorVagaExtra(e.target.value)}
+                                                placeholder="0.00"
+                                            />
+                                            <p className="text-xs text-muted-foreground">
+                                                Valor cobrado por cada vaga extra utilizada
+                                            </p>
+                                        </div>
+                                    )}
                                 </div>
                             )}
                         </>
