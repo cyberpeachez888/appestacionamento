@@ -18,9 +18,12 @@ ADD COLUMN IF NOT EXISTS dia_vencimento_pos_pago INTEGER CHECK (dia_vencimento_p
 ALTER TABLE convenios_planos
 ADD COLUMN IF NOT EXISTS porcentagem_desconto DECIMAL(5,2) CHECK (porcentagem_desconto >= 0 AND porcentagem_desconto <= 100);
 
--- Update valor_mensal to allow NULL for pós-pago convenios
+-- Alterar valor_mensal para aceitar NULL (será calculado para pós-pago)
 ALTER TABLE convenios_planos
 ALTER COLUMN valor_mensal DROP NOT NULL;
+
+-- Alterar dia_vencimento_pagamento para aceitar NULL (pós-pago usa dia_vencimento_pos_pago)
+ALTER TABLE convenios_planos ALTER COLUMN dia_vencimento_pagamento DROP NOT NULL;
 
 -- Comments
 COMMENT ON COLUMN convenios_planos.valor_por_vaga IS 'Valor unitário por vaga (R$/vaga). Usado para calcular valor_mensal = valor_por_vaga × num_vagas';
