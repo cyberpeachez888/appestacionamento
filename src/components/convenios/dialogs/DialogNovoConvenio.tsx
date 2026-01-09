@@ -745,6 +745,3 @@ export function DialogNovoConvenio({ open, onOpenChange, onSuccess, mode = 'crea
         </Dialog>
     );
 }
-
-// Ensure component is exported
-export { DialogNovoConvenio };
