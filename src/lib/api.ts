@@ -1052,6 +1052,13 @@ class ApiClient {
     });
   }
 
+  async updateConvenioPlano(convenioId: string, planoData: any) {
+    return this.request<any>(`/convenios/${convenioId}/plano`, {
+      method: 'PUT',
+      body: JSON.stringify(planoData),
+    });
+  }
+
   // Notificações
   async getNotificacoes(unreadOnly?: boolean) {
     const query = unreadOnly ? '?unreadOnly=true' : '';

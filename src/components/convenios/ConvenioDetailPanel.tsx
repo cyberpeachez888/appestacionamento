@@ -30,6 +30,10 @@ import {
 import { api } from '@/lib/api';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { DialogEditarConvenio } from './dialogs/DialogEditarConvenio';
+import { DialogAlterarPlano } from './dialogs/DialogAlterarPlano';
+import { DialogAdicionarVeiculo } from './dialogs/DialogAdicionarVeiculo';
+import { DialogGerarFatura } from './dialogs/DialogGerarFatura';
 
 
 
@@ -68,6 +72,12 @@ export function ConvenioDetailPanel({ convenioId, onClose }: ConvenioDetailPanel
     const [loadingMovimentacoes, setLoadingMovimentacoes] = useState(false);
     const [loadingDocumentos, setLoadingDocumentos] = useState(false);
     const [uploadingDoc, setUploadingDoc] = useState(false);
+
+    // Dialog states
+    const [dialogEditar, setDialogEditar] = useState(false);
+    const [dialogAlterarPlano, setDialogAlterarPlano] = useState(false);
+    const [dialogAdicionarVeiculo, setDialogAdicionarVeiculo] = useState(false);
+    const [dialogGerarFatura, setDialogGerarFatura] = useState(false);
 
     useEffect(() => {
         fetchConvenioDetalhes();
@@ -243,7 +253,7 @@ export function ConvenioDetailPanel({ convenioId, onClose }: ConvenioDetailPanel
                         <Badge variant={convenio.status === 'ativo' ? 'default' : 'secondary'}>
                             {convenio.status}
                         </Badge>
-                        <Button variant="outline" size="sm">
+                        <Button variant="outline" size="sm" onClick={() => setDialogEditar(true)}>
                             <Edit className="h-4 w-4 mr-2" />
                             Editar
                         </Button>
@@ -426,14 +436,14 @@ export function ConvenioDetailPanel({ convenioId, onClose }: ConvenioDetailPanel
                             </div>
                         )}
 
-                        <Button variant="outline">Alterar Plano</Button>
+                        <Button variant="outline" onClick={() => setDialogAlterarPlano(true)}>Alterar Plano</Button>
                     </TabsContent>
 
                     {/* Aba 3: Veículos */}
                     <TabsContent value="veiculos" className="space-y-4">
                         <div className="flex justify-between items-center">
                             <h3 className="font-semibold">Veículos Autorizados ({convenio.veiculos?.length || 0})</h3>
-                            <Button size="sm">Adicionar Veículo</Button>
+                            <Button size="sm" onClick={() => setDialogAdicionarVeiculo(true)}>Adicionar Veículo</Button>
                         </div>
 
                         {convenio.veiculos && convenio.veiculos.length > 0 ? (
@@ -466,7 +476,7 @@ export function ConvenioDetailPanel({ convenioId, onClose }: ConvenioDetailPanel
                     <TabsContent value="financeiro" className="space-y-4">
                         <div className="flex justify-between items-center">
                             <h3 className="font-semibold">Faturas ({convenio.faturas?.length || 0})</h3>
-                            <Button size="sm">Gerar Fatura</Button>
+                            <Button size="sm" onClick={() => setDialogGerarFatura(true)}>Gerar Fatura</Button>
                         </div>
 
                         {convenio.faturas && convenio.faturas.length > 0 ? (
@@ -643,6 +653,80 @@ export function ConvenioDetailPanel({ convenioId, onClose }: ConvenioDetailPanel
                     </TabsContent>
                 </Tabs>
             </CardContent>
+
+            {/* Dialogs */}
+            {convenio && (
+                <>
+                    <DialogEditarConvenio
+                        open={dialogEditar}
+                        onOpenChange={setDialogEditar}
+                        convenioId={convenioId}
+                        convenioAtual={{
+                            nome_empresa: convenio.nome_empresa,
+                            razao_social: convenio.razao_social,
+                            categoria: convenio.categoria,
+                            contato_nome: convenio.contato_nome,
+                            contato_email: convenio.contato_email,
+                            contato_telefone: convenio.contato_telefone,
+                            endereco_completo: convenio.endereco_completo,
+                            observacoes: convenio.observacoes,
+                        }}
+                        onSuccess={() => {
+                            fetchConvenioDetalhes();
+                            toast({
+                                title: 'Convênio atualizado',
+                                description: 'Os dados foram atualizados com sucesso.',
+                            });
+                        }}
+                    />
+
+                    <DialogAlterarPlano
+                        open={dialogAlterarPlano}
+                        onOpenChange={setDialogAlterarPlano}
+                        convenioId={convenioId}
+                        tipoConvenio={convenio.tipo_convenio}
+                        planoAtual={planoAtivo}
+                        onSuccess={() => {
+                            fetchConvenioDetalhes();
+                            toast({
+                                title: 'Plano alterado',
+                                description: 'O novo plano foi ativado com sucesso.',
+                            });
+                        }}
+                    />
+
+                    <DialogAdicionarVeiculo
+                        open={dialogAdicionarVeiculo}
+                        onOpenChange={setDialogAdicionarVeiculo}
+                        convenioId={convenioId}
+                        onSuccess={() => {
+                            fetchConvenioDetalhes();
+                            toast({
+                                title: 'Veículo adicionado',
+                                description: 'O veículo foi cadastrado com sucesso.',
+                            });
+                        }}
+                    />
+
+                    {planoAtivo && (
+                        <DialogGerarFatura
+                            open={dialogGerarFatura}
+                            onOpenChange={setDialogGerarFatura}
+                            convenioId={convenioId}
+                            convenioNome={convenio.nome_empresa}
+                            tipoConvenio={convenio.tipo_convenio}
+                            valorMensal={planoAtivo.valor_mensal}
+                            onSuccess={() => {
+                                fetchConvenioDetalhes();
+                                toast({
+                                    title: 'Fatura gerada',
+                                    description: 'A fatura foi criada com sucesso.',
+                                });
+                            }}
+                        />
+                    )}
+                </>
+            )}
         </Card>
     );
 }
