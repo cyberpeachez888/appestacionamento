@@ -123,12 +123,14 @@ export default {
                 .from(CONVENIOS_TABLE)
                 .select(`
           *,
-          planos:convenios_planos(*),
+          planos:convenios_planos!inner(*),
           veiculos:convenios_veiculos(*),
           faturas:convenios_faturas(*),
           historico:convenios_historico(*)
         `)
                 .eq('id', id)
+                .order('ativo', { foreignTable: 'convenios_planos', ascending: false })
+                .order('created_at', { foreignTable: 'convenios_planos', ascending: false })
                 .single();
 
             if (error) {
