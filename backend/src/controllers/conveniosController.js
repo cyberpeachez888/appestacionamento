@@ -134,11 +134,16 @@ export default {
                 .single();
 
             if (error) {
+                console.error('[getById] Error:', error);
                 if (error.code === 'PGRST116') {
                     return res.status(404).json({ error: 'Convênio não encontrado' });
                 }
                 return res.status(500).json({ error: error.message });
             }
+
+            console.log('[getById] Success - Convenio:', data?.nome_empresa);
+            console.log('[getById] Planos count:', data?.planos?.length || 0);
+            console.log('[getById] Planos:', JSON.stringify(data?.planos));
 
             res.json(data);
         } catch (err) {
