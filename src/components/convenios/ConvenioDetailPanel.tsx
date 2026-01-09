@@ -214,6 +214,14 @@ export function ConvenioDetailPanel({ convenioId, onClose }: ConvenioDetailPanel
 
     const planoAtivo = convenio?.planos?.find(p => p.ativo);
 
+    // Debug: Check what we're getting
+    console.log('ConvenioDetailPanel DEBUG:', {
+        convenio: convenio?.nome_empresa,
+        planos: convenio?.planos,
+        planoAtivo,
+        tipoConvenio: convenio?.tipo_convenio
+    });
+
     if (loading) {
         return (
             <Card>
@@ -661,6 +669,7 @@ export function ConvenioDetailPanel({ convenioId, onClose }: ConvenioDetailPanel
                         open={dialogEditar}
                         onOpenChange={setDialogEditar}
                         convenioId={convenioId}
+                        tipoConvenio={convenio.tipo_convenio as 'pre-pago' | 'pos-pago'}
                         convenioAtual={{
                             nome_empresa: convenio.nome_empresa,
                             razao_social: convenio.razao_social,
@@ -671,6 +680,11 @@ export function ConvenioDetailPanel({ convenioId, onClose }: ConvenioDetailPanel
                             endereco_completo: convenio.endereco_completo,
                             observacoes: convenio.observacoes,
                         }}
+                        planoAtual={planoAtivo ? {
+                            dia_vencimento_pagamento: planoAtivo.dia_vencimento_pagamento,
+                            dia_fechamento: (planoAtivo as any).dia_fechamento,
+                            dia_vencimento_pos_pago: (planoAtivo as any).dia_vencimento_pos_pago,
+                        } : undefined}
                         onSuccess={() => {
                             fetchConvenioDetalhes();
                             toast({
