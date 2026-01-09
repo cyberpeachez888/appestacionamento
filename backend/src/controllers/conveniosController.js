@@ -123,7 +123,7 @@ export default {
                 .from(CONVENIOS_TABLE)
                 .select(`
           *,
-          planos:convenios_planos!inner(*),
+          planos:convenios_planos(*),
           veiculos:convenios_veiculos(*),
           faturas:convenios_faturas(*),
           historico:convenios_historico(*)
