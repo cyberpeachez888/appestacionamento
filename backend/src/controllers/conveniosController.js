@@ -274,7 +274,24 @@ export default {
                     ativo: true
                 };
 
-                await supabase.from(PLANOS_TABLE).insert(planoData);
+                console.log('[create] Tentando criar plano:', planoData);
+                const { data: planoCreated, error: planoError } = await supabase
+                    .from(PLANOS_TABLE)
+                    .insert(planoData)
+                    .select()
+                    .single();
+
+                if (planoError) {
+                    console.error('[create] ERRO ao criar plano:', planoError);
+                    return res.status(500).json({
+                        error: 'Erro ao criar plano do convênio',
+                        details: planoError.message
+                    });
+                }
+
+                console.log('[create] Plano criado com sucesso:', planoCreated.id);
+            } else {
+                console.warn('[create] ATENÇÃO: Convênio criado SEM plano!');
             }
 
             // Registrar no histórico
