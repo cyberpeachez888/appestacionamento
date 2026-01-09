@@ -5,7 +5,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
     Dialog,
     DialogContent,
@@ -35,9 +35,37 @@ interface DialogNovoConvenioProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
     onSuccess: () => void;
+    mode?: 'create' | 'edit';
+    convenioId?: string;
+    initialData?: {
+        nome_empresa: string;
+        razao_social: string;
+        cnpj: string;
+        categoria: string;
+        tipo_convenio: 'pre-pago' | 'pos-pago';
+        contato_nome: string;
+        contato_email: string;
+        contato_telefone: string;
+        endereco_completo?: string;
+        observacoes?: string;
+        data_inicio: string;
+        data_vencimento_contrato?: string;
+        plano?: {
+            num_vagas_contratadas: number;
+            num_vagas_reservadas: number;
+            valor_por_vaga?: number;
+            valor_mensal?: number;
+            dia_vencimento_pagamento?: number;
+            dia_fechamento?: number;
+            dia_vencimento_pos_pago?: number;
+            permite_vagas_extras: boolean;
+            valor_vaga_extra?: number;
+            porcentagem_desconto?: number;
+        };
+    };
 }
 
-export function DialogNovoConvenio({ open, onOpenChange, onSuccess }: DialogNovoConvenioProps) {
+export function DialogNovoConvenio({ open, onOpenChange, onSuccess, mode = 'create', convenioId, initialData }: DialogNovoConvenioProps) {
     const [step, setStep] = useState(1);
     const [loading, setLoading] = useState(false);
 
@@ -99,49 +127,122 @@ export function DialogNovoConvenio({ open, onOpenChange, onSuccess }: DialogNovo
         setDataVencimentoContrato('');
     };
 
+    // Pre-populate form in edit mode
+    useEffect(() => {
+        if (mode === 'edit' && initialData && open) {
+            // Step 1
+            setNomeEmpresa(initialData.nome_empresa || '');
+            setRazaoSocial(initialData.razao_social || '');
+            setCnpj(initialData.cnpj || '');
+            setCategoria(initialData.categoria || '');
+            setEndereco(initialData.endereco_completo || '');
+            setObservacoes(initialData.observacoes || '');
+
+            // Step 2
+            setContatoNome(initialData.contato_nome || '');
+            setContatoEmail(initialData.contato_email || '');
+            setContatoTelefone(initialData.contato_telefone || '');
+
+            // Step 3
+            setTipoConvenio(initialData.tipo_convenio || '');
+            if (initialData.plano) {
+                setNumVagas(initialData.plano.num_vagas_contratadas?.toString() || '');
+                setNumVagasReservadas(initialData.plano.num_vagas_reservadas?.toString() || '0');
+                setValorPorVaga(initialData.plano.valor_por_vaga?.toString() || '');
+                setValorMensal(initialData.plano.valor_mensal?.toString() || '');
+                setDiaVencimento(initialData.plano.dia_vencimento_pagamento?.toString() || '');
+                setDiaFechamento(initialData.plano.dia_fechamento?.toString() || '');
+                setDiaVencimentoPosPago(initialData.plano.dia_vencimento_pos_pago?.toString() || '');
+                setPermiteVagasExtras(initialData.plano.permite_vagas_extras || false);
+                setValorVagaExtra(initialData.plano.valor_vaga_extra?.toString() || '');
+                setPorcentagemDesconto(initialData.plano.porcentagem_desconto?.toString() || '');
+
+                // Detect tipo_vaga_extra based on valor
+                if (initialData.plano.permite_vagas_extras) {
+                    setTipoVagaExtra(initialData.plano.valor_vaga_extra && parseFloat(initialData.plano.valor_vaga_extra.toString()) > 0 ? 'paga' : 'gratis');
+                }
+            }
+
+            // Step 4
+            setDataInicio(initialData.data_inicio || '');
+            setDataVencimentoContrato(initialData.data_vencimento_contrato || '');
+        }
+    }, [mode, initialData, open]);
+
     const handleSubmit = async () => {
         try {
             setLoading(true);
             const isPrePago = tipoConvenio === 'pre-pago';
 
-            const payload = {
-                nome_empresa: nomeEmpresa,
-                razao_social: razaoSocial,
-                cnpj,
-                tipo_convenio: tipoConvenio,
-                categoria,
-                data_inicio: dataInicio,
-                data_vencimento_contrato: dataVencimentoContrato || undefined,
-                contato_nome: contatoNome,
-                contato_email: contatoEmail,
-                contato_telefone: contatoTelefone,
-                endereco_completo: endereco || undefined,
-                observacoes: observacoes || undefined,
-                plano: {
-                    tipo_plano: 'padrao',
+            if (mode === 'edit' && convenioId) {
+                // Edit mode: Update convenio + plan
+                const convenioUpdates = {
+                    nome_empresa: nomeEmpresa,
+                    razao_social: razaoSocial,
+                    cnpj,
+                    categoria,
+                    data_vencimento_contrato: dataVencimentoContrato || undefined,
+                    contato_nome: contatoNome,
+                    contato_email: contatoEmail,
+                    contato_telefone: contatoTelefone,
+                    endereco_completo: endereco || undefined,
+                    observacoes: observacoes || undefined,
+                };
+
+                const planoUpdates = {
                     num_vagas_contratadas: parseInt(numVagas),
                     num_vagas_reservadas: parseInt(numVagasReservadas) || 0,
                     valor_por_vaga: valorPorVaga ? parseFloat(valorPorVaga) : undefined,
-                    // Pre-pago fields
                     valor_mensal: isPrePago && valorMensal ? parseFloat(valorMensal) : null,
-                    dia_vencimento_pagamento: isPrePago ? parseInt(diaVencimento) : undefined,
-                    // Pos-pago fields
-                    dia_vencimento_pos_pago: !isPrePago && diaVencimentoPosPago ? parseInt(diaVencimentoPosPago) : undefined,
-                    dia_fechamento: !isPrePago && diaFechamento ? parseInt(diaFechamento) : undefined,
-
+                    dia_vencimento_pagamento: isPrePago ? parseInt(diaVencimento) : null,
+                    dia_vencimento_pos_pago: !isPrePago && diaVencimentoPosPago ? parseInt(diaVencimentoPosPago) : null,
+                    dia_fechamento: !isPrePago && diaFechamento ? parseInt(diaFechamento) : null,
                     permite_vagas_extras: permiteVagasExtras,
-                    valor_vaga_extra: permiteVagasExtras ? parseFloat(valorVagaExtra) : undefined,
-                    porcentagem_desconto: porcentagemDesconto ? parseFloat(porcentagemDesconto) : undefined,
-                },
-            };
+                    valor_vaga_extra: permiteVagasExtras && tipoVagaExtra === 'paga' ? parseFloat(valorVagaExtra) : null,
+                    porcentagem_desconto: porcentagemDesconto ? parseFloat(porcentagemDesconto) : null,
+                };
 
-            await api.createConvenio(payload);
+                await api.updateConvenio(convenioId, convenioUpdates);
+                await api.updateConvenioPlano(convenioId, planoUpdates);
+            } else {
+                // Create mode
+                const payload = {
+                    nome_empresa: nomeEmpresa,
+                    razao_social: razaoSocial,
+                    cnpj,
+                    tipo_convenio: tipoConvenio,
+                    categoria,
+                    data_inicio: dataInicio,
+                    data_vencimento_contrato: dataVencimentoContrato || undefined,
+                    contato_nome: contatoNome,
+                    contato_email: contatoEmail,
+                    contato_telefone: contatoTelefone,
+                    endereco_completo: endereco || undefined,
+                    observacoes: observacoes || undefined,
+                    plano: {
+                        tipo_plano: 'padrao',
+                        num_vagas_contratadas: parseInt(numVagas),
+                        num_vagas_reservadas: parseInt(numVagasReservadas) || 0,
+                        valor_por_vaga: valorPorVaga ? parseFloat(valorPorVaga) : undefined,
+                        valor_mensal: isPrePago && valorMensal ? parseFloat(valorMensal) : null,
+                        dia_vencimento_pagamento: isPrePago ? parseInt(diaVencimento) : undefined,
+                        dia_vencimento_pos_pago: !isPrePago && diaVencimentoPosPago ? parseInt(diaVencimentoPosPago) : undefined,
+                        dia_fechamento: !isPrePago && diaFechamento ? parseInt(diaFechamento) : undefined,
+                        permite_vagas_extras: permiteVagasExtras,
+                        valor_vaga_extra: permiteVagasExtras && tipoVagaExtra === 'paga' ? parseFloat(valorVagaExtra) : undefined,
+                        porcentagem_desconto: porcentagemDesconto ? parseFloat(porcentagemDesconto) : undefined,
+                    },
+                };
+
+                await api.createConvenio(payload);
+            }
+
             resetForm();
             onOpenChange(false);
             onSuccess();
         } catch (error: any) {
             console.error('Erro:', error);
-            alert(error.message || 'Erro ao criar convênio');
+            alert(error.message || `Erro ao ${mode === 'edit' ? 'atualizar' : 'criar'} convênio`);
         } finally {
             setLoading(false);
         }
@@ -172,7 +273,7 @@ export function DialogNovoConvenio({ open, onOpenChange, onSuccess }: DialogNovo
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
-                    <DialogTitle>Novo Convênio - Passo {step} de 4</DialogTitle>
+                    <DialogTitle>{mode === 'edit' ? 'Editar' : 'Novo'} Convênio - Passo {step} de 4</DialogTitle>
                     <DialogDescription>
                         {step === 1 && 'Dados da empresa'}
                         {step === 2 && 'Informações de contato'}
