@@ -119,6 +119,19 @@ export default {
         try {
             const { id } = req.params;
 
+            // DEBUG: Verificar se existem planos separadamente
+            const { data: planosCheck, error: planosError } = await supabase
+                .from('convenios_planos')
+                .select('*')
+                .eq('convenio_id', id);
+
+            console.log('[getById] Direct planos query:', {
+                convenioId: id,
+                planosFound: planosCheck?.length || 0,
+                error: planosError,
+                planos: planosCheck
+            });
+
             const { data, error } = await supabase
                 .from(CONVENIOS_TABLE)
                 .select(`
