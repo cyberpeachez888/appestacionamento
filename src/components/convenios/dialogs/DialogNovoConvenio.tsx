@@ -217,12 +217,17 @@ export function DialogNovoConvenio({ open, onOpenChange, onSuccess }: DialogNovo
                                 <Label htmlFor="categoria">
                                     Categoria <span className="text-red-500">*</span>
                                 </Label>
-                                <Input
-                                    id="categoria"
-                                    value={categoria}
-                                    onChange={(e) => setCategoria(e.target.value)}
-                                    placeholder="Ex: Funcionários, Clientes, Parceiros..."
-                                />
+                                <Select value={categoria} onValueChange={setCategoria}>
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Selecione a categoria" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="funcionarios">Funcionários</SelectItem>
+                                        <SelectItem value="clientes">Clientes</SelectItem>
+                                        <SelectItem value="fornecedores">Fornecedores</SelectItem>
+                                        <SelectItem value="outros">Outros</SelectItem>
+                                    </SelectContent>
+                                </Select>
                             </div>
 
                             <div className="grid gap-2">
