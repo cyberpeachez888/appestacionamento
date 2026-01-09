@@ -20,6 +20,7 @@ import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Info, ArrowLeftRight } from 'lucide-react';
 import { api } from '@/lib/api';
 
@@ -52,6 +53,7 @@ export function DialogAlterarPlano({
     const isPrePago = tipoConvenio === 'pre-pago';
 
     // Form fields
+    const [tipoPlanoSelecionado, setTipoPlanoSelecionado] = useState<'pre-pago' | 'pos-pago'>(tipoConvenio);
     const [numVagas, setNumVagas] = useState('');
     const [numVagasReservadas, setNumVagasReservadas] = useState('');
     const [valorMensal, setValorMensal] = useState('');
@@ -65,6 +67,7 @@ export function DialogAlterarPlano({
     // Pre-populate form when dialog opens
     useEffect(() => {
         if (open && planoAtual) {
+            setTipoPlanoSelecionado(tipoConvenio);
             setNumVagas(planoAtual.num_vagas_contratadas?.toString() || '');
             setNumVagasReservadas(planoAtual.num_vagas_reservadas?.toString() || '0');
             setValorMensal(planoAtual.valor_mensal?.toString() || '');
@@ -144,24 +147,30 @@ export function DialogAlterarPlano({
                     </DialogDescription>
                 </DialogHeader>
 
-                {/* Alert mostrando plano atual e opção de troca */}
-                <Alert className="bg-blue-50 border-blue-200">
-                    <Info className="h-4 w-4 text-blue-600" />
-                    <AlertDescription className="text-blue-900">
-                        <div className="flex items-center gap-2 font-medium mb-1">
-                            <span>Plano Atual: <strong className="text-blue-700">{isPrePago ? 'Pré-pago (Mensalidade Fixa)' : 'Pós-pago (Por Uso)'}</strong></span>
-                        </div>
-                        <div className="text-sm text-blue-700 flex items-center gap-1">
-                            <ArrowLeftRight className="h-3 w-3" />
-                            <span>Opção alternativa: <strong>{isPrePago ? 'Pós-pago (Por Uso)' : 'Pré-pago (Mensalidade Fixa)'}</strong></span>
-                        </div>
-                        <p className="text-xs text-blue-600 mt-2">
-                            Para trocar entre Pré-pago ↔ Pós-pago, entre em contato com o suporte.
-                        </p>
-                    </AlertDescription>
-                </Alert>
 
                 <div className="grid gap-4 py-4">
+                    {/* Tipo de Plano Selector */}
+                    <div className="grid gap-2">
+                        <Label htmlFor="tipo_plano">
+                            Tipo de Plano <span className="text-red-500">*</span>
+                        </Label>
+                        <Select value={tipoPlanoSelecionado} onValueChange={(value) => setTipoPlanoSelecionado(value as 'pre-pago' | 'pos-pago')}>
+                            <SelectTrigger>
+                                <SelectValue placeholder="Selecione o tipo" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="pre-pago">Pré-pago (Mensalidade Fixa)</SelectItem>
+                                <SelectItem value="pos-pago">Pós-pago (Por Uso)</SelectItem>
+                            </SelectContent>
+                        </Select>
+                        <p className="text-xs text-muted-foreground">
+                            {tipoPlanoSelecionado === tipoConvenio
+                                ? '✓ Mantendo tipo de plano atual'
+                                : `⚠️ Alterando de ${tipoConvenio === 'pre-pago' ? 'Pré-pago' : 'Pós-pago'} para ${tipoPlanoSelecionado === 'pre-pago' ? 'Pré-pago' : 'Pós-pago'}`
+                            }
+                        </p>
+                    </div>
+
                     <div className="grid grid-cols-2 gap-4">
                         <div className="grid gap-2">
                             <Label htmlFor="num_vagas">
@@ -188,7 +197,7 @@ export function DialogAlterarPlano({
                         </div>
                     </div>
 
-                    {isPrePago ? (
+                    {tipoPlanoSelecionado === 'pre-pago' ? (
                         <div className="grid grid-cols-2 gap-4">
                             <div className="grid gap-2">
                                 <Label htmlFor="valor_mensal">
