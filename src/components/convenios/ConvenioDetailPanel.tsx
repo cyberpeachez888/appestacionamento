@@ -665,26 +665,37 @@ export function ConvenioDetailPanel({ convenioId, onClose }: ConvenioDetailPanel
             {/* Dialogs */}
             {convenio && (
                 <>
-                    <DialogEditarConvenio
+                    <DialogNovoConvenio
+                        mode="edit"
+                        convenioId={convenioId}
                         open={dialogEditar}
                         onOpenChange={setDialogEditar}
-                        convenioId={convenioId}
-                        tipoConvenio={convenio.tipo_convenio as 'pre-pago' | 'pos-pago'}
-                        convenioAtual={{
+                        initialData={{
                             nome_empresa: convenio.nome_empresa,
                             razao_social: convenio.razao_social,
+                            cnpj: convenio.cnpj || '',
                             categoria: convenio.categoria,
+                            tipo_convenio: convenio.tipo_convenio as 'pre-pago' | 'pos-pago',
                             contato_nome: convenio.contato_nome,
                             contato_email: convenio.contato_email,
                             contato_telefone: convenio.contato_telefone,
                             endereco_completo: convenio.endereco_completo,
                             observacoes: convenio.observacoes,
+                            data_inicio: convenio.data_inicio || '',
+                            data_vencimento_contrato: convenio.data_vencimento_contrato,
+                            plano: planoAtivo ? {
+                                num_vagas_contratadas: planoAtivo.num_vagas_contratadas,
+                                num_vagas_reservadas: planoAtivo.num_vagas_reservadas || 0,
+                                valor_por_vaga: (planoAtivo as any).valor_por_vaga,
+                                valor_mensal: planoAtivo.valor_mensal,
+                                dia_vencimento_pagamento: planoAtivo.dia_vencimento_pagamento,
+                                dia_fechamento: (planoAtivo as any).dia_fechamento,
+                                dia_vencimento_pos_pago: (planoAtivo as any).dia_vencimento_pos_pago,
+                                permite_vagas_extras: planoAtivo.permite_vagas_extras,
+                                valor_vaga_extra: (planoAtivo as any).valor_vaga_extra,
+                                porcentagem_desconto: (planoAtivo as any).porcentagem_desconto,
+                            } : undefined,
                         }}
-                        planoAtual={planoAtivo ? {
-                            dia_vencimento_pagamento: planoAtivo.dia_vencimento_pagamento,
-                            dia_fechamento: (planoAtivo as any).dia_fechamento,
-                            dia_vencimento_pos_pago: (planoAtivo as any).dia_vencimento_pos_pago,
-                        } : undefined}
                         onSuccess={() => {
                             fetchConvenioDetalhes();
                             toast({
