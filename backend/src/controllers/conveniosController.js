@@ -33,17 +33,17 @@ export default {
                 .from(CONVENIOS_TABLE)
                 .select(`
           *,
-          plano_ativo:convenios_planos!inner(
+          plano_ativo:convenios_planos(
             id,
             num_vagas_contratadas,
             num_vagas_reservadas,
             valor_mensal,
             dia_vencimento_pagamento,
             permite_vagas_extras,
-            valor_vaga_extra
+            valor_vaga_extra,
+            ativo
           )
         `)
-                .eq('convenios_planos.ativo', true)
                 .order('created_at', { ascending: false });
 
             // Filtros
@@ -86,15 +86,20 @@ export default {
                         .eq('convenio_id', convenio.id)
                         .is('data_saida', null);
 
+                    // Filter for active plan only
+                    const planoAtivo = Array.isArray(convenio.plano_ativo)
+                        ? convenio.plano_ativo.find(p => p.ativo === true)
+                        : null;
+
                     const vagasOcupadas = movimentacoes?.length || 0;
-                    const vagasContratadas = convenio.plano_ativo?.[0]?.num_vagas_contratadas || 0;
+                    const vagasContratadas = planoAtivo?.num_vagas_contratadas || 0;
 
                     return {
                         ...convenio,
                         vagas_ocupadas: vagasOcupadas,
                         taxa_ocupacao: calcularTaxaOcupacao(vagasOcupadas, vagasContratadas),
                         inadimplente: verificarInadimplencia(convenio, faturas || []),
-                        plano_ativo: convenio.plano_ativo?.[0] || null
+                        plano_ativo: planoAtivo
                     };
                 })
             );
