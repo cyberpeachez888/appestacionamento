@@ -421,6 +421,7 @@ export default function ConveniosPage() {
 
             {/* Dialogs */}
             <DialogNovoConvenio
+                mode="create"
                 open={dialogNovoConvenio}
                 onOpenChange={setDialogNovoConvenio}
                 onSuccess={() => {
