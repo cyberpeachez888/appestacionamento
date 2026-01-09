@@ -483,28 +483,6 @@ export function DialogNovoConvenio({ open, onOpenChange, onSuccess }: DialogNovo
                                 </>
                             ) : null}
 
-                            {/* Campo de Desconto - Aparece para ambos os tipos */}
-                            {tipoConvenio && (
-                                <div className="grid gap-2">
-                                    <Label htmlFor="porcentagem_desconto">
-                                        Desconto Percentual (Opcional)
-                                    </Label>
-                                    <Input
-                                        id="porcentagem_desconto"
-                                        type="number"
-                                        step="0.01"
-                                        min="0"
-                                        max="100"
-                                        value={porcentagemDesconto}
-                                        onChange={(e) => setPorcentagemDesconto(e.target.value)}
-                                        placeholder="0.00"
-                                    />
-                                    <p className="text-xs text-muted-foreground">
-                                        Desconto aplicado sobre o valor base da fatura (0-100%)
-                                    </p>
-                                </div>
-                            )}
-
                             <div className="flex items-center space-x-2">
                                 <Checkbox
                                     id="permite_vagas_extras"
