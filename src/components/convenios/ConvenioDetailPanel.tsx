@@ -392,8 +392,16 @@ export function ConvenioDetailPanel({ convenioId, onClose }: ConvenioDetailPanel
                                     <h3 className="font-semibold mb-2">Plano Atual</h3>
                                     <dl className="space-y-2">
                                         <div>
+                                            <dt className="text-sm text-muted-foreground">Status</dt>
+                                            <dd>
+                                                <Badge variant={planoAtivo.ativo ? 'default' : 'secondary'}>
+                                                    {planoAtivo.ativo ? 'Ativo' : 'Inativo'}
+                                                </Badge>
+                                            </dd>
+                                        </div>
+                                        <div>
                                             <dt className="text-sm text-muted-foreground">Tipo</dt>
-                                            <dd className="font-medium">{planoAtivo.tipo_plano}</dd>
+                                            <dd className="font-medium capitalize">{planoAtivo.tipo_plano}</dd>
                                         </div>
                                         <div>
                                             <dt className="text-sm text-muted-foreground">Vagas Contratadas</dt>
@@ -403,14 +411,33 @@ export function ConvenioDetailPanel({ convenioId, onClose }: ConvenioDetailPanel
                                             <dt className="text-sm text-muted-foreground">Vagas Reservadas</dt>
                                             <dd className="font-medium">{planoAtivo.num_vagas_reservadas}</dd>
                                         </div>
-                                        <div>
-                                            <dt className="text-sm text-muted-foreground">Valor Mensal</dt>
-                                            <dd className="font-medium text-lg">{formatarValor(planoAtivo.valor_mensal)}</dd>
-                                        </div>
-                                        <div>
-                                            <dt className="text-sm text-muted-foreground">Dia de Vencimento</dt>
-                                            <dd className="font-medium">Dia {planoAtivo.dia_vencimento_pagamento}</dd>
-                                        </div>
+                                        {convenio.tipo_convenio === 'pre-pago' ? (
+                                            <>
+                                                <div>
+                                                    <dt className="text-sm text-muted-foreground">Valor Mensal</dt>
+                                                    <dd className="font-medium text-lg">{formatarValor(planoAtivo.valor_mensal)}</dd>
+                                                </div>
+                                                <div>
+                                                    <dt className="text-sm text-muted-foreground">Dia de Vencimento</dt>
+                                                    <dd className="font-medium">Dia {planoAtivo.dia_vencimento_pagamento}</dd>
+                                                </div>
+                                            </>
+                                        ) : (
+                                            <>
+                                                {(planoAtivo as any).dia_fechamento && (
+                                                    <div>
+                                                        <dt className="text-sm text-muted-foreground">Dia de Fechamento</dt>
+                                                        <dd className="font-medium">Dia {(planoAtivo as any).dia_fechamento}</dd>
+                                                    </div>
+                                                )}
+                                                {(planoAtivo as any).dia_vencimento_pos_pago && (
+                                                    <div>
+                                                        <dt className="text-sm text-muted-foreground">Dia de Vencimento</dt>
+                                                        <dd className="font-medium">Dia {(planoAtivo as any).dia_vencimento_pos_pago}</dd>
+                                                    </div>
+                                                )}
+                                            </>
+                                        )}
                                     </dl>
                                 </div>
 

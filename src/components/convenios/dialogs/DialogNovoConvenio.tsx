@@ -737,7 +737,7 @@ export function DialogNovoConvenio({ open, onOpenChange, onSuccess, mode = 'crea
                             disabled={!canGoNext() || loading}
                             className="bg-green-600 hover:bg-green-700"
                         >
-                            {loading ? 'Salvando...' : 'Criar Convênio'}
+                            {loading ? 'Salvando...' : (mode === 'edit' ? 'Finalizar' : 'Criar Convênio')}
                         </Button>
                     )}
                 </DialogFooter>
