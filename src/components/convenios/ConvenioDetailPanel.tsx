@@ -789,7 +789,9 @@ export function ConvenioDetailPanel({ convenioId, onClose }: ConvenioDetailPanel
                                 valor_mensal: planoAtivo.valor_mensal,
                                 dia_vencimento_pagamento: planoAtivo.dia_vencimento_pagamento,
                                 dia_fechamento: (planoAtivo as any).dia_fechamento,
-                                dia_vencimento_pos_pago: (planoAtivo as any).dia_vencimento_pos_pago,
+                                // Temporary fallback: use dia_fechamento if vencimento_pos_pago is null
+                                dia_vencimento_pos_pago: (planoAtivo as any).dia_vencimento_pos_pago
+                                    || (planoAtivo as any).dia_fechamento,
                                 permite_vagas_extras: planoAtivo.permite_vagas_extras,
                                 valor_vaga_extra: (planoAtivo as any).valor_vaga_extra,
                                 porcentagem_desconto: (planoAtivo as any).porcentagem_desconto,
