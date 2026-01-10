@@ -424,6 +424,12 @@ export function ConvenioDetailPanel({ convenioId, onClose }: ConvenioDetailPanel
                                             </>
                                         ) : (
                                             <>
+                                                {(planoAtivo as any).valor_por_vaga && (
+                                                    <div>
+                                                        <dt className="text-sm text-muted-foreground">Valor por Vaga</dt>
+                                                        <dd className="font-medium text-lg">{formatarValor((planoAtivo as any).valor_por_vaga)}/vaga</dd>
+                                                    </div>
+                                                )}
                                                 {(planoAtivo as any).dia_fechamento && (
                                                     <div>
                                                         <dt className="text-sm text-muted-foreground">Dia de Fechamento</dt>

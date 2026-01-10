@@ -386,6 +386,12 @@ export default function ConveniosPage() {
                                                         <TableCell className="font-medium">
                                                             {(() => {
                                                                 const plano = getActivePlan(convenio.plano_ativo);
+                                                                // Pós-pago: show valor_por_vaga, Pré-pago: show valor_mensal
+                                                                if (convenio.tipo_convenio === 'pos-pago') {
+                                                                    return plano?.valor_por_vaga
+                                                                        ? `${formatarValor(plano.valor_por_vaga)}/vaga`
+                                                                        : 'R$ 0,00';
+                                                                }
                                                                 return formatarValor(plano?.valor_mensal || 0);
                                                             })()}
                                                         </TableCell>
