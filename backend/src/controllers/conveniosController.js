@@ -420,23 +420,32 @@ export default {
                 .update({ ativo: false, data_fim_vigencia: new Date().toISOString().split('T')[0] })
                 .eq('id', planoAtual.id);
 
-            // Criar novo plano
+            // Criar novo plano - PRESERVE values from old plan if not provided
             const novoPlano = {
                 id: uuid(),
                 convenio_id: convenioId,
-                tipo_plano: planoData.tipo_plano || 'padrao',
-                num_vagas_contratadas: planoData.num_vagas_contratadas,
-                num_vagas_reservadas: planoData.num_vagas_reservadas || 0,
-                valor_por_vaga: planoData.valor_por_vaga || null,
-                valor_mensal: planoData.valor_mensal || null,
-                dia_vencimento_pagamento: planoData.dia_vencimento_pagamento || null,
-                dia_vencimento_pos_pago: planoData.dia_vencimento_pos_pago || null,
-                dia_fechamento: planoData.dia_fechamento || null,
-                permite_vagas_extras: planoData.permite_vagas_extras || false,
-                valor_vaga_extra: planoData.valor_vaga_extra || null,
-                porcentagem_desconto: planoData.porcentagem_desconto || null,
-                permite_horario_especial: planoData.permite_horario_especial || false,
-                horarios_permitidos: planoData.horarios_permitidos || null,
+                tipo_plano: planoData.tipo_plano ?? planoAtual.tipo_plano ?? 'padrao',
+                num_vagas_contratadas: planoData.num_vagas_contratadas ?? planoAtual.num_vagas_contratadas,
+                num_vagas_reservadas: planoData.num_vagas_reservadas ?? planoAtual.num_vagas_reservadas ?? 0,
+                // CRITICAL: Preserve financial fields from old plan
+                valor_por_vaga: planoData.valor_por_vaga !== undefined ? planoData.valor_por_vaga : planoAtual.valor_por_vaga,
+                valor_mensal: planoData.valor_mensal !== undefined ? planoData.valor_mensal : planoAtual.valor_mensal,
+                // CRITICAL: Preserve date fields from old plan
+                dia_vencimento_pagamento: planoData.dia_vencimento_pagamento !== undefined
+                    ? planoData.dia_vencimento_pagamento
+                    : planoAtual.dia_vencimento_pagamento,
+                dia_vencimento_pos_pago: planoData.dia_vencimento_pos_pago !== undefined
+                    ? planoData.dia_vencimento_pos_pago
+                    : planoAtual.dia_vencimento_pos_pago,
+                dia_fechamento: planoData.dia_fechamento !== undefined
+                    ? planoData.dia_fechamento
+                    : planoAtual.dia_fechamento,
+                // Other fields
+                permite_vagas_extras: planoData.permite_vagas_extras ?? planoAtual.permite_vagas_extras ?? false,
+                valor_vaga_extra: planoData.valor_vaga_extra !== undefined ? planoData.valor_vaga_extra : planoAtual.valor_vaga_extra,
+                porcentagem_desconto: planoData.porcentagem_desconto !== undefined ? planoData.porcentagem_desconto : planoAtual.porcentagem_desconto,
+                permite_horario_especial: planoData.permite_horario_especial ?? planoAtual.permite_horario_especial ?? false,
+                horarios_permitidos: planoData.horarios_permitidos ?? planoAtual.horarios_permitidos,
                 data_inicio_vigencia: new Date().toISOString().split('T')[0],
                 ativo: true
             };
