@@ -30,10 +30,12 @@ import {
 import { api } from '@/lib/api';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { DialogNovoConvenio } from './dialogs/DialogNovoConvenio';
 import { DialogEditarConvenio } from './dialogs/DialogEditarConvenio';
 import { DialogAlterarPlano } from './dialogs/DialogAlterarPlano';
 import { DialogAdicionarVeiculo } from './dialogs/DialogAdicionarVeiculo';
 import { DialogGerarFatura } from './dialogs/DialogGerarFatura';
+
 
 
 
