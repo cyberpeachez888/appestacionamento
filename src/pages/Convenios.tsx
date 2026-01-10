@@ -55,11 +55,25 @@ interface Convenio {
     taxa_ocupacao: number;
     inadimplente: boolean;
     plano_ativo: {
+        id: string;
         num_vagas_contratadas: number;
-        valor_mensal: number;
-        dia_vencimento_pagamento: number;
-    } | null;
+        num_vagas_reservadas: number;
+        valor_mensal: number | null;
+        dia_vencimento_pagamento: number | null;
+        permite_vagas_extras: boolean;
+        valor_vaga_extra: number | null;
+        ativo: boolean;
+    } | null | any; // any to handle potential array from backend
 }
+
+// Helper to safely extract active plan (handles array or object)
+const getActivePlan = (plano: any): Convenio['plano_ativo'] => {
+    if (!plano) return null;
+    if (Array.isArray(plano)) {
+        return plano.find(p => p.ativo === true) || null;
+    }
+    return plano;
+};
 
 export default function ConveniosPage() {
     const [stats, setStats] = useState<ConvenioStats | null>(null);
@@ -361,16 +375,25 @@ export default function ConveniosPage() {
                                                         </TableCell>
                                                         <TableCell className="capitalize">{convenio.tipo_convenio}</TableCell>
                                                         <TableCell>
-                                                            {convenio.vagas_ocupadas} / {convenio.plano_ativo?.num_vagas_contratadas || 0}
+                                                            {(() => {
+                                                                const plano = getActivePlan(convenio.plano_ativo);
+                                                                return `${plano?.vagas_ocupadas || convenio.vagas_ocupadas || 0} / ${plano?.num_vagas_contratadas || 0}`;
+                                                            })()}
                                                             <span className="text-xs text-muted-foreground ml-1">
                                                                 ({convenio.taxa_ocupacao.toFixed(0)}%)
                                                             </span>
                                                         </TableCell>
                                                         <TableCell className="font-medium">
-                                                            {formatarValor(convenio.plano_ativo?.valor_mensal || 0)}
+                                                            {(() => {
+                                                                const plano = getActivePlan(convenio.plano_ativo);
+                                                                return formatarValor(plano?.valor_mensal || 0);
+                                                            })()}
                                                         </TableCell>
                                                         <TableCell>
-                                                            Dia {convenio.plano_ativo?.dia_vencimento_pagamento || '-'}
+                                                            {(() => {
+                                                                const plano = getActivePlan(convenio.plano_ativo);
+                                                                return `Dia ${plano?.dia_vencimento_pagamento || '-'}`;
+                                                            })()}
                                                         </TableCell>
                                                         <TableCell
                                                             className="flex gap-1"
