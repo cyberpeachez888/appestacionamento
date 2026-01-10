@@ -411,65 +411,102 @@ export function ConvenioDetailPanel({ convenioId, onClose }: ConvenioDetailPanel
                                             <dt className="text-sm text-muted-foreground">Vagas Reservadas</dt>
                                             <dd className="font-medium">{planoAtivo.num_vagas_reservadas}</dd>
                                         </div>
-                                        {convenio.tipo_convenio === 'pre-pago' ? (
-                                            <>
-                                                <div>
-                                                    <dt className="text-sm text-muted-foreground">Valor Mensal</dt>
-                                                    <dd className="font-medium text-lg">{formatarValor(planoAtivo.valor_mensal || 0)}</dd>
-                                                </div>
-                                                <div>
-                                                    <dt className="text-sm text-muted-foreground">Dia de Vencimento</dt>
-                                                    <dd className="font-medium">Dia {planoAtivo.dia_vencimento_pagamento}</dd>
-                                                </div>
-                                            </>
-                                        ) : (
-                                            <>
-                                                {(planoAtivo as any).valor_por_vaga && (
-                                                    <div>
-                                                        <dt className="text-sm text-muted-foreground">Valor por Vaga</dt>
-                                                        <dd className="font-medium text-lg">{formatarValor((planoAtivo as any).valor_por_vaga)}/vaga</dd>
-                                                    </div>
-                                                )}
-                                                {(planoAtivo as any).dia_fechamento && (
-                                                    <div>
-                                                        <dt className="text-sm text-muted-foreground">Dia de Fechamento</dt>
-                                                        <dd className="font-medium">Dia {(planoAtivo as any).dia_fechamento}</dd>
-                                                    </div>
-                                                )}
-                                                {(planoAtivo as any).dia_vencimento_pos_pago && (
-                                                    <div>
-                                                        <dt className="text-sm text-muted-foreground">Dia de Vencimento</dt>
-                                                        <dd className="font-medium">Dia {(planoAtivo as any).dia_vencimento_pos_pago}</dd>
-                                                    </div>
-                                                )}
-                                            </>
-                                        )}
                                     </dl>
                                 </div>
 
                                 <div>
-                                    <h3 className="font-semibold mb-2">Configurações</h3>
+                                    <h3 className="font-semibold mb-2">Valores e Datas</h3>
                                     <dl className="space-y-2">
-                                        <div>
-                                            <dt className="text-sm text-muted-foreground">Permite Vagas Extras</dt>
-                                            <dd className="font-medium">{planoAtivo.permite_vagas_extras ? 'Sim' : 'Não'}</dd>
-                                        </div>
-                                        {planoAtivo.permite_vagas_extras && planoAtivo.valor_vaga_extra && (
-                                            <div>
-                                                <dt className="text-sm text-muted-foreground">Valor por Vaga Extra</dt>
-                                                <dd className="font-medium">{formatarValor(planoAtivo.valor_vaga_extra)}</dd>
-                                            </div>
+                                        {/* VALORES */}
+                                        {convenio.tipo_convenio === 'pre-pago' ? (
+                                            <>
+                                                {/* Valor Total do Convênio (Mensal) */}
+                                                <div>
+                                                    <dt className="text-sm text-muted-foreground">Valor do Convênio</dt>
+                                                    <dd className="font-medium text-lg text-blue-600">{formatarValor(planoAtivo.valor_mensal || 0)}</dd>
+                                                </div>
+                                                {/* Valor com Desconto */}
+                                                {planoAtivo.porcentagem_desconto && Number(planoAtivo.porcentagem_desconto) > 0 ? (
+                                                    <div>
+                                                        <dt className="text-sm text-muted-foreground">Valor Cobrado (c/ Desconto)</dt>
+                                                        <dd className="font-medium text-lg text-green-600">
+                                                            {formatarValor(
+                                                                (planoAtivo.valor_mensal || 0) * (1 - Number(planoAtivo.porcentagem_desconto) / 100)
+                                                            )}
+                                                        </dd>
+                                                    </div>
+                                                ) : null}
+                                            </>
+                                        ) : (
+                                            <>
+                                                {/* Pós-pago: Valor por Vaga */}
+                                                {(planoAtivo as any).valor_por_vaga && (
+                                                    <>
+                                                        <div>
+                                                            <dt className="text-sm text-muted-foreground">Valor por Vaga</dt>
+                                                            <dd className="font-medium text-lg text-blue-600">{formatarValor((planoAtivo as any).valor_por_vaga)}/vaga</dd>
+                                                        </div>
+                                                        {/* Valor Total (Valor por Vaga × Vagas Contratadas) */}
+                                                        <div>
+                                                            <dt className="text-sm text-muted-foreground">Valor Total Convênio</dt>
+                                                            <dd className="font-medium text-lg">
+                                                                {formatarValor((planoAtivo as any).valor_por_vaga * planoAtivo.num_vagas_contratadas)}
+                                                            </dd>
+                                                        </div>
+                                                        {/* Valor com Desconto */}
+                                                        {planoAtivo.porcentagem_desconto && Number(planoAtivo.porcentagem_desconto) > 0 ? (
+                                                            <div>
+                                                                <dt className="text-sm text-muted-foreground">Valor Cobrado (c/ Desconto)</dt>
+                                                                <dd className="font-medium text-lg text-green-600">
+                                                                    {formatarValor(
+                                                                        ((planoAtivo as any).valor_por_vaga * planoAtivo.num_vagas_contratadas) *
+                                                                        (1 - Number(planoAtivo.porcentagem_desconto) / 100)
+                                                                    )}
+                                                                </dd>
+                                                            </div>
+                                                        ) : null}
+                                                    </>
+                                                )}
+                                            </>
                                         )}
-                                        <div>
-                                            <dt className="text-sm text-muted-foreground">Horário Especial</dt>
-                                            <dd className="font-medium">{planoAtivo.permite_horario_especial ? 'Sim' : 'Não'}</dd>
-                                        </div>
+
+                                        {/* DESCONTO PERCENTAGE - ALWAYS SHOW IF EXISTS */}
                                         {planoAtivo.porcentagem_desconto && Number(planoAtivo.porcentagem_desconto) > 0 && (
                                             <div>
-                                                <dt className="text-sm text-muted-foreground">Desconto</dt>
+                                                <dt className="text-sm text-muted-foreground">Desconto Aplicado</dt>
                                                 <dd className="font-medium text-green-600">{Number(planoAtivo.porcentagem_desconto).toFixed(2)}%</dd>
                                             </div>
                                         )}
+
+                                        {/* DATAS - CRÍTICO */}
+                                        <div className="pt-2 border-t">
+                                            {convenio.tipo_convenio === 'pre-pago' ? (
+                                                <>
+                                                    {/* DIA DE VENCIMENTO - PRÉ-PAGO */}
+                                                    <div className="mb-2">
+                                                        <dt className="text-sm text-muted-foreground font-semibold">Dia de Vencimento</dt>
+                                                        <dd className="font-medium text-lg">Dia {planoAtivo.dia_vencimento_pagamento || '-'}</dd>
+                                                    </div>
+                                                </>
+                                            ) : (
+                                                <>
+                                                    {/* DIA DE FECHAMENTO - PÓS-PAGO */}
+                                                    {(planoAtivo as any).dia_fechamento && (
+                                                        <div className="mb-2">
+                                                            <dt className="text-sm text-muted-foreground">Dia de Fechamento</dt>
+                                                            <dd className="font-medium">Dia {(planoAtivo as any).dia_fechamento}</dd>
+                                                        </div>
+                                                    )}
+                                                    {/* DIA DE VENCIMENTO - PÓS-PAGO */}
+                                                    <div className="mb-2">
+                                                        <dt className="text-sm text-muted-foreground font-semibold">Dia de Vencimento</dt>
+                                                        <dd className="font-medium text-lg">
+                                                            Dia {(planoAtivo as any).dia_vencimento_pos_pago || planoAtivo.dia_vencimento_pagamento || '-'}
+                                                        </dd>
+                                                    </div>
+                                                </>
+                                            )}
+                                        </div>
                                     </dl>
                                 </div>
                             </div>
