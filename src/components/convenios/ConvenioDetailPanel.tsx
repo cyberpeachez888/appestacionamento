@@ -216,6 +216,22 @@ export function ConvenioDetailPanel({ convenioId, onClose }: ConvenioDetailPanel
 
     const planoAtivo = convenio?.planos?.find(p => p.ativo);
 
+    // DEBUG: Log to see what data we actually have
+    useEffect(() => {
+        if (planoAtivo) {
+            console.log('[ConvenioDetailPanel] planoAtivo data:', {
+                id: planoAtivo.id,
+                tipo_plano: planoAtivo.tipo_plano,
+                dia_vencimento_pagamento: planoAtivo.dia_vencimento_pagamento,
+                dia_vencimento_pos_pago: (planoAtivo as any).dia_vencimento_pos_pago,
+                dia_fechamento: (planoAtivo as any).dia_fechamento,
+                valor_mensal: planoAtivo.valor_mensal,
+                valor_por_vaga: (planoAtivo as any).valor_por_vaga,
+                allFields: Object.keys(planoAtivo)
+            });
+        }
+    }, [planoAtivo]);
+
     // Debug: Check what we're getting
     console.log('ConvenioDetailPanel DEBUG:', {
         convenio: convenio?.nome_empresa,
@@ -497,11 +513,22 @@ export function ConvenioDetailPanel({ convenioId, onClose }: ConvenioDetailPanel
                                                             <dd className="font-medium">Dia {(planoAtivo as any).dia_fechamento}</dd>
                                                         </div>
                                                     )}
-                                                    {/* DIA DE VENCIMENTO - PÓS-PAGO */}
+                                                    {/* DIA DE VENCIMENTO - PÓS-PAGO - CRITICAL FIELD */}
                                                     <div className="mb-2">
                                                         <dt className="text-sm text-muted-foreground font-semibold">Dia de Vencimento</dt>
-                                                        <dd className="font-medium text-lg">
-                                                            Dia {(planoAtivo as any).dia_vencimento_pos_pago || planoAtivo.dia_vencimento_pagamento || '-'}
+                                                        <dd className="font-medium text-lg text-red-600">
+                                                            Dia {(() => {
+                                                                const vencimento = (planoAtivo as any).dia_vencimento_pos_pago
+                                                                    || planoAtivo.dia_vencimento_pagamento
+                                                                    || (planoAtivo as any).dia_fechamento; // Last resort fallback
+                                                                console.log('[Dia Vencimento Display]', {
+                                                                    dia_vencimento_pos_pago: (planoAtivo as any).dia_vencimento_pos_pago,
+                                                                    dia_vencimento_pagamento: planoAtivo.dia_vencimento_pagamento,
+                                                                    dia_fechamento: (planoAtivo as any).dia_fechamento,
+                                                                    result: vencimento
+                                                                });
+                                                                return vencimento || '-';
+                                                            })()}
                                                         </dd>
                                                     </div>
                                                 </>
