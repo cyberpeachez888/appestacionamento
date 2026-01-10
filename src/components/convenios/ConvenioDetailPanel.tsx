@@ -415,7 +415,7 @@ export function ConvenioDetailPanel({ convenioId, onClose }: ConvenioDetailPanel
                                             <>
                                                 <div>
                                                     <dt className="text-sm text-muted-foreground">Valor Mensal</dt>
-                                                    <dd className="font-medium text-lg">{formatarValor(planoAtivo.valor_mensal)}</dd>
+                                                    <dd className="font-medium text-lg">{formatarValor(planoAtivo.valor_mensal || 0)}</dd>
                                                 </div>
                                                 <div>
                                                     <dt className="text-sm text-muted-foreground">Dia de Vencimento</dt>
