@@ -202,8 +202,36 @@ export function DialogNovoConvenio({ open, onOpenChange, onSuccess, mode = 'crea
                     porcentagem_desconto: porcentagemDesconto ? parseFloat(porcentagemDesconto) : null,
                 };
 
-                await api.updateConvenio(convenioId, convenioUpdates);
-                await api.updateConvenioPlano(convenioId, planoUpdates);
+                console.log('[DialogNovoConvenio] 📤 Enviando updates:', {
+                    convenioId,
+                    planoUpdates,
+                    dia_vencimento_key: isPrePago ? 'dia_vencimento_pagamento' : 'dia_vencimento_pos_pago',
+                    dia_vencimento_value: isPrePago ? planoUpdates.dia_vencimento_pagamento : planoUpdates.dia_vencimento_pos_pago
+                });
+
+                // CRITICAL: Wait for both updates to complete
+                const [convenioResponse, planoResponse] = await Promise.all([
+                    api.updateConvenio(convenioId, convenioUpdates),
+                    api.updateConvenioPlano(convenioId, planoUpdates)
+                ]);
+
+                console.log('[DialogNovoConvenio] ✅ Backend responses:', {
+                    convenioResponse,
+                    planoResponse
+                });
+
+                // CRITICAL: Call onSuccess FIRST to trigger parent refetch BEFORE closing dialog
+                // This ensures the parent component starts fetching fresh data immediately
+                console.log('[DialogNovoConvenio] 🔄 Triggering parent refetch...');
+                onSuccess();
+
+                // Small delay to ensure refetch starts before dialog closes
+                await new Promise(resolve => setTimeout(resolve, 100));
+
+                // Then close dialog and reset form
+                console.log('[DialogNovoConvenio] 🚪 Closing dialog...');
+                onOpenChange(false);
+                resetForm();
             } else {
                 // Create mode
                 const payload = {
@@ -235,13 +263,14 @@ export function DialogNovoConvenio({ open, onOpenChange, onSuccess, mode = 'crea
                 };
 
                 await api.createConvenio(payload);
-            }
 
-            resetForm();
-            onOpenChange(false);
-            onSuccess();
+                // For create mode, keep original order
+                onSuccess();
+                onOpenChange(false);
+                resetForm();
+            }
         } catch (error: any) {
-            console.error('Erro:', error);
+            console.error('[DialogNovoConvenio] ❌ Error:', error);
             alert(error.message || `Erro ao ${mode === 'edit' ? 'atualizar' : 'criar'} convênio`);
         } finally {
             setLoading(false);

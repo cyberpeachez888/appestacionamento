@@ -121,11 +121,18 @@ export function ConvenioDetailPanel({ convenioId, onClose }: ConvenioDetailPanel
 
     const fetchConvenioDetalhes = async () => {
         try {
+            console.log('[ConvenioDetailPanel] 🔄 Fetching convenio details for ID:', convenioId);
             setLoading(true);
             const data = await api.getConvenioById(convenioId);
+            console.log('[ConvenioDetailPanel] ✅ Received data:', {
+                nome_empresa: data?.nome_empresa,
+                planos_count: data?.planos?.length,
+                plano_ativo: data?.planos?.find(p => p.ativo),
+                all_planos: data?.planos
+            });
             setConvenio(data);
         } catch (error) {
-            console.error('Erro ao buscar detalhes:', error);
+            console.error('[ConvenioDetailPanel] ❌ Error fetching details:', error);
         } finally {
             setLoading(false);
         }
