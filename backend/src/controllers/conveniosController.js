@@ -35,12 +35,18 @@ export default {
           *,
           plano_ativo:convenios_planos(
             id,
+            tipo_plano,
             num_vagas_contratadas,
             num_vagas_reservadas,
+            valor_por_vaga,
             valor_mensal,
             dia_vencimento_pagamento,
+            dia_vencimento_pos_pago,
+            dia_fechamento,
             permite_vagas_extras,
             valor_vaga_extra,
+            permite_horario_especial,
+            porcentagem_desconto,
             ativo
           )
         `)
