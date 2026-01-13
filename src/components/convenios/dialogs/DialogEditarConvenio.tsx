@@ -134,7 +134,14 @@ export function DialogEditarConvenio({
                 }
 
                 if (Object.keys(planoUpdates).length > 0) {
+                    console.log('📤 ENVIANDO ATUALIZAÇÃO DE PLANO:', {
+                        convenioId,
+                        tipoConvenio,
+                        planoUpdates,
+                        keys: Object.keys(planoUpdates)
+                    });
                     await api.updateConvenioPlano(convenioId, planoUpdates);
+                    console.log('✅ ATUALIZAÇÃO DE PLANO CONCLUÍDA');
                 }
             }
 

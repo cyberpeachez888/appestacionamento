@@ -402,6 +402,13 @@ export default {
             const { id: convenioId } = req.params;
             const planoData = req.body;
 
+            console.log('🔍 [updatePlano] Received data:', {
+                convenioId,
+                planoData,
+                keys: Object.keys(planoData),
+                timestamp: new Date().toISOString()
+            });
+
             // Buscar plano ativo atual
             const { data: planoAtual, error: planoError } = await supabase
                 .from(PLANOS_TABLE)
@@ -449,6 +456,16 @@ export default {
                 data_inicio_vigencia: new Date().toISOString().split('T')[0],
                 ativo: true
             };
+
+            console.log('💾 [updatePlano] Saving new plan:', {
+                id: novoPlano.id,
+                convenio_id: novoPlano.convenio_id,
+                dia_vencimento_pagamento: novoPlano.dia_vencimento_pagamento,
+                dia_vencimento_pos_pago: novoPlano.dia_vencimento_pos_pago,
+                dia_fechamento: novoPlano.dia_fechamento,
+                valor_mensal: novoPlano.valor_mensal,
+                num_vagas_contratadas: novoPlano.num_vagas_contratadas
+            });
 
             const { data: plano, error } = await supabase
                 .from(PLANOS_TABLE)
