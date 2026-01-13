@@ -334,8 +334,16 @@ export function CustomerDialog({ open, onOpenChange, customer, onSaved }: Custom
           paidAmount: isRetroactive ? null : (paymentMethod === 'Dinheiro' ? parseFloat(paidAmount) : undefined),
           operatorName: operatorName.trim() || undefined,
           status: 'Em dia' as const,
-          contractDate: contractDate.toISOString(),
+          // For retroactive customers, use the user-provided contractDate
+          // For normal customers, use current date/time
+          contractDate: isRetroactive && contractDate
+            ? contractDate.toISOString()
+            : new Date().toISOString(),
           dueDate: dueDate || addMonths(contractDate, 1).toISOString(),
+          // Only send lastPayment for retroactive customers if provided
+          lastPayment: isRetroactive && lastPayment
+            ? new Date(lastPayment + 'T12:00:00').toISOString()
+            : undefined,
           retroactivePayments: selectedRetroactiveMonths.length > 0 ? selectedRetroactiveMonths : undefined,
           isRetroactive, // Flag to indicate retroactive customer
         };
@@ -854,6 +862,46 @@ export function CustomerDialog({ open, onOpenChange, customer, onSaved }: Custom
                 className="col-span-3"
               />
             </div>
+
+            {/* Date Fields for Retroactive Customers - Only during creation */}
+            {!customer && isRetroactive && (
+              <>
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="retroContractDate" className="text-right">
+                    Data de Contratação <span className="text-red-500">*</span>
+                  </Label>
+                  <div className="col-span-3 space-y-1">
+                    <Input
+                      id="retroContractDate"
+                      type="date"
+                      value={contractDate ? format(contractDate, 'yyyy-MM-dd') : ''}
+                      onChange={(e) => setContractDate(new Date(e.target.value))}
+                      required
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Data em que o cliente iniciou o contrato de mensalista
+                    </p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="retroLastPayment" className="text-right">
+                    Último Pagamento
+                  </Label>
+                  <div className="col-span-3 space-y-1">
+                    <Input
+                      id="retroLastPayment"
+                      type="date"
+                      value={lastPayment}
+                      onChange={(e) => setLastPayment(e.target.value)}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Data do último pagamento antes do cadastro no app
+                    </p>
+                  </div>
+                </div>
+              </>
+            )}
 
             {/* Date Fields - Only for editing existing customers */}
             {customer && (
