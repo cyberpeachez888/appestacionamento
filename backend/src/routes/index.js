@@ -29,6 +29,7 @@ import pricingRulesRoutes from './pricingRules.js';
 
 import conveniosRoutes from './convenios.js';
 import notificacoesRoutes from './notificacoes.js';
+import testCleanupController from '../controllers/testCleanupController.js';
 import { requireAuth, requireAdmin, requirePermission } from '../middleware/auth.js';
 import { loginLimiter, apiLimiter, strictLimiter } from '../middleware/rateLimiter.js';
 import printerJobsController from '../controllers/printerJobsController.js';
@@ -770,6 +771,20 @@ router.get(
   '/cash-register/report/:id/:format',
   requireAuth,
   cashRegisterController.downloadReport
+);
+
+// Test Cleanup (Diagnostic endpoint - Admin only)
+router.post(
+  '/test/cleanup',
+  requireAuth,
+  requireAdmin,
+  testCleanupController.testCleanup
+);
+router.get(
+  '/test/cleanup/sample-ids',
+  requireAuth,
+  requireAdmin,
+  testCleanupController.getSampleIds
 );
 
 // Convenios (Corporate Agreements Management)
