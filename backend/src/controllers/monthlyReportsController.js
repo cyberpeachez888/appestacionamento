@@ -269,55 +269,148 @@ export default {
       const cleanupErrors = [];
 
       if (clearOperational) {
-        console.log('🧹 Starting operational cleanup...');
+        console.log('🧹 ===== STARTING OPERATIONAL CLEANUP =====');
+        console.log(`🧹 User ID: ${user.id}`);
+        console.log(`🧹 User Role: ${user.role}`);
+        console.log(`🧹 User Login: ${user.login}`);
 
         // Clear tickets for the period
         if (tickets && tickets.length > 0) {
           const ticketIds = tickets.map((t) => t.id);
-          console.log(`🧹 Attempting to delete ${ticketIds.length} tickets...`);
+          console.log(`🧹 Found ${ticketIds.length} tickets to delete`);
+          console.log(`🧹 First 3 ticket IDs:`, ticketIds.slice(0, 3));
 
-          const { error: deleteTicketsError, count } = await supabase
+          const { data: deletedData, error: deleteTicketsError, count } = await supabase
             .from('tickets')
             .delete()
-            .in('id', ticketIds);
+            .in('id', ticketIds)
+            .select(); // ← IMPORTANTE: Adicionar .select() para retornar registros deletados
+
+          console.log(`🧹 Delete response - Error:`, deleteTicketsError);
+          console.log(`🧹 Delete response - Count:`, count);
+          console.log(`🧹 Delete response - Data length:`, deletedData?.length);
 
           if (deleteTicketsError) {
             console.error('❌ Error clearing tickets:', deleteTicketsError);
             console.error('❌ Error code:', deleteTicketsError.code);
+            console.error('❌ Error hint:', deleteTicketsError.hint);
             console.error('❌ Error details:', deleteTicketsError.details);
             console.error('❌ Error message:', deleteTicketsError.message);
-            cleanupErrors.push({ table: 'tickets', error: deleteTicketsError.message });
+            cleanupErrors.push({
+              table: 'tickets',
+              error: deleteTicketsError.message,
+              code: deleteTicketsError.code,
+            });
           } else {
-            clearedTickets = ticketIds.length;
-            console.log(`✅ Successfully deleted ${clearedTickets} tickets`);
+            // Verificar se realmente deletou
+            const actualDeleted = deletedData?.length || 0;
+            clearedTickets = actualDeleted;
+
+            if (actualDeleted === 0) {
+              console.warn('⚠️  DELETE command succeeded but 0 rows affected!');
+              console.warn('⚠️  This usually indicates RLS policy blocking deletion');
+              cleanupErrors.push({
+                table: 'tickets',
+                error: 'No rows deleted despite no error - check RLS policies',
+              });
+            } else if (actualDeleted < ticketIds.length) {
+              console.warn(
+                `⚠️  Partial deletion: ${actualDeleted}/${ticketIds.length} tickets deleted`
+              );
+              cleanupErrors.push({
+                table: 'tickets',
+                error: `Only ${actualDeleted}/${ticketIds.length} tickets deleted`,
+              });
+            } else {
+              console.log(`✅ Successfully deleted ${clearedTickets} tickets`);
+            }
+          }
+
+          // Verificação adicional: Contar registros restantes
+          const { count: remainingCount, error: countError } = await supabase
+            .from('tickets')
+            .select('*', { count: 'exact', head: true })
+            .in('id', ticketIds);
+
+          if (!countError) {
+            console.log(
+              `🔍 Verification: ${remainingCount} tickets still in database (should be 0)`
+            );
+            if (remainingCount > 0) {
+              console.error(`❌ CRITICAL: ${remainingCount} tickets were NOT deleted!`);
+              cleanupErrors.push({
+                table: 'tickets',
+                error: `${remainingCount} tickets still exist after deletion attempt`,
+              });
+            }
           }
         } else {
           console.log('ℹ️  No tickets to clear');
         }
 
-        // Clear payments for the period (avulsos only - don't clear monthly customer payments)
+        // === MESMO PROCESSO PARA PAYMENTS ===
         if (payments && payments.length > 0) {
           const paymentIds = payments
-            .filter((p) => p.target_type !== 'monthly_customer') // Keep monthly customer payments
+            .filter((p) => p.target_type !== 'monthly_customer')
             .map((p) => p.id);
 
           if (paymentIds.length > 0) {
-            console.log(`🧹 Attempting to delete ${paymentIds.length} payments...`);
+            console.log(`🧹 Found ${paymentIds.length} payments to delete`);
+            console.log(`🧹 First 3 payment IDs:`, paymentIds.slice(0, 3));
 
-            const { error: deletePaymentsError, count } = await supabase
+            const { data: deletedData, error: deletePaymentsError, count } = await supabase
               .from('payments')
               .delete()
-              .in('id', paymentIds);
+              .in('id', paymentIds)
+              .select();
+
+            console.log(`🧹 Delete response - Error:`, deletePaymentsError);
+            console.log(`🧹 Delete response - Count:`, count);
+            console.log(`🧹 Delete response - Data length:`, deletedData?.length);
 
             if (deletePaymentsError) {
               console.error('❌ Error clearing payments:', deletePaymentsError);
               console.error('❌ Error code:', deletePaymentsError.code);
+              console.error('❌ Error hint:', deletePaymentsError.hint);
               console.error('❌ Error details:', deletePaymentsError.details);
-              console.error('❌ Error message:', deletePaymentsError.message);
-              cleanupErrors.push({ table: 'payments', error: deletePaymentsError.message });
+              cleanupErrors.push({
+                table: 'payments',
+                error: deletePaymentsError.message,
+                code: deletePaymentsError.code,
+              });
             } else {
-              clearedPayments = paymentIds.length;
-              console.log(`✅ Successfully deleted ${clearedPayments} payments`);
+              const actualDeleted = deletedData?.length || 0;
+              clearedPayments = actualDeleted;
+
+              if (actualDeleted === 0) {
+                console.warn('⚠️  DELETE succeeded but 0 payments affected - check RLS policies');
+                cleanupErrors.push({
+                  table: 'payments',
+                  error: 'No rows deleted despite no error - check RLS policies',
+                });
+              } else if (actualDeleted < paymentIds.length) {
+                console.warn(`⚠️  Partial deletion: ${actualDeleted}/${paymentIds.length} payments`);
+                cleanupErrors.push({
+                  table: 'payments',
+                  error: `Only ${actualDeleted}/${paymentIds.length} payments deleted`,
+                });
+              } else {
+                console.log(`✅ Successfully deleted ${clearedPayments} payments`);
+              }
+            }
+
+            // Verificação adicional
+            const { count: remainingCount, error: countError } = await supabase
+              .from('payments')
+              .select('*', { count: 'exact', head: true })
+              .in('id', paymentIds);
+
+            if (!countError && remainingCount > 0) {
+              console.error(`❌ CRITICAL: ${remainingCount} payments were NOT deleted!`);
+              cleanupErrors.push({
+                table: 'payments',
+                error: `${remainingCount} payments still exist after deletion`,
+              });
             }
           } else {
             console.log('ℹ️  No avulso payments to clear (all are monthly customer payments)');
@@ -326,10 +419,13 @@ export default {
           console.log('ℹ️  No payments to clear');
         }
 
-        console.log(`🧹 Cleanup complete: ${clearedTickets} tickets, ${clearedPayments} payments deleted`);
+        console.log('🧹 ===== CLEANUP COMPLETE =====');
+        console.log(
+          `🧹 Final count: ${clearedTickets} tickets, ${clearedPayments} payments deleted`
+        );
 
         if (cleanupErrors.length > 0) {
-          console.error('⚠️  Cleanup completed with errors:', cleanupErrors);
+          console.error('⚠️  Cleanup errors:', JSON.stringify(cleanupErrors, null, 2));
         }
       } else {
         console.log('ℹ️  Operational cleanup skipped (clearOperational = false)');
