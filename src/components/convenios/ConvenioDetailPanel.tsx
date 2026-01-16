@@ -221,7 +221,82 @@ export function ConvenioDetailPanel({ convenioId, onClose }: ConvenioDetailPanel
         }).format(valor);
     };
 
+    /**
+     * Retorna a última fatura paga do convênio
+     */
+    const getUltimoPagamento = (faturas: any[]) => {
+        if (!faturas || faturas.length === 0) return null;
+
+        const faturasPagas = faturas
+            .filter(f => f.status === 'paga' && f.data_pagamento)
+            .sort((a, b) => new Date(b.data_pagamento).getTime() - new Date(a.data_pagamento).getTime());
+
+        return faturasPagas[0] || null;
+    };
+
+    /**
+     * Normaliza data de vencimento para meses com menos dias
+     */
+    const normalizeDueDate = (dia: number, mes: number, ano: number): Date => {
+        const ultimoDiaDoMes = new Date(ano, mes + 1, 0).getDate();
+        const diaFinal = Math.min(dia, ultimoDiaDoMes);
+        return new Date(ano, mes, diaFinal);
+    };
+
+    /**
+     * Calcula o próximo vencimento baseado no dia de vencimento do plano
+     */
+    const calcularProximoVencimento = (plano: any, tipoConvenio: string): Date => {
+        let diaVencimento: number;
+
+        if (tipoConvenio === 'pre-pago') {
+            diaVencimento = plano.dia_vencimento_pagamento;
+        } else {
+            diaVencimento = (plano as any).dia_vencimento_pos_pago
+                || plano.dia_vencimento_pagamento
+                || (plano as any).dia_fechamento;
+        }
+
+        const hoje = new Date();
+        const anoAtual = hoje.getFullYear();
+        const mesAtual = hoje.getMonth();
+
+        let proximoVencimento = normalizeDueDate(diaVencimento, mesAtual, anoAtual);
+
+        if (proximoVencimento < hoje) {
+            const proximoMes = mesAtual === 11 ? 0 : mesAtual + 1;
+            const proximoAno = mesAtual === 11 ? anoAtual + 1 : anoAtual;
+            proximoVencimento = normalizeDueDate(diaVencimento, proximoMes, proximoAno);
+        }
+
+        return proximoVencimento;
+    };
+
+    /**
+     * Calcula quantos dias faltam para o vencimento
+     */
+    const calcularDiasAteVencimento = (dataVencimento: Date): number => {
+        const hoje = new Date();
+        hoje.setHours(0, 0, 0, 0);
+        const vencimento = new Date(dataVencimento);
+        vencimento.setHours(0, 0, 0, 0);
+
+        const diffTime = vencimento.getTime() - hoje.getTime();
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+        return diffDays;
+    };
+
     const planoAtivo = convenio?.planos?.find(p => p.ativo);
+
+    // Calcular dados derivados
+    const ultimoPagamento = getUltimoPagamento(convenio?.faturas || []);
+    const proximoVencimento = planoAtivo && convenio
+        ? calcularProximoVencimento(planoAtivo, convenio.tipo_convenio)
+        : null;
+    const diasAteVencimento = proximoVencimento
+        ? calcularDiasAteVencimento(proximoVencimento)
+        : null;
 
     // DEBUG: Log to see what data we actually have
     useEffect(() => {
@@ -547,6 +622,123 @@ export function ConvenioDetailPanel({ convenioId, onClose }: ConvenioDetailPanel
                         ) : (
                             <div className="text-center py-8 text-muted-foreground">
                                 Nenhum plano ativo
+                            </div>
+                        )}
+
+                        {/* Seção: Datas Importantes */}
+                        {planoAtivo && (
+                            <div className="mt-6 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950 dark:to-indigo-950 rounded-lg border border-blue-200 dark:border-blue-800">
+                                <h4 className="font-semibold mb-4 text-blue-900 dark:text-blue-100">
+                                    📅 Datas Importantes
+                                </h4>
+                                <div className="grid grid-cols-3 gap-6">
+                                    {/* Data de Contratação */}
+                                    <div>
+                                        <dt className="text-sm text-blue-600 dark:text-blue-400 mb-1">
+                                            Data de Contratação
+                                        </dt>
+                                        <dd className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                                            {formatarData(planoAtivo.data_inicio_vigencia)}
+                                        </dd>
+                                    </div>
+
+                                    {/* Último Pagamento */}
+                                    <div>
+                                        <dt className="text-sm text-blue-600 dark:text-blue-400 mb-1">
+                                            💳 Último Pagamento
+                                        </dt>
+                                        {ultimoPagamento ? (
+                                            <>
+                                                <dd className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                                                    {formatarData(ultimoPagamento.data_pagamento)}
+                                                </dd>
+                                                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                                    {ultimoPagamento.forma_pagamento} • {formatarValor(ultimoPagamento.valor_total)}
+                                                </p>
+                                            </>
+                                        ) : (
+                                            <dd className="text-sm text-gray-400 dark:text-gray-500 italic">
+                                                Nenhum pagamento registrado
+                                            </dd>
+                                        )}
+                                    </div>
+
+                                    {/* Próximo Vencimento */}
+                                    <div>
+                                        <dt className="text-sm text-blue-600 dark:text-blue-400 mb-1">
+                                            ⏰ Próximo Vencimento
+                                        </dt>
+                                        {proximoVencimento && (
+                                            <>
+                                                <dd className={`text-lg font-semibold ${diasAteVencimento === 0
+                                                        ? 'text-red-600 dark:text-red-400'
+                                                        : diasAteVencimento && diasAteVencimento <= 7 && diasAteVencimento > 0
+                                                            ? 'text-orange-600 dark:text-orange-400'
+                                                            : 'text-blue-600 dark:text-blue-400'
+                                                    }`}>
+                                                    {formatarData(proximoVencimento.toISOString())}
+                                                </dd>
+
+                                                {/* Alertas Visuais */}
+                                                {diasAteVencimento === 0 && (
+                                                    <p className="text-xs text-red-600 dark:text-red-400 font-medium mt-1 flex items-center gap-1">
+                                                        <span>🔴</span> Vence hoje!
+                                                    </p>
+                                                )}
+                                                {diasAteVencimento && diasAteVencimento > 0 && diasAteVencimento <= 7 && (
+                                                    <p className="text-xs text-orange-600 dark:text-orange-400 font-medium mt-1 flex items-center gap-1">
+                                                        <span>⚠️</span> Vence em {diasAteVencimento} {diasAteVencimento === 1 ? 'dia' : 'dias'}
+                                                    </p>
+                                                )}
+                                                {diasAteVencimento && diasAteVencimento > 7 && (
+                                                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                                        Faltam {diasAteVencimento} dias
+                                                    </p>
+                                                )}
+                                            </>
+                                        )}
+                                    </div>
+                                </div>
+
+                                {/* Seção Adicional: Ciclo de Faturamento */}
+                                <div className="mt-4 pt-4 border-t border-blue-200 dark:border-blue-800">
+                                    <h5 className="text-sm font-semibold text-blue-800 dark:text-blue-200 mb-3">
+                                        Ciclo de Faturamento
+                                    </h5>
+                                    <div className="grid grid-cols-3 gap-4 text-sm">
+                                        {convenio.tipo_convenio === 'pos-pago' && (planoAtivo as any).dia_fechamento && (
+                                            <div>
+                                                <label className="text-gray-600 dark:text-gray-400">Dia de Fechamento</label>
+                                                <p className="font-medium text-gray-900 dark:text-gray-100">
+                                                    Dia {(planoAtivo as any).dia_fechamento}
+                                                </p>
+                                            </div>
+                                        )}
+                                        <div>
+                                            <label className="text-gray-600 dark:text-gray-400">Dia de Vencimento</label>
+                                            <p className="font-medium text-gray-900 dark:text-gray-100">
+                                                Dia {convenio.tipo_convenio === 'pre-pago'
+                                                    ? planoAtivo.dia_vencimento_pagamento
+                                                    : ((planoAtivo as any).dia_vencimento_pos_pago || planoAtivo.dia_vencimento_pagamento)}
+                                            </p>
+                                        </div>
+                                        <div>
+                                            <label className="text-gray-600 dark:text-gray-400">Status da Fatura Atual</label>
+                                            <p className="font-medium text-gray-900 dark:text-gray-100">
+                                                {(() => {
+                                                    const hoje = new Date();
+                                                    const mesAtual = `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, '0')}`;
+                                                    const faturaAtual = convenio.faturas?.find(f => f.periodo_referencia === mesAtual);
+
+                                                    if (!faturaAtual) return '⏳ Não gerada';
+                                                    if (faturaAtual.status === 'paga') return '✅ Paga';
+                                                    if (faturaAtual.status === 'vencida') return '🔴 Vencida';
+                                                    return '⏳ Pendente';
+                                                })()}
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         )}
 
