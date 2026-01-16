@@ -288,7 +288,7 @@ export function DialogNovoConvenio({ open, onOpenChange, onSuccess, mode = 'crea
             if (tipoConvenio === 'pre-pago') {
                 return tipoConvenio && numVagas && valorMensal && diaVencimento;
             } else if (tipoConvenio === 'pos-pago') {
-                return tipoConvenio && numVagas && diaVencimento && diaFechamento;
+                return tipoConvenio && numVagas && diaVencimentoPosPago && diaFechamento;
             }
             return false;
         }
@@ -550,19 +550,20 @@ export function DialogNovoConvenio({ open, onOpenChange, onSuccess, mode = 'crea
                             )}
 
                             {tipoConvenio === 'pre-pago' ? (
-                                <div className="grid grid-cols-2 gap-4">\n                                    <div className="grid gap-2">
-                                    <Label htmlFor="valor_mensal">
-                                        Valor Mensal <span className="text-red-500">*</span>
-                                    </Label>
-                                    <Input
-                                        id="valor_mensal"
-                                        type="number"
-                                        step="0.01"
-                                        value={valorMensal}
-                                        onChange={(e) => setValorMensal(e.target.value)}
-                                        placeholder="0.00"
-                                    />
-                                </div>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="valor_mensal">
+                                            Valor Mensal <span className="text-red-500">*</span>
+                                        </Label>
+                                        <Input
+                                            id="valor_mensal"
+                                            type="number"
+                                            step="0.01"
+                                            value={valorMensal}
+                                            onChange={(e) => setValorMensal(e.target.value)}
+                                            placeholder="0.00"
+                                        />
+                                    </div>
                                     <div className="grid gap-2">
                                         <Label htmlFor="dia_vencimento">
                                             Dia de Vencimento <span className="text-red-500">*</span>
@@ -571,11 +572,14 @@ export function DialogNovoConvenio({ open, onOpenChange, onSuccess, mode = 'crea
                                             id="dia_vencimento"
                                             type="number"
                                             min="1"
-                                            max="28"
+                                            max="31"
                                             value={diaVencimento}
                                             onChange={(e) => setDiaVencimento(e.target.value)}
-                                            placeholder="1-28"
+                                            placeholder="1-31"
                                         />
+                                        <p className="text-xs text-muted-foreground">
+                                            💡 Dias 29-31 serão ajustados para o último dia válido em meses mais curtos
+                                        </p>
                                     </div>
                                 </div>
                             ) : tipoConvenio === 'pos-pago' ? (
@@ -592,29 +596,36 @@ export function DialogNovoConvenio({ open, onOpenChange, onSuccess, mode = 'crea
                                                 id="dia_fechamento"
                                                 type="number"
                                                 min="1"
-                                                max="28"
+                                                max="31"
                                                 value={diaFechamento}
                                                 onChange={(e) => setDiaFechamento(e.target.value)}
-                                                placeholder="1-28"
+                                                placeholder="1-31"
                                             />
+                                            <p className="text-xs text-muted-foreground">
+                                                Data de fechamento do período de cobrança
+                                            </p>
                                         </div>
                                         <div className="grid gap-2">
-                                            <Label htmlFor="dia_vencimento">
+                                            <Label htmlFor="dia_vencimento_pos_pago">
                                                 Dia de Vencimento <span className="text-red-500">*</span>
                                             </Label>
                                             <Input
-                                                id="dia_vencimento"
+                                                id="dia_vencimento_pos_pago"
                                                 type="number"
                                                 min="1"
-                                                max="28"
-                                                value={diaVencimento}
-                                                onChange={(e) => setDiaVencimento(e.target.value)}
-                                                placeholder="1-28"
+                                                max="31"
+                                                value={diaVencimentoPosPago}
+                                                onChange={(e) => setDiaVencimentoPosPago(e.target.value)}
+                                                placeholder="1-31"
                                             />
+                                            <p className="text-xs text-muted-foreground">
+                                                💡 Dias 29-31 serão ajustados para o último dia válido em meses mais curtos
+                                            </p>
                                         </div>
                                     </div>
                                 </>
                             ) : null}
+
 
                             <div className="flex items-center space-x-2">
                                 <Checkbox
