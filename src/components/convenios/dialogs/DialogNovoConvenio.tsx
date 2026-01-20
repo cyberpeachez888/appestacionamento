@@ -42,7 +42,6 @@ interface DialogNovoConvenioProps {
         razao_social: string;
         cnpj: string;
         categoria: string;
-        tipo_convenio: 'pre-pago' | 'pos-pago';
         contato_nome: string;
         contato_email: string;
         contato_telefone: string;
@@ -55,9 +54,8 @@ interface DialogNovoConvenioProps {
             num_vagas_reservadas: number;
             valor_por_vaga?: number;
             valor_mensal?: number;
-            dia_vencimento_pagamento?: number;
+            dia_vencimento?: number;
             dia_fechamento?: number;
-            dia_vencimento_pos_pago?: number;
             permite_vagas_extras: boolean;
             valor_vaga_extra?: number;
             porcentagem_desconto?: number;
@@ -82,19 +80,17 @@ export function DialogNovoConvenio({ open, onOpenChange, onSuccess, mode = 'crea
     const [contatoEmail, setContatoEmail] = useState('');
     const [contatoTelefone, setContatoTelefone] = useState('');
 
-    // Passo 3: Plano
-    const [tipoConvenio, setTipoConvenio] = useState('');
+    // Passo 3: Plano (Convênio Corporativo Unificado)
     const [numVagas, setNumVagas] = useState('');
     const [numVagasReservadas, setNumVagasReservadas] = useState('');
     const [valorPorVaga, setValorPorVaga] = useState(''); // NEW: Price per spot
     const [valorMensal, setValorMensal] = useState('');
-    const [diaVencimento, setDiaVencimento] = useState('');
     const [permiteVagasExtras, setPermiteVagasExtras] = useState(false);
     const [tipoVagaExtra, setTipoVagaExtra] = useState<'gratis' | 'paga'>('gratis');
     const [maxVagasExtras, setMaxVagasExtras] = useState('');
     const [valorVagaExtra, setValorVagaExtra] = useState('');
-    const [diaFechamento, setDiaFechamento] = useState(''); // Pós-pago: closing day
-    const [diaVencimentoPosPago, setDiaVencimentoPosPago] = useState(''); // Pós-pago: due day
+    const [diaFechamento, setDiaFechamento] = useState(''); // Closing day  
+    const [diaVencimento, setDiaVencimento] = useState(''); // Due day (unified)
     const [porcentagemDesconto, setPorcentagemDesconto] = useState(''); // Discount percentage
 
     // Passo 4: Contrato
@@ -112,14 +108,12 @@ export function DialogNovoConvenio({ open, onOpenChange, onSuccess, mode = 'crea
         setContatoNome('');
         setContatoEmail('');
         setContatoTelefone('');
-        setTipoConvenio('');
         setNumVagas('');
         setNumVagasReservadas('');
         setValorPorVaga('');
         setValorMensal('');
         setDiaVencimento('');
         setDiaFechamento('');
-        setDiaVencimentoPosPago('');
         setPermiteVagasExtras(false);
         setValorVagaExtra('');
         setPorcentagemDesconto('');
@@ -144,15 +138,13 @@ export function DialogNovoConvenio({ open, onOpenChange, onSuccess, mode = 'crea
             setContatoTelefone(initialData.contato_telefone || '');
 
             // Step 3
-            setTipoConvenio(initialData.tipo_convenio || '');
             if (initialData.plano) {
                 setNumVagas(initialData.plano.num_vagas_contratadas?.toString() || '');
                 setNumVagasReservadas(initialData.plano.num_vagas_reservadas?.toString() || '0');
                 setValorPorVaga(initialData.plano.valor_por_vaga?.toString() || '');
                 setValorMensal(initialData.plano.valor_mensal?.toString() || '');
-                setDiaVencimento(initialData.plano.dia_vencimento_pagamento?.toString() || '');
+                setDiaVencimento(initialData.plano.dia_vencimento?.toString() || '');
                 setDiaFechamento(initialData.plano.dia_fechamento?.toString() || '');
-                setDiaVencimentoPosPago(initialData.plano.dia_vencimento_pos_pago?.toString() || '');
                 setPermiteVagasExtras(initialData.plano.permite_vagas_extras || false);
                 setValorVagaExtra(initialData.plano.valor_vaga_extra?.toString() || '');
                 setPorcentagemDesconto(initialData.plano.porcentagem_desconto?.toString() || '');
@@ -172,7 +164,6 @@ export function DialogNovoConvenio({ open, onOpenChange, onSuccess, mode = 'crea
     const handleSubmit = async () => {
         try {
             setLoading(true);
-            const isPrePago = tipoConvenio === 'pre-pago';
 
             if (mode === 'edit' && convenioId) {
                 // Edit mode: Update convenio + plan
@@ -193,10 +184,9 @@ export function DialogNovoConvenio({ open, onOpenChange, onSuccess, mode = 'crea
                     num_vagas_contratadas: parseInt(numVagas),
                     num_vagas_reservadas: parseInt(numVagasReservadas) || 0,
                     valor_por_vaga: valorPorVaga ? parseFloat(valorPorVaga) : undefined,
-                    valor_mensal: isPrePago && valorMensal ? parseFloat(valorMensal) : null,
-                    dia_vencimento_pagamento: isPrePago ? parseInt(diaVencimento) : null,
-                    dia_vencimento_pos_pago: !isPrePago && diaVencimentoPosPago ? parseInt(diaVencimentoPosPago) : null,
-                    dia_fechamento: !isPrePago && diaFechamento ? parseInt(diaFechamento) : null,
+                    valor_mensal: valorMensal ? parseFloat(valorMensal) : null,
+                    dia_vencimento: diaVencimento ? parseInt(diaVencimento) : null,
+                    dia_fechamento: diaFechamento ? parseInt(diaFechamento) : null,
                     permite_vagas_extras: permiteVagasExtras,
                     valor_vaga_extra: permiteVagasExtras && tipoVagaExtra === 'paga' ? parseFloat(valorVagaExtra) : null,
                     porcentagem_desconto: porcentagemDesconto ? parseFloat(porcentagemDesconto) : null,
@@ -204,9 +194,7 @@ export function DialogNovoConvenio({ open, onOpenChange, onSuccess, mode = 'crea
 
                 console.log('[DialogNovoConvenio] 📤 Enviando updates:', {
                     convenioId,
-                    planoUpdates,
-                    dia_vencimento_key: isPrePago ? 'dia_vencimento_pagamento' : 'dia_vencimento_pos_pago',
-                    dia_vencimento_value: isPrePago ? planoUpdates.dia_vencimento_pagamento : planoUpdates.dia_vencimento_pos_pago
+                    planoUpdates
                 });
 
                 // CRITICAL: Wait for both updates to complete
@@ -238,7 +226,6 @@ export function DialogNovoConvenio({ open, onOpenChange, onSuccess, mode = 'crea
                     nome_empresa: nomeEmpresa,
                     razao_social: razaoSocial,
                     cnpj,
-                    tipo_convenio: tipoConvenio,
                     categoria,
                     data_inicio: dataInicio,
                     data_vencimento_contrato: dataVencimentoContrato || undefined,
@@ -248,14 +235,13 @@ export function DialogNovoConvenio({ open, onOpenChange, onSuccess, mode = 'crea
                     endereco_completo: endereco || undefined,
                     observacoes: observacoes || undefined,
                     plano: {
-                        tipo_plano: 'padrao',
+                        tipo_plano: 'corporativo',
                         num_vagas_contratadas: parseInt(numVagas),
                         num_vagas_reservadas: parseInt(numVagasReservadas) || 0,
                         valor_por_vaga: valorPorVaga ? parseFloat(valorPorVaga) : undefined,
-                        valor_mensal: isPrePago && valorMensal ? parseFloat(valorMensal) : null,
-                        dia_vencimento_pagamento: isPrePago ? parseInt(diaVencimento) : undefined,
-                        dia_vencimento_pos_pago: !isPrePago && diaVencimentoPosPago ? parseInt(diaVencimentoPosPago) : undefined,
-                        dia_fechamento: !isPrePago && diaFechamento ? parseInt(diaFechamento) : undefined,
+                        valor_mensal: valorMensal ? parseFloat(valorMensal) : null,
+                        dia_vencimento: diaVencimento ? parseInt(diaVencimento) : undefined,
+                        dia_fechamento: diaFechamento ? parseInt(diaFechamento) : undefined,
                         permite_vagas_extras: permiteVagasExtras,
                         valor_vaga_extra: permiteVagasExtras && tipoVagaExtra === 'paga' ? parseFloat(valorVagaExtra) : undefined,
                         porcentagem_desconto: porcentagemDesconto ? parseFloat(porcentagemDesconto) : undefined,
@@ -285,12 +271,8 @@ export function DialogNovoConvenio({ open, onOpenChange, onSuccess, mode = 'crea
             return contatoNome && contatoEmail && contatoTelefone;
         }
         if (step === 3) {
-            if (tipoConvenio === 'pre-pago') {
-                return tipoConvenio && numVagas && valorMensal && diaVencimento;
-            } else if (tipoConvenio === 'pos-pago') {
-                return tipoConvenio && numVagas && diaVencimentoPosPago && diaFechamento;
-            }
-            return false;
+            // Convênio Corporativo requer vagas, vencimento e fechamento
+            return numVagas && diaVencimento && diaFechamento;
         }
         if (step === 4) {
             return dataInicio;
@@ -432,24 +414,10 @@ export function DialogNovoConvenio({ open, onOpenChange, onSuccess, mode = 'crea
                         </>
                     )}
 
-                    {/* Passo 3: Plano */}
+                    {/* Passo 3: Plano - Convênio Corporativo */}
                     {step === 3 && (
                         <>
-                            <div className="grid gap-2">
-                                <Label htmlFor="tipo_convenio">
-                                    Tipo de Convênio <span className="text-red-500">*</span>
-                                </Label>
-                                <Select value={tipoConvenio} onValueChange={setTipoConvenio}>
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Selecione" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="pre-pago">Pré-pago (Mensalidade Fixa)</SelectItem>
-                                        <SelectItem value="pos-pago">Pós-pago (Por Uso)</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            </div>
-
+                            {/* Vagas */}
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="grid gap-2">
                                     <Label htmlFor="num_vagas">
@@ -549,84 +517,45 @@ export function DialogNovoConvenio({ open, onOpenChange, onSuccess, mode = 'crea
                                 </div>
                             )}
 
-                            {tipoConvenio === 'pre-pago' ? (
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div className="grid gap-2">
-                                        <Label htmlFor="valor_mensal">
-                                            Valor Mensal <span className="text-red-500">*</span>
-                                        </Label>
-                                        <Input
-                                            id="valor_mensal"
-                                            type="number"
-                                            step="0.01"
-                                            value={valorMensal}
-                                            onChange={(e) => setValorMensal(e.target.value)}
-                                            placeholder="0.00"
-                                        />
-                                    </div>
-                                    <div className="grid gap-2">
-                                        <Label htmlFor="dia_vencimento">
-                                            Dia de Vencimento <span className="text-red-500">*</span>
-                                        </Label>
-                                        <Input
-                                            id="dia_vencimento"
-                                            type="number"
-                                            min="1"
-                                            max="31"
-                                            value={diaVencimento}
-                                            onChange={(e) => setDiaVencimento(e.target.value)}
-                                            placeholder="1-31"
-                                        />
-                                        <p className="text-xs text-muted-foreground">
-                                            💡 Dias 29-31 serão ajustados para o último dia válido em meses mais curtos
-                                        </p>
-                                    </div>
+                            {/* Datas de Fechamento e Vencimento - Convênio Corporativo */}
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="grid gap-2">
+                                    <Label htmlFor="dia_fechamento">
+                                        Dia de Fechamento <span className="text-red-500">*</span>
+                                    </Label>
+                                    <Input
+                                        id="dia_fechamento"
+                                        type="number"
+                                        min="1"
+                                        max="31"
+                                        value={diaFechamento}
+                                        onChange={(e) => setDiaFechamento(e.target.value)}
+                                        placeholder="1-31"
+                                    />
+                                    <p className="text-xs text-muted-foreground">
+                                        Data de fechamento do período de cobrança
+                                    </p>
                                 </div>
-                            ) : tipoConvenio === 'pos-pago' ? (
-                                <>
-                                    <div className="bg-blue-50 text-blue-700 p-3 rounded-md text-sm border border-blue-200">
-                                        ℹ️ Valor calculado mensalmente baseado no uso real
-                                    </div>
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <div className="grid gap-2">
-                                            <Label htmlFor="dia_fechamento">
-                                                Dia de Fechamento <span className="text-red-500">*</span>
-                                            </Label>
-                                            <Input
-                                                id="dia_fechamento"
-                                                type="number"
-                                                min="1"
-                                                max="31"
-                                                value={diaFechamento}
-                                                onChange={(e) => setDiaFechamento(e.target.value)}
-                                                placeholder="1-31"
-                                            />
-                                            <p className="text-xs text-muted-foreground">
-                                                Data de fechamento do período de cobrança
-                                            </p>
-                                        </div>
-                                        <div className="grid gap-2">
-                                            <Label htmlFor="dia_vencimento_pos_pago">
-                                                Dia de Vencimento <span className="text-red-500">*</span>
-                                            </Label>
-                                            <Input
-                                                id="dia_vencimento_pos_pago"
-                                                type="number"
-                                                min="1"
-                                                max="31"
-                                                value={diaVencimentoPosPago}
-                                                onChange={(e) => setDiaVencimentoPosPago(e.target.value)}
-                                                placeholder="1-31"
-                                            />
-                                            <p className="text-xs text-muted-foreground">
-                                                💡 Dias 29-31 serão ajustados para o último dia válido em meses mais curtos
-                                            </p>
-                                        </div>
-                                    </div>
-                                </>
-                            ) : null}
+                                <div className="grid gap-2">
+                                    <Label htmlFor="dia_vencimento">
+                                        Dia de Vencimento <span className="text-red-500">*</span>
+                                    </Label>
+                                    <Input
+                                        id="dia_vencimento"
+                                        type="number"
+                                        min="1"
+                                        max="31"
+                                        value={diaVencimento}
+                                        onChange={(e) => setDiaVencimento(e.target.value)}
+                                        placeholder="1-31"
+                                    />
+                                    <p className="text-xs text-muted-foreground">
+                                        💡 Dias 29-31 serão ajustados para o último dia válido em meses mais curtos
+                                    </p>
+                                </div>
+                            </div>
 
-
+                            {/* Vagas Extras */}
                             <div className="flex items-center space-x-2">
                                 <Checkbox
                                     id="permite_vagas_extras"
@@ -738,20 +667,13 @@ export function DialogNovoConvenio({ open, onOpenChange, onSuccess, mode = 'crea
                                     </div>
                                     <div className="flex justify-between">
                                         <dt className="text-muted-foreground">Tipo:</dt>
-                                        <dd className="font-medium capitalize">{tipoConvenio}</dd>
+                                        <dd className="font-medium">Convênio Corporativo</dd>
                                     </div>
                                     <div className="flex justify-between">
                                         <dt className="text-muted-foreground">Vagas:</dt>
                                         <dd className="font-medium">{numVagas}</dd>
                                     </div>
-                                    {tipoConvenio === 'pre-pago' && (
-                                        <div className="flex justify-between">
-                                            <dt className="text-muted-foreground">Valor Mensal:</dt>
-                                            <dd className="font-medium">
-                                                R$ {parseFloat(valorMensal || '0').toFixed(2)}
-                                            </dd>
-                                        </div>
-                                    )}
+
                                 </dl>
                             </div>
                         </>
@@ -781,7 +703,7 @@ export function DialogNovoConvenio({ open, onOpenChange, onSuccess, mode = 'crea
                         </Button>
                     )}
                 </DialogFooter>
-            </DialogContent>
-        </Dialog>
+            </DialogContent >
+        </Dialog >
     );
 }

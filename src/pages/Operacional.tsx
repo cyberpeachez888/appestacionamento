@@ -15,6 +15,7 @@ import { VehicleDialog } from '@/components/VehicleDialog';
 import { ExitConfirmationDialog } from '@/components/ExitConfirmationDialog';
 import { ReimbursementReceiptDialog } from '@/components/ReimbursementReceiptDialog';
 import { OperacionalDetailPanel } from '@/components/OperacionalDetailPanel';
+import { ModalVincularConvenio } from '@/components/convenios/ModalVincularConvenio';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useToast } from '@/hooks/use-toast';
@@ -65,9 +66,13 @@ export default function Operacional() {
   const [selectedVehicle, setSelectedVehicle] = useState<any>();
   const [exitingVehicle, setExitingVehicle] = useState<any>();
   const [exitingVehicleIsMonthly, setExitingVehicleIsMonthly] = useState(false);
-  const [exitingVehicleIsConvenio, setExitingVehicleIsConvenio] = useState(false); // Novo estado
+  const [exitingVehicleIsConvenio, setExitingVehicleIsConvenio] = useState(false);
+  const [exitingVehicleIsVagaExtra, setExitingVehicleIsVagaExtra] = useState(false);
+  const [exitingVehicleTipoVagaExtra, setExitingVehicleTipoVagaExtra] = useState<'paga' | 'cortesia'>();
   const [reimbursementDialogOpen, setReimbursementDialogOpen] = useState(false);
   const [reimbursementVehicle, setReimbursementVehicle] = useState<any>();
+  const [vincularModalOpen, setVincularModalOpen] = useState(false);
+  const [vehicleToVincular, setVehicleToVincular] = useState<any>();
   const [selectedRowId, setSelectedRowId] = useState<string | null>(null);
   // companyConfig vem do contexto
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -178,9 +183,15 @@ export default function Operacional() {
     // Verificar Convênio
     const isConvenio = vehicle.metadata?.isConvenio;
 
+    // Verificar Vaga Extra
+    const isVagaExtra = vehicle.metadata?.tipoVaga === 'extra';
+    const tipoVagaExtra = vehicle.metadata?.tipoVagaExtra as 'paga' | 'cortesia' | undefined;
+
     setExitingVehicle(vehicle);
     setExitingVehicleIsMonthly(isMonthly);
-    setExitingVehicleIsConvenio(!!isConvenio); // Setar flag de convênio
+    setExitingVehicleIsConvenio(!!isConvenio);
+    setExitingVehicleIsVagaExtra(isVagaExtra);
+    setExitingVehicleTipoVagaExtra(tipoVagaExtra);
     setExitDialogOpen(true);
   };
 
@@ -197,26 +208,143 @@ export default function Operacional() {
 
     const baseValue = calculateRateValue(exitingVehicle, rate, now);
 
-    // Valor é zero se for mensalista ou convênio
-    const totalValue = (exitingVehicleIsMonthly || exitingVehicleIsConvenio) ? 0 : baseValue;
+    // Calcular valor baseado no tipo de veículo
+    let totalValue = 0;
+    let valorCobradoVagaExtra = 0;
+
+    const isVagaExtraPaga = exitingVehicleIsVagaExtra && exitingVehicleTipoVagaExtra === 'paga';
+    const isVagaExtraCortesia = exitingVehicleIsVagaExtra && exitingVehicleTipoVagaExtra === 'cortesia';
+
+    if (isVagaExtraPaga) {
+      // VAGA EXTRA PAGA - Calcular usando pricing API
+      console.log('[Exit] Calculando valor para vaga extra paga...');
+      try {
+        const pricingResponse = await fetch(`${API_URL}/pricing/calculate`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            vehicleType: exitingVehicle.vehicleType,
+            entryDate: exitingVehicle.entryDate,
+            entryTime: exitingVehicle.entryTime,
+            exitDate,
+            exitTime,
+            rateType: 'Hora/Fração',
+          }),
+        });
+
+        if (pricingResponse.ok) {
+          const pricingData = await pricingResponse.json();
+          valorCobradoVagaExtra = pricingData.price || 0;
+          console.log('[Exit] Valor calculado pela API:', valorCobradoVagaExtra);
+        } else {
+          console.error('[Exit] Erro ao calcular preço, usando baseValue');
+          valorCobradoVagaExtra = baseValue;
+        }
+      } catch (error) {
+        console.error('[Exit] Erro na API de pricing:', error);
+        valorCobradoVagaExtra = baseValue;
+      }
+      totalValue = 0; // Não cobra na saída, vai para fatura
+    } else if (isVagaExtraCortesia) {
+      // VAGA EXTRA CORTESIA
+      valorCobradoVagaExtra = 0;
+      totalValue = 0;
+    } else if (exitingVehicleIsMonthly || exitingVehicleIsConvenio) {
+      // MENSALISTA OU CONVÊNIO REGULAR
+      totalValue = 0;
+    } else {
+      // AVULSO - Valor normal
+      totalValue = baseValue;
+    }
 
     // Log do token para diagnóstico
     console.log('Token usado na saída:', token);
     try {
       // Se for convênio, registrar saída no módulo de convênios também
       if (exitingVehicleIsConvenio && exitingVehicle.metadata?.convenioId) {
-        await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/api/convenios/${exitingVehicle.metadata.convenioId}/movimentacoes`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          },
-          body: JSON.stringify({
+        if (exitingVehicleIsVagaExtra) {
+          // VAGA EXTRA: Atualizar movimentação existente com dados de saída
+          console.log('[Exit] Atualizando movimentação de vaga extra...', exitingVehicle.plate);
+
+          try {
+            // Buscar movimentação existente
+            const findResponse = await fetch(
+              `${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/api/convenios/${exitingVehicle.metadata.convenioId}/movimentacoes?placa=${exitingVehicle.plate}`,
+              {
+                headers: {
+                  'Authorization': `Bearer ${token}`
+                }
+              }
+            );
+
+            console.log('[Exit] Response da busca:', findResponse.status);
+
+            if (findResponse.ok) {
+              const movimentacoes = await findResponse.json();
+              console.log('[Exit] Movimentações encontradas:', movimentacoes.length, movimentacoes);
+
+              // Pegar a movimentação sem saída
+              const movimentacao = movimentacoes.find((m: any) => !m.data_saida && m.placa === exitingVehicle.plate);
+
+              if (movimentacao) {
+                console.log('[Exit] Movimentação encontrada, ID:', movimentacao.id);
+
+                // Atualizar com dados de saída
+                const updateResponse = await fetch(
+                  `${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/api/convenios/${exitingVehicle.metadata.convenioId}/movimentacoes/${movimentacao.id}`,
+                  {
+                    method: 'PATCH',
+                    headers: {
+                      'Content-Type': 'application/json',
+                      'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({
+                      data_saida: exitDate,
+                      hora_saida: exitTime,
+                      valor_cobrado: valorCobradoVagaExtra
+                    })
+                  }
+                );
+
+                console.log('[Exit] Response do UPDATE:', updateResponse.status);
+
+                if (updateResponse.ok) {
+                  const updated = await updateResponse.json();
+                  console.log('[Exit] ✅ Movimentação atualizada com sucesso!', updated);
+                } else {
+                  const errorText = await updateResponse.text();
+                  console.error('[Exit] ❌ Erro ao atualizar:', updateResponse.status, errorText);
+                }
+              } else {
+                console.warn('[Exit] ⚠️ Nenhuma movimentação ativa encontrada para:', exitingVehicle.plate);
+              }
+            } else {
+              const errorText = await findResponse.text();
+              console.error('[Exit] ❌ Erro ao buscar movimentações:', findResponse.status, errorText);
+            }
+          } catch (error) {
+            console.error('[Exit] ❌ Erro ao processar vaga extra:', error);
+          }
+        } else {
+          // CONVÊNIO REGULAR: Criar nova movimentação de saída
+          const convenioPayload: any = {
             placa: exitingVehicle.plate,
             tipo_movimentacao: 'saida',
             data_saida: `${exitDate}T${exitTime}:00`
-          })
-        });
+          };
+
+          await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/api/convenios/${exitingVehicle.metadata.convenioId}/movimentacoes`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify(convenioPayload)
+          });
+        }
       }
 
       // Update vehicle exit
@@ -303,6 +431,11 @@ export default function Operacional() {
         variant: 'destructive',
       });
     }
+  };
+
+  const handleVincularConvenio = (vehicle: any) => {
+    setVehicleToVincular(vehicle);
+    setVincularModalOpen(true);
   };
 
   const handleEdit = (vehicle: any) => {
@@ -558,8 +691,33 @@ export default function Operacional() {
                         title="Clique para selecionar | Clique duas vezes para acessar opções de reembolso"
                       >
                         <td className="px-4 py-3 font-medium">
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-2 flex-wrap">
                             <span>{vehicle.plate}</span>
+
+                            {/* Badge Tipo de Vaga */}
+                            {vehicle.metadata?.isConvenio ? (
+                              vehicle.metadata?.convenioVeiculoId ? (
+                                <span className="text-[10px] font-semibold uppercase tracking-wide bg-green-100 text-green-800 px-2 py-0.5 rounded-full">
+                                  Regular
+                                </span>
+                              ) : (
+                                // Vaga Extra - diferenciar paga vs cortesia
+                                vehicle.metadata?.tipoVagaExtra === 'cortesia' ? (
+                                  <span className="text-[10px] font-semibold uppercase tracking-wide bg-green-500 text-white px-2 py-0.5 rounded-full">
+                                    CORTESIA
+                                  </span>
+                                ) : (
+                                  <span className="text-[10px] font-semibold uppercase tracking-wide bg-yellow-500 text-black px-2 py-0.5 rounded-full">
+                                    EXTRA
+                                  </span>
+                                )
+                              )
+                            ) : (
+                              <span className="text-[10px] font-semibold uppercase tracking-wide bg-gray-100 text-gray-700 px-2 py-0.5 rounded-full">
+                                Avulso
+                              </span>
+                            )}
+
                             {/* Badge Mensalista */}
                             {monthlyCustomers.some((customer) =>
                               customer.plates.some(
@@ -574,7 +732,7 @@ export default function Operacional() {
                             {/* Badge Convênio */}
                             {vehicle.metadata?.isConvenio && (
                               <span className="text-[11px] font-semibold uppercase tracking-wide bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full">
-                                Convênio
+                                Convênio: {vehicle.metadata?.convenioNome || 'N/A'}
                               </span>
                             )}
                           </div>
@@ -622,6 +780,18 @@ export default function Operacional() {
                                 <Trash2 className="h-4 w-4" />
                               </Button>
                             </>
+                          )}
+                          {/* Botão Vincular a Convênio - apenas para veículos não-convênio em andamento */}
+                          {vehicle.status === 'Em andamento' && !vehicle.metadata?.isConvenio && hasPermission('openCloseCash') && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="bg-blue-50 border-blue-300 text-blue-700 hover:bg-blue-100"
+                              onClick={(e) => { e.stopPropagation(); handleVincularConvenio(vehicle); }}
+                            >
+                              <Building2 className="h-4 w-4 mr-1" />
+                              Vincular
+                            </Button>
                           )}
                           {vehicle.status === 'Em andamento' && hasPermission('openCloseCash') && (
                             <Button size="sm" onClick={(e) => { e.stopPropagation(); handleFinishExit(vehicle); }}>
@@ -688,6 +858,8 @@ export default function Operacional() {
         companyConfig={companyConfig}
         operatorName="Operador do Sistema"
         isMonthlyVehicle={exitingVehicleIsMonthly}
+        isConvenioVagaExtra={exitingVehicleIsVagaExtra}
+        tipoVagaExtra={exitingVehicleTipoVagaExtra}
       />
 
       <ReimbursementReceiptDialog
@@ -702,6 +874,17 @@ export default function Operacional() {
         companyConfig={companyConfig}
         operatorName="Operador do Sistema"
         onSubmit={handleReimbursementSubmit}
+      />
+
+      <ModalVincularConvenio
+        open={vincularModalOpen}
+        onOpenChange={setVincularModalOpen}
+        vehicle={vehicleToVincular}
+        onSuccess={() => {
+          fetchVehicles();
+          setVincularModalOpen(false);
+          setVehicleToVincular(undefined);
+        }}
       />
     </div>
   );

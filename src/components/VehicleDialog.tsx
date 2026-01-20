@@ -44,23 +44,36 @@ export const VehicleDialog = ({ open, onOpenChange, vehicle, onSaved }: VehicleD
   useEffect(() => {
     const verificarPlaca = async () => {
       if (plate.length === 7 && !vehicle) { // Apenas na criação
+        console.log('[VehicleDialog] 🔍 Verificando placa:', plate);
         setVerificandoConvenio(true);
         try {
-          const token = localStorage.getItem('token');
-          const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/api/convenios/veiculos/verificar/${plate}`, {
+          // FIX: Use correct token key 'auth:token' instead of 'token'
+          const token = localStorage.getItem('auth:token') || sessionStorage.getItem('auth:token');
+          const apiUrl = `${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/api/convenios/veiculos/verificar/${plate}`;
+
+          console.log('[VehicleDialog] 📡 API URL:', apiUrl);
+          console.log('[VehicleDialog] 🔑 Token exists:', !!token);
+
+          const response = await fetch(apiUrl, {
             headers: { 'Authorization': `Bearer ${token}` }
           });
 
+          console.log('[VehicleDialog] 📬 Response status:', response.status);
+
           if (response.ok) {
             const data = await response.json();
+            console.log('[VehicleDialog] 📦 Response data:', data);
+
             if (data.autorizado) {
               setConvenioData(data);
+              console.log('[VehicleDialog] ✅ Veículo AUTORIZADO:', data.nome_empresa);
               toast({
                 title: 'Veículo de Convênio Identificado!',
-                description: `${data.nome_empresa} - ${data.tipo_convenio}`,
+                description: `${data.nome_empresa} - Convênio Corporativo`,
                 className: 'bg-blue-50 border-blue-200 text-blue-800',
               });
             } else if (data.bloqueio) {
+              console.log('[VehicleDialog] 🚫 Veículo BLOQUEADO:', data.message);
               setConvenioData({ ...data, bloqueado: true });
               toast({
                 title: 'Entrada Bloqueada pelo Convênio',
@@ -68,11 +81,15 @@ export const VehicleDialog = ({ open, onOpenChange, vehicle, onSaved }: VehicleD
                 variant: 'destructive',
               });
             } else {
+              console.log('[VehicleDialog] ⚠️ Veículo NÃO autorizado:', data.message);
               setConvenioData(null);
             }
+          } else {
+            const errorText = await response.text();
+            console.error('[VehicleDialog] ❌ HTTP Error:', response.status, errorText);
           }
         } catch (error) {
-          console.error('Erro ao verificar convênio:', error);
+          console.error('[VehicleDialog] ❌ Erro ao verificar convênio:', error);
         } finally {
           setVerificandoConvenio(false);
         }
@@ -182,12 +199,10 @@ export const VehicleDialog = ({ open, onOpenChange, vehicle, onSaved }: VehicleD
       contractedDays: contractedDays ? parseInt(contractedDays) : undefined,
       contractedEndDate: undefined as string | undefined,
       contractedEndTime: undefined as string | undefined,
-      // Metadata para identificar convênio
       metadata: convenioData ? {
         isConvenio: true,
         convenioId: convenioData.convenio_id,
-        convenioNome: convenioData.nome_empresa,
-        tipoConvenio: convenioData.tipo_convenio
+        convenioNome: convenioData.nome_empresa
       } : undefined
     };
 
@@ -213,7 +228,8 @@ export const VehicleDialog = ({ open, onOpenChange, vehicle, onSaved }: VehicleD
 
         // 2. Se for convênio, registrar movimentação específica
         if (convenioData) {
-          const token = localStorage.getItem('token');
+          // FIX: Use correct token key 'auth:token'
+          const token = localStorage.getItem('auth:token') || sessionStorage.getItem('auth:token');
           // Registrar entrada no módulo de convênios
           await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/api/convenios/${convenioData.convenio_id}/movimentacoes`, {
             method: 'POST',
@@ -252,6 +268,9 @@ export const VehicleDialog = ({ open, onOpenChange, vehicle, onSaved }: VehicleD
   const requiresContractedDays =
     selectedRate && ['Semanal', 'Quinzenal', 'Mensal'].includes(selectedRate.rateType);
 
+  // Helper: Simplified form for convenio entry
+  const isConvenioEntryOnly = convenioData && !convenioData.bloqueado && !vehicle;
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
@@ -282,7 +301,7 @@ export const VehicleDialog = ({ open, onOpenChange, vehicle, onSaved }: VehicleD
                   {convenioData.bloqueado ? 'Entrada Bloqueada' : 'Veículo de Convênio'}
                 </h4>
                 <p className={`text-sm ${convenioData.bloqueado ? 'text-red-700' : 'text-blue-700'}`}>
-                  {convenioData.message || `${convenioData.nome_empresa} • ${convenioData.tipo_convenio === 'pre-pago' ? 'Pré-pago' : 'Pós-pago'}`}
+                  {convenioData.message || `${convenioData.nome_empresa} • Convênio Corporativo`}
                 </p>
                 {convenioData.observacoes && (
                   <p className={`text-xs mt-1 italic ${convenioData.bloqueado ? 'text-red-600' : 'text-blue-600'}`}>
@@ -292,7 +311,7 @@ export const VehicleDialog = ({ open, onOpenChange, vehicle, onSaved }: VehicleD
               </div>
             </div>
           )}
-          <div className="grid grid-cols-2 gap-4">
+          <div className={isConvenioEntryOnly ? "space-y-4" : "grid grid-cols-2 gap-4"}>
             <div>
               <Label htmlFor="plate">Placa *</Label>
               <Input
@@ -301,33 +320,38 @@ export const VehicleDialog = ({ open, onOpenChange, vehicle, onSaved }: VehicleD
                 onChange={(e) => setPlate(e.target.value)}
                 placeholder="ABC-1234"
                 className="uppercase"
+                disabled={isConvenioEntryOnly}
               />
             </div>
 
+            {!isConvenioEntryOnly && (
+              <div>
+                <Label htmlFor="vehicleType">Tipo de Veículo *</Label>
+                <VehicleTypeSelect
+                  value={vehicleType}
+                  onValueChange={(v) => setVehicleType(v as VehicleType)}
+                />
+              </div>
+            )}
+          </div>
+
+          {!isConvenioEntryOnly && (
             <div>
-              <Label htmlFor="vehicleType">Tipo de Veículo *</Label>
-              <VehicleTypeSelect
-                value={vehicleType}
-                onValueChange={(v) => setVehicleType(v as VehicleType)}
-              />
+              <Label htmlFor="rate">Tarifa {convenioData ? '(Opcional/Automática)' : '*'}</Label>
+              <Select value={rateId} onValueChange={setRateId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione uma tarifa" />
+                </SelectTrigger>
+                <SelectContent>
+                  {availableRates.map((rate) => (
+                    <SelectItem key={rate.id} value={rate.id}>
+                      {rate.rateType} - R$ {rate.value.toFixed(2)}/{rate.unit}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
-          </div>
-
-          <div>
-            <Label htmlFor="rate">Tarifa {convenioData ? '(Opcional/Automática)' : '*'}</Label>
-            <Select value={rateId} onValueChange={setRateId}>
-              <SelectTrigger>
-                <SelectValue placeholder="Selecione uma tarifa" />
-              </SelectTrigger>
-              <SelectContent>
-                {availableRates.map((rate) => (
-                  <SelectItem key={rate.id} value={rate.id}>
-                    {rate.rateType} - R$ {rate.value.toFixed(2)}/{rate.unit}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          )}
 
           {requiresContractedDays && (
             <div>
@@ -342,7 +366,7 @@ export const VehicleDialog = ({ open, onOpenChange, vehicle, onSaved }: VehicleD
             </div>
           )}
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className={isConvenioEntryOnly ? "space-y-4" : "grid grid-cols-2 gap-4"}>
             <div>
               <Label htmlFor="entryDate">Data de Entrada *</Label>
               <Input
@@ -350,6 +374,7 @@ export const VehicleDialog = ({ open, onOpenChange, vehicle, onSaved }: VehicleD
                 type="date"
                 value={entryDate}
                 onChange={(e) => setEntryDate(e.target.value)}
+                disabled={isConvenioEntryOnly}
               />
             </div>
 
@@ -360,36 +385,39 @@ export const VehicleDialog = ({ open, onOpenChange, vehicle, onSaved }: VehicleD
                 type="time"
                 value={entryTime}
                 onChange={(e) => setEntryTime(e.target.value)}
+                disabled={isConvenioEntryOnly}
               />
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="exitDate">Data de Saída</Label>
-              <Input
-                id="exitDate"
-                type="date"
-                value={exitDate}
-                onChange={(e) => setExitDate(e.target.value)}
-              />
-            </div>
+          {!isConvenioEntryOnly && (
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="exitDate">Data de Saída</Label>
+                <Input
+                  id="exitDate"
+                  type="date"
+                  value={exitDate}
+                  onChange={(e) => setExitDate(e.target.value)}
+                />
+              </div>
 
-            <div>
-              <Label htmlFor="exitTime">Hora de Saída</Label>
-              <Input
-                id="exitTime"
-                type="time"
-                value={exitTime}
-                onChange={(e) => {
-                  setExitTime(e.target.value);
-                  if (e.target.value && !exitDate) {
-                    setExitDate(entryDate);
-                  }
-                }}
-              />
+              <div>
+                <Label htmlFor="exitTime">Hora de Saída</Label>
+                <Input
+                  id="exitTime"
+                  type="time"
+                  value={exitTime}
+                  onChange={(e) => {
+                    setExitTime(e.target.value);
+                    if (e.target.value && !exitDate) {
+                      setExitDate(entryDate);
+                    }
+                  }}
+                />
+              </div>
             </div>
-          </div>
+          )}
 
           {exitTime && (!vehicle || vehicle.status === 'Em andamento') && (
             <div className="bg-blue-50 border-blue-200 border p-3 rounded-md flex items-center gap-2 animate-in fade-in slide-in-from-top-1 duration-500">
@@ -418,7 +446,7 @@ export const VehicleDialog = ({ open, onOpenChange, vehicle, onSaved }: VehicleD
             </div>
           )}
 
-          {exitDate && exitTime && (vehicle || plate) && selectedRate && (
+          {!isConvenioEntryOnly && exitDate && exitTime && (vehicle || plate) && selectedRate && (
             <div className="bg-muted p-4 rounded-lg animate-in zoom-in-95 duration-300">
               <p className="text-sm text-muted-foreground">Valor calculado:</p>
               <p className="text-2xl font-bold text-primary">
@@ -432,7 +460,7 @@ export const VehicleDialog = ({ open, onOpenChange, vehicle, onSaved }: VehicleD
               Cancelar
             </Button>
             <Button type="submit" disabled={convenioData?.bloqueado || (!!exitTime && !paymentMethod && !convenioData)}>
-              {vehicle ? 'Atualizar' : 'Adicionar'}
+              {vehicle ? 'Atualizar' : isConvenioEntryOnly ? 'Registrar Entrada' : 'Adicionar'}
             </Button>
           </div>
         </form>

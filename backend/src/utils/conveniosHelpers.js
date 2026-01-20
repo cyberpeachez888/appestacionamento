@@ -136,10 +136,161 @@ export function calcularValorPosPago(movimentacoes, valorHora) {
 }
 
 /**
- * Gera número de fatura único
+ * Gera número de fatura no formato YYYY-NNN (reseta a cada ano)
+ * @param {Object} supabase - Cliente Supabase
+ * @param {number} year - Ano para gerar o número
+ * @returns {Promise<string>} Número da fatura (ex: 2026-001)
+ */
+export async function gerarNumeroFaturaYYYYNNN(supabase, year = new Date().getFullYear()) {
+    try {
+        // Usar função do banco de dados para garantir atomicidade
+        const { data, error } = await supabase.rpc('get_next_invoice_number', { p_year: year });
+
+        if (error) throw error;
+
+        return data;
+    } catch (err) {
+        console.error('Erro ao gerar número de fatura:', err);
+        throw new Error('Falha ao gerar número sequencial da fatura');
+    }
+}
+
+/**
+ * Calcula período de referência baseado nas vagas extras
+ * @param {Object} supabase - Cliente Supabase
+ * @param {string} convenioId - ID do convênio
+ * @returns {Promise<Object>} { texto, dataInicio, dataFim }
+ */
+export async function calcularPeriodoReferencia(supabase, convenioId) {
+    try {
+        // Buscar vagas extras finalizadas pendentes de faturamento
+        const { data: vagasExtras, error } = await supabase
+            .from('convenios_movimentacoes')
+            .select('data_entrada, data_saida')
+            .eq('convenio_id', convenioId)
+            .eq('tipo_vaga', 'extra')
+            .eq('faturado', false)
+            .not('data_saida', 'is', null)
+            .order('data_saida', { ascending: true });
+
+        if (error) throw error;
+
+        if (!vagasExtras || vagasExtras.length === 0) {
+            // Sem vagas extras: período = mês atual
+            const hoje = new Date();
+            const mes = hoje.toLocaleDateString('pt-BR', { month: 'long' });
+            const ano = hoje.getFullYear();
+
+            return {
+                texto: `${mes.charAt(0).toUpperCase() + mes.slice(1)}/${ano}`,
+                dataInicio: null,
+                dataFim: null
+            };
+        }
+
+        // Com vagas extras: período = data da mais antiga até a mais recente
+        const dataInicio = new Date(vagasExtras[0].data_saida);
+        const dataFim = new Date(vagasExtras[vagasExtras.length - 1].data_saida);
+
+        // Verificar se todas estão no mesmo mês
+        const mesmoMes = dataInicio.getMonth() === dataFim.getMonth() &&
+            dataInicio.getFullYear() === dataFim.getFullYear();
+
+        let texto;
+        if (mesmoMes) {
+            const mes = dataInicio.toLocaleDateString('pt-BR', { month: 'long' });
+            const ano = dataInicio.getFullYear();
+            texto = `${mes.charAt(0).toUpperCase() + mes.slice(1)}/${ano}`;
+        } else {
+            const formatoBR = { day: '2-digit', month: '2-digit', year: 'numeric' };
+            texto = `${dataInicio.toLocaleDateString('pt-BR', formatoBR)} - ${dataFim.toLocaleDateString('pt-BR', formatoBR)}`;
+        }
+
+        return {
+            texto,
+            dataInicio: vagasExtras[0].data_saida,
+            dataFim: vagasExtras[vagasExtras.length - 1].data_saida
+        };
+    } catch (err) {
+        console.error('Erro ao calcular período de referência:', err);
+        throw new Error('Falha ao calcular período de referência');
+    }
+}
+
+/**
+ * Valida dados para preview de fatura
+ * @param {Object} convenio - Dados do convênio
+ * @param {Object} plano - Plano ativo
+ * @returns {Object} { valido: boolean, erros: string[] }
+ */
+export function validarDadosPreview(convenio, plano) {
+    const erros = [];
+
+    if (!convenio) {
+        erros.push('Convênio não encontrado');
+        return { valido: false, erros };
+    }
+
+    if (!plano) {
+        erros.push('Convênio sem plano ativo');
+        return { valido: false, erros };
+    }
+
+    if (convenio.status !== 'ativo') {
+        erros.push(`Convênio está ${convenio.status}`);
+    }
+
+    if (!plano.valor_mensal && (!plano.valor_por_vaga || !plano.num_vagas_contratadas)) {
+        erros.push('Plano sem configuração de valor (valor_mensal ou valor_por_vaga não definidos)');
+    }
+
+    if (!plano.dia_vencimento && !plano.dia_vencimento_pagamento) {
+        erros.push('Plano sem dia de vencimento configurado');
+    }
+
+    return {
+        valido: erros.length === 0,
+        erros
+    };
+}
+
+/**
+ * Calcula mensalidade com desconto aplicado
+ * @param {Object} plano - Dados do plano
+ * @returns {Object} { valorBase, desconto, valorFinal, descricao }
+ */
+export function calcularMensalidade(plano) {
+    let valorBase = 0;
+
+    // Calcular valor base
+    if (plano.valor_mensal) {
+        valorBase = Number(plano.valor_mensal);
+    } else if (plano.valor_por_vaga && plano.num_vagas_contratadas) {
+        valorBase = Number(plano.valor_por_vaga) * Number(plano.num_vagas_contratadas);
+    }
+
+    // Aplicar desconto se configurado
+    let desconto = 0;
+    if (plano.porcentagem_desconto && Number(plano.porcentagem_desconto) > 0) {
+        desconto = valorBase * (Number(plano.porcentagem_desconto) / 100);
+    }
+
+    const valorFinal = valorBase - desconto;
+
+    return {
+        valorBase,
+        desconto,
+        valorFinal,
+        descricao: `Mensalidade - ${plano.num_vagas_contratadas} vagas contratadas`
+    };
+}
+
+/**
+ * Gera número de fatura único (LEGACY - manter para compatibilidade)
  * @param {string} convenioId - ID do convênio
  * @param {string} periodo - Período (YYYY-MM)
  * @returns {string} Número da fatura (ex: FAT-2024-12-ABC123)
+ * @deprecated Use gerarNumeroFaturaYYYYNNN instead
  */
 export function gerarNumeroFatura(convenioId, periodo) {
     const [ano, mes] = periodo.split('-');

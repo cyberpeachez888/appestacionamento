@@ -10,6 +10,7 @@ import conveniosMovimentacoesController from '../controllers/conveniosMovimentac
 import conveniosFaturasController from '../controllers/conveniosFaturasController.js';
 import conveniosDocumentosController from '../controllers/conveniosDocumentosController.js';
 import conveniosJobsController from '../controllers/conveniosJobsController.js';
+import conveniosVagasExtrasController from '../controllers/conveniosVagasExtrasController.js';
 import { requireAuth } from '../middleware/auth.js';
 
 const router = express.Router();
@@ -93,10 +94,19 @@ router.patch('/:convenioId/movimentacoes/:movimentacaoId', conveniosMovimentacoe
 // FATURAS
 // =====================================================
 
+// GET /api/convenios/:convenioId/fatura/preview - Preview de fatura
+router.get('/:convenioId/fatura/preview', conveniosFaturasController.preview);
+
+// POST /api/convenios/:convenioId/fatura/gerar - Gerar fatura oficial com PDF
+router.post('/:convenioId/fatura/gerar', conveniosFaturasController.generateInvoice);
+
 // GET /api/convenios/:convenioId/faturas - Listar faturas
 router.get('/:convenioId/faturas', conveniosFaturasController.list);
 
-// POST /api/convenios/:convenioId/faturas - Gerar fatura
+// GET /api/convenios/:convenioId/faturas/:faturaId/download - Download PDF
+router.get('/:convenioId/faturas/:faturaId/download', conveniosFaturasController.downloadPDF);
+
+// POST /api/convenios/:convenioId/faturas - Gerar fatura (LEGACY)
 router.post('/:convenioId/faturas', conveniosFaturasController.create);
 
 // PATCH /api/convenios/:convenioId/faturas/:faturaId/pagar - Registrar pagamento
@@ -117,6 +127,16 @@ router.post('/:convenioId/documentos', conveniosDocumentosController.upload);
 
 // DELETE /api/convenios/:convenioId/documentos/:docId - Remover documento
 router.delete('/:convenioId/documentos/:docId', conveniosDocumentosController.delete);
+
+// =====================================================
+// VAGAS EXTRAS
+// =====================================================
+
+// GET /api/convenios/:convenioId/vagas-extras - Listar vagas extras
+router.get('/:convenioId/vagas-extras', conveniosVagasExtrasController.list);
+
+// GET /api/convenios/:convenioId/vagas-extras/exportar - Exportar Excel
+router.get('/:convenioId/vagas-extras/exportar', conveniosVagasExtrasController.exportar);
 
 // =====================================================
 // JOBS / CRONS (Verificações Automáticas)

@@ -21,14 +21,13 @@ import { Textarea } from '@/components/ui/textarea';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertCircle, Receipt } from 'lucide-react';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
 
 interface DialogGerarFaturaProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
     convenioId: string;
     convenioNome: string;
-    tipoConvenio: 'pre-pago' | 'pos-pago';
     valorMensal: number;
     onSuccess: () => void;
 }
@@ -38,7 +37,6 @@ export function DialogGerarFatura({
     onOpenChange,
     convenioId,
     convenioNome,
-    tipoConvenio,
     valorMensal,
     onSuccess,
 }: DialogGerarFaturaProps) {
@@ -58,12 +56,10 @@ export function DialogGerarFatura({
             setPeriodoReferencia(mesAtual);
             setDataEmissao(hoje.toISOString().split('T')[0]);
 
-            // Se pós-pago, buscar movimentações não faturadas
-            if (tipoConvenio === 'pos-pago') {
-                fetchMovimentacoesNaoFaturadas(mesAtual);
-            }
+            // Buscar movimentações não faturadas para todos os convênios
+            fetchMovimentacoesNaoFaturadas(mesAtual);
         }
-    }, [open, tipoConvenio]);
+    }, [open]);
 
     const fetchMovimentacoesNaoFaturadas = async (periodo: string) => {
         try {
@@ -176,19 +172,10 @@ export function DialogGerarFatura({
                 </DialogHeader>
 
                 <div className="grid gap-4 py-4">
-                    {/* Tipo de Convênio Info */}
                     <Alert>
                         <AlertCircle className="h-4 w-4" />
                         <AlertDescription>
-                            {tipoConvenio === 'pre-pago' ? (
-                                <>
-                                    <strong>Pré-pago:</strong> Valor fixo mensal de {formatarValor(valorMensal)}
-                                </>
-                            ) : (
-                                <>
-                                    <strong>Pós-pago:</strong> {movimentacoesCount} movimentação(ões) não faturada(s)
-                                </>
-                            )}
+                            <strong>Convênio Corporativo:</strong> {movimentacoesCount} movimentação(ões) não faturada(s)
                         </AlertDescription>
                     </Alert>
 
@@ -202,9 +189,7 @@ export function DialogGerarFatura({
                             value={periodoReferencia}
                             onChange={(e) => {
                                 setPeriodoReferencia(e.target.value);
-                                if (tipoConvenio === 'pos-pago') {
-                                    fetchMovimentacoesNaoFaturadas(e.target.value);
-                                }
+                                fetchMovimentacoesNaoFaturadas(e.target.value);
                             }}
                         />
                         {periodoReferencia && (

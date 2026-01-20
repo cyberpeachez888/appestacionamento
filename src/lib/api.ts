@@ -172,6 +172,15 @@ class ApiClient {
     return this.request<T>(endpoint, fetchOptions);
   }
 
+  async put<T>(endpoint: string, data?: any, options?: any) {
+    const fetchOptions: RequestInit = {
+      ...(options || {}),
+      method: 'PUT',
+      body: data ? JSON.stringify(data) : undefined
+    };
+    return this.request<T>(endpoint, fetchOptions);
+  }
+
   // Rates endpoints
   async getRates() {
     return this.request<Rate[]>('/rates');

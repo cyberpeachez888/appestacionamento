@@ -10,6 +10,7 @@ import { logEvent } from '../services/auditLogger.js';
 const VEICULOS_TABLE = 'convenios_veiculos';
 const CONVENIOS_TABLE = 'convenios';
 const HISTORICO_TABLE = 'convenios_historico';
+const MOVIMENTACOES_TABLE = 'convenios_movimentacoes';
 
 export default {
     /**
@@ -287,9 +288,7 @@ export default {
           convenio:convenios(
             id,
             nome_empresa,
-            status,
-            tipo_convenio,
-            plano_ativo_id
+            status
           )
         `)
                 .eq('placa', placaNormalizada)
@@ -326,7 +325,8 @@ export default {
                 const { data: plano } = await supabase
                     .from('convenios_planos')
                     .select('num_vagas_contratadas, permite_vagas_extras')
-                    .eq('id', v.convenio.plano_ativo_id)
+                    .eq('convenio_id', convenioId)
+                    .eq('ativo', true)
                     .single();
 
                 if (!plano) {
@@ -378,7 +378,6 @@ export default {
                 res.json({
                     autorizado: true,
                     nome_empresa: permitido.convenio.nome_empresa,
-                    tipo_convenio: permitido.convenio.tipo_convenio,
                     convenio_id: permitido.convenio.id,
                     observacoes: permitido.ocupacao
                         ? `Vagas: ${permitido.ocupacao.atual}/${permitido.ocupacao.limite}`

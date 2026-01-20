@@ -26,6 +26,7 @@ import {
     Trash2,
     Upload,
     Download,
+    ParkingSquare,
 } from 'lucide-react';
 import { api } from '@/lib/api';
 import { Input } from '@/components/ui/input';
@@ -35,6 +36,11 @@ import { DialogEditarConvenio } from './dialogs/DialogEditarConvenio';
 import { DialogAlterarPlano } from './dialogs/DialogAlterarPlano';
 import { DialogAdicionarVeiculo } from './dialogs/DialogAdicionarVeiculo';
 import { DialogGerarFatura } from './dialogs/DialogGerarFatura';
+import { DialogPreviewFatura } from './dialogs/DialogPreviewFatura';
+import { DialogVisualizarFatura } from './dialogs/DialogVisualizarFatura';
+import { VagasExtrasTab } from './VagasExtrasTab';
+import { MovimentacoesContratoTab } from './MovimentacoesContratoTab';
+import { gerarPDFFatura } from '@/utils/faturaPDFGenerator';
 
 
 
@@ -44,7 +50,6 @@ interface ConvenioDetalhes {
     nome_empresa: string;
     cnpj: string;
     razao_social: string;
-    tipo_convenio: 'pre-pago' | 'pos-pago';
     categoria: string;
     status: string;
     data_inicio: string;
@@ -80,15 +85,16 @@ export function ConvenioDetailPanel({ convenioId, onClose }: ConvenioDetailPanel
     const [dialogAlterarPlano, setDialogAlterarPlano] = useState(false);
     const [dialogAdicionarVeiculo, setDialogAdicionarVeiculo] = useState(false);
     const [dialogGerarFatura, setDialogGerarFatura] = useState(false);
+    const [dialogPreviewFatura, setDialogPreviewFatura] = useState(false);
+    const [dialogVisualizarFatura, setDialogVisualizarFatura] = useState(false);
+    const [selectedFatura, setSelectedFatura] = useState<any>(null);
 
     useEffect(() => {
         fetchConvenioDetalhes();
     }, [convenioId]);
 
     useEffect(() => {
-        if (activeTab === 'movimentacoes') {
-            fetchMovimentacoes();
-        } else if (activeTab === 'documentos') {
+        if (activeTab === 'documentos') {
             fetchDocumentos();
         }
     }, [activeTab, convenioId]);
@@ -206,6 +212,46 @@ export function ConvenioDetailPanel({ convenioId, onClose }: ConvenioDetailPanel
         }
     };
 
+    const handleDownloadFatura = async (fatura: any) => {
+        try {
+            toast({
+                title: 'Gerando PDF...',
+                description: 'Aguarde enquanto o PDF da fatura é gerado.',
+            });
+
+            // Buscar movimentações vinculadas à fatura (todas as faturas agora têm movimentações)
+            let movimentacoes: any[] = [];
+            try {
+                const allMovimentacoes = await api.getConvenioMovimentacoes(convenioId);
+                // Filtrar apenas movimentações desta fatura
+                movimentacoes = allMovimentacoes.filter((mov: any) => mov.fatura_id === fatura.id);
+            } catch (error) {
+                console.error('Erro ao buscar movimentações:', error);
+                // Continuar sem movimentações se houver erro
+            }
+
+            // Gerar PDF
+            gerarPDFFatura(fatura, convenio, movimentacoes);
+
+            toast({
+                title: 'PDF gerado com sucesso!',
+                description: `Fatura ${fatura.numero_fatura} foi baixada.`,
+            });
+        } catch (error) {
+            console.error('Erro ao gerar PDF:', error);
+            toast({
+                title: 'Erro ao gerar PDF',
+                description: 'Não foi possível gerar o PDF da fatura. Tente novamente.',
+                variant: 'destructive',
+            });
+        }
+    };
+
+    const handleVisualizarFatura = (fatura: any) => {
+        setSelectedFatura(fatura);
+        setDialogVisualizarFatura(true);
+    };
+
     const formatarCNPJ = (cnpj: string) => {
         return cnpj.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, '$1.$2.$3/$4-$5');
     };
@@ -244,18 +290,14 @@ export function ConvenioDetailPanel({ convenioId, onClose }: ConvenioDetailPanel
     };
 
     /**
-     * Calcula o próximo vencimento baseado no dia de vencimento do plano
+     * Calcula o próximo vencimento baseado no dia de vencimento do plano (campo unificado)
      */
-    const calcularProximoVencimento = (plano: any, tipoConvenio: string): Date => {
-        let diaVencimento: number;
-
-        if (tipoConvenio === 'pre-pago') {
-            diaVencimento = plano.dia_vencimento_pagamento;
-        } else {
-            diaVencimento = (plano as any).dia_vencimento_pos_pago
-                || plano.dia_vencimento_pagamento
-                || (plano as any).dia_fechamento;
-        }
+    const calcularProximoVencimento = (plano: any): Date => {
+        // Usar o novo campo unificado dia_vencimento com fallbacks para migração
+        const diaVencimento = plano.dia_vencimento
+            || (plano as any).dia_vencimento_pos_pago
+            || plano.dia_vencimento_pagamento
+            || (plano as any).dia_fechamento;
 
         const hoje = new Date();
         const anoAtual = hoje.getFullYear();
@@ -291,8 +333,8 @@ export function ConvenioDetailPanel({ convenioId, onClose }: ConvenioDetailPanel
 
     // Calcular dados derivados
     const ultimoPagamento = getUltimoPagamento(convenio?.faturas || []);
-    const proximoVencimento = planoAtivo && convenio
-        ? calcularProximoVencimento(planoAtivo, convenio.tipo_convenio)
+    const proximoVencimento = planoAtivo
+        ? calcularProximoVencimento(planoAtivo)
         : null;
     const diasAteVencimento = proximoVencimento
         ? calcularDiasAteVencimento(proximoVencimento)
@@ -318,8 +360,7 @@ export function ConvenioDetailPanel({ convenioId, onClose }: ConvenioDetailPanel
     console.log('ConvenioDetailPanel DEBUG:', {
         convenio: convenio?.nome_empresa,
         planos: convenio?.planos,
-        planoAtivo,
-        tipoConvenio: convenio?.tipo_convenio
+        planoAtivo
     });
 
     if (loading) {
@@ -353,7 +394,7 @@ export function ConvenioDetailPanel({ convenioId, onClose }: ConvenioDetailPanel
                         <div>
                             <CardTitle className="text-2xl">{convenio.nome_empresa}</CardTitle>
                             <p className="text-sm text-muted-foreground">
-                                {formatarCNPJ(convenio.cnpj)} • {convenio.tipo_convenio === 'pre-pago' ? 'Pré-pago' : 'Pós-pago'}
+                                {formatarCNPJ(convenio.cnpj)} • Convênio Corporativo
                             </p>
                         </div>
                     </div>
@@ -385,7 +426,7 @@ export function ConvenioDetailPanel({ convenioId, onClose }: ConvenioDetailPanel
 
             <CardContent>
                 <Tabs value={activeTab} onValueChange={setActiveTab}>
-                    <TabsList className="grid w-full grid-cols-7">
+                    <TabsList className="grid w-full grid-cols-8">
                         <TabsTrigger value="dados-gerais">
                             <Building2 className="h-4 w-4 mr-2" />
                             Dados
@@ -405,6 +446,10 @@ export function ConvenioDetailPanel({ convenioId, onClose }: ConvenioDetailPanel
                         <TabsTrigger value="movimentacoes">
                             <TrendingUp className="h-4 w-4 mr-2" />
                             Movimentações
+                        </TabsTrigger>
+                        <TabsTrigger value="vagas-extras">
+                            <ParkingSquare className="h-4 w-4 mr-2" />
+                            Vagas Extras
                         </TabsTrigger>
                         <TabsTrigger value="documentos">
                             <FileText className="h-4 w-4 mr-2" />
@@ -515,13 +560,19 @@ export function ConvenioDetailPanel({ convenioId, onClose }: ConvenioDetailPanel
                                 <div>
                                     <h3 className="font-semibold mb-2">Valores e Datas</h3>
                                     <dl className="space-y-2">
-                                        {/* VALORES */}
-                                        {convenio.tipo_convenio === 'pre-pago' ? (
+                                        {/* VALORES - Unified Display */}
+                                        {(planoAtivo as any).valor_por_vaga && (
                                             <>
-                                                {/* Valor Total do Convênio (Mensal) */}
                                                 <div>
-                                                    <dt className="text-sm text-muted-foreground">Valor do Convênio</dt>
-                                                    <dd className="font-medium text-lg text-blue-600">{formatarValor(planoAtivo.valor_mensal || 0)}</dd>
+                                                    <dt className="text-sm text-muted-foreground">Valor por Vaga</dt>
+                                                    <dd className="font-medium text-lg text-blue-600">{formatarValor((planoAtivo as any).valor_por_vaga)}/vaga</dd>
+                                                </div>
+                                                {/* Valor Total (Valor por Vaga × Vagas Contratadas) */}
+                                                <div>
+                                                    <dt className="text-sm text-muted-foreground">Valor Total Convênio</dt>
+                                                    <dd className="font-medium text-lg">
+                                                        {formatarValor((planoAtivo as any).valor_por_vaga * planoAtivo.num_vagas_contratadas)}
+                                                    </dd>
                                                 </div>
                                                 {/* Valor com Desconto */}
                                                 {planoAtivo.porcentagem_desconto && Number(planoAtivo.porcentagem_desconto) > 0 ? (
@@ -529,42 +580,12 @@ export function ConvenioDetailPanel({ convenioId, onClose }: ConvenioDetailPanel
                                                         <dt className="text-sm text-muted-foreground">Valor Cobrado (c/ Desconto)</dt>
                                                         <dd className="font-medium text-lg text-green-600">
                                                             {formatarValor(
-                                                                (planoAtivo.valor_mensal || 0) * (1 - Number(planoAtivo.porcentagem_desconto) / 100)
+                                                                ((planoAtivo as any).valor_por_vaga * planoAtivo.num_vagas_contratadas) *
+                                                                (1 - Number(planoAtivo.porcentagem_desconto) / 100)
                                                             )}
                                                         </dd>
                                                     </div>
                                                 ) : null}
-                                            </>
-                                        ) : (
-                                            <>
-                                                {/* Pós-pago: Valor por Vaga */}
-                                                {(planoAtivo as any).valor_por_vaga && (
-                                                    <>
-                                                        <div>
-                                                            <dt className="text-sm text-muted-foreground">Valor por Vaga</dt>
-                                                            <dd className="font-medium text-lg text-blue-600">{formatarValor((planoAtivo as any).valor_por_vaga)}/vaga</dd>
-                                                        </div>
-                                                        {/* Valor Total (Valor por Vaga × Vagas Contratadas) */}
-                                                        <div>
-                                                            <dt className="text-sm text-muted-foreground">Valor Total Convênio</dt>
-                                                            <dd className="font-medium text-lg">
-                                                                {formatarValor((planoAtivo as any).valor_por_vaga * planoAtivo.num_vagas_contratadas)}
-                                                            </dd>
-                                                        </div>
-                                                        {/* Valor com Desconto */}
-                                                        {planoAtivo.porcentagem_desconto && Number(planoAtivo.porcentagem_desconto) > 0 ? (
-                                                            <div>
-                                                                <dt className="text-sm text-muted-foreground">Valor Cobrado (c/ Desconto)</dt>
-                                                                <dd className="font-medium text-lg text-green-600">
-                                                                    {formatarValor(
-                                                                        ((planoAtivo as any).valor_por_vaga * planoAtivo.num_vagas_contratadas) *
-                                                                        (1 - Number(planoAtivo.porcentagem_desconto) / 100)
-                                                                    )}
-                                                                </dd>
-                                                            </div>
-                                                        ) : null}
-                                                    </>
-                                                )}
                                             </>
                                         )}
 
@@ -576,45 +597,28 @@ export function ConvenioDetailPanel({ convenioId, onClose }: ConvenioDetailPanel
                                             </div>
                                         )}
 
-                                        {/* DATAS - CRÍTICO */}
+                                        {/* DATAS - Convênio Corporativo Unificado */}
                                         <div className="pt-2 border-t">
-                                            {convenio.tipo_convenio === 'pre-pago' ? (
-                                                <>
-                                                    {/* DIA DE VENCIMENTO - PRÉ-PAGO */}
-                                                    <div className="mb-2">
-                                                        <dt className="text-sm text-muted-foreground font-semibold">Dia de Vencimento</dt>
-                                                        <dd className="font-medium text-lg">Dia {planoAtivo.dia_vencimento_pagamento || '-'}</dd>
-                                                    </div>
-                                                </>
-                                            ) : (
-                                                <>
-                                                    {/* DIA DE FECHAMENTO - PÓS-PAGO */}
-                                                    {(planoAtivo as any).dia_fechamento && (
-                                                        <div className="mb-2">
-                                                            <dt className="text-sm text-muted-foreground">Dia de Fechamento</dt>
-                                                            <dd className="font-medium">Dia {(planoAtivo as any).dia_fechamento}</dd>
-                                                        </div>
-                                                    )}
-                                                    {/* DIA DE VENCIMENTO - PÓS-PAGO - CRITICAL FIELD */}
-                                                    <div className="mb-2">
-                                                        <dt className="text-sm text-muted-foreground font-semibold">Dia de Vencimento</dt>
-                                                        <dd className="font-medium text-lg text-red-600">
-                                                            Dia {(() => {
-                                                                const vencimento = (planoAtivo as any).dia_vencimento_pos_pago
-                                                                    || planoAtivo.dia_vencimento_pagamento
-                                                                    || (planoAtivo as any).dia_fechamento; // Last resort fallback
-                                                                console.log('[Dia Vencimento Display]', {
-                                                                    dia_vencimento_pos_pago: (planoAtivo as any).dia_vencimento_pos_pago,
-                                                                    dia_vencimento_pagamento: planoAtivo.dia_vencimento_pagamento,
-                                                                    dia_fechamento: (planoAtivo as any).dia_fechamento,
-                                                                    result: vencimento
-                                                                });
-                                                                return vencimento || '-';
-                                                            })()}
-                                                        </dd>
-                                                    </div>
-                                                </>
+                                            {/* DIA DE FECHAMENTO */}
+                                            {(planoAtivo as any).dia_fechamento && (
+                                                <div className="mb-2">
+                                                    <dt className="text-sm text-muted-foreground">Dia de Fechamento</dt>
+                                                    <dd className="font-medium">Dia {(planoAtivo as any).dia_fechamento}</dd>
+                                                </div>
                                             )}
+                                            {/* DIA DE VENCIMENTO - Campo Unificado */}
+                                            <div className="mb-2">
+                                                <dt className="text-sm text-muted-foreground font-semibold">Dia de Vencimento</dt>
+                                                <dd className="font-medium text-lg">
+                                                    Dia {(() => {
+                                                        const vencimento = planoAtivo.dia_vencimento
+                                                            || (planoAtivo as any).dia_vencimento_pos_pago
+                                                            || planoAtivo.dia_vencimento_pagamento
+                                                            || (planoAtivo as any).dia_fechamento;
+                                                        return vencimento || '-';
+                                                    })()}
+                                                </dd>
+                                            </div>
                                         </div>
                                     </dl>
                                 </div>
@@ -671,10 +675,10 @@ export function ConvenioDetailPanel({ convenioId, onClose }: ConvenioDetailPanel
                                         {proximoVencimento && (
                                             <>
                                                 <dd className={`text-lg font-semibold ${diasAteVencimento === 0
-                                                        ? 'text-red-600 dark:text-red-400'
-                                                        : diasAteVencimento && diasAteVencimento <= 7 && diasAteVencimento > 0
-                                                            ? 'text-orange-600 dark:text-orange-400'
-                                                            : 'text-blue-600 dark:text-blue-400'
+                                                    ? 'text-red-600 dark:text-red-400'
+                                                    : diasAteVencimento && diasAteVencimento <= 7 && diasAteVencimento > 0
+                                                        ? 'text-orange-600 dark:text-orange-400'
+                                                        : 'text-blue-600 dark:text-blue-400'
                                                     }`}>
                                                     {formatarData(proximoVencimento.toISOString())}
                                                 </dd>
@@ -706,20 +710,19 @@ export function ConvenioDetailPanel({ convenioId, onClose }: ConvenioDetailPanel
                                         Ciclo de Faturamento
                                     </h5>
                                     <div className="grid grid-cols-3 gap-4 text-sm">
-                                        {convenio.tipo_convenio === 'pos-pago' && (planoAtivo as any).dia_fechamento && (
-                                            <div>
-                                                <label className="text-gray-600 dark:text-gray-400">Dia de Fechamento</label>
-                                                <p className="font-medium text-gray-900 dark:text-gray-100">
-                                                    Dia {(planoAtivo as any).dia_fechamento}
-                                                </p>
-                                            </div>
-                                        )}
+                                        <div>
+                                            <label className="text-gray-600 dark:text-gray-400">Dia de Fechamento</label>
+                                            <p className="font-medium text-gray-900 dark:text-gray-100">
+                                                Dia {(planoAtivo as any).dia_fechamento || '-'}
+                                            </p>
+                                        </div>
                                         <div>
                                             <label className="text-gray-600 dark:text-gray-400">Dia de Vencimento</label>
                                             <p className="font-medium text-gray-900 dark:text-gray-100">
-                                                Dia {convenio.tipo_convenio === 'pre-pago'
-                                                    ? planoAtivo.dia_vencimento_pagamento
-                                                    : ((planoAtivo as any).dia_vencimento_pos_pago || planoAtivo.dia_vencimento_pagamento)}
+                                                Dia {planoAtivo.dia_vencimento
+                                                    || (planoAtivo as any).dia_vencimento_pos_pago
+                                                    || planoAtivo.dia_vencimento_pagamento
+                                                    || '-'}
                                             </p>
                                         </div>
                                         <div>
@@ -731,9 +734,24 @@ export function ConvenioDetailPanel({ convenioId, onClose }: ConvenioDetailPanel
                                                     const faturaAtual = convenio.faturas?.find(f => f.periodo_referencia === mesAtual);
 
                                                     if (!faturaAtual) return '⏳ Não gerada';
-                                                    if (faturaAtual.status === 'paga') return '✅ Paga';
-                                                    if (faturaAtual.status === 'vencida') return '🔴 Vencida';
-                                                    return '⏳ Pendente';
+
+                                                    // Show generation timestamp
+                                                    let statusText = '';
+                                                    if (faturaAtual.status === 'paga') statusText = '✅ Paga';
+                                                    else if (faturaAtual.status === 'vencida') statusText = '🔴 Vencida';
+                                                    else statusText = '⏳ Pendente';
+
+                                                    return (
+                                                        <>
+                                                            <span>{statusText}</span>
+                                                            {faturaAtual.data_emissao && (
+                                                                <span className="block text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                                                    Gerada em: {formatarData(faturaAtual.data_emissao)}
+                                                                    {faturaAtual.created_at && ` às ${new Date(faturaAtual.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`}
+                                                                </span>
+                                                            )}
+                                                        </>
+                                                    );
                                                 })()}
                                             </p>
                                         </div>
@@ -782,24 +800,41 @@ export function ConvenioDetailPanel({ convenioId, onClose }: ConvenioDetailPanel
                     <TabsContent value="financeiro" className="space-y-4">
                         <div className="flex justify-between items-center">
                             <h3 className="font-semibold">Faturas ({convenio.faturas?.length || 0})</h3>
-                            <Button size="sm" onClick={() => setDialogGerarFatura(true)}>Gerar Fatura</Button>
+                            <Button size="sm" onClick={() => setDialogPreviewFatura(true)}>Gerar Nova Fatura</Button>
                         </div>
 
                         {convenio.faturas && convenio.faturas.length > 0 ? (
                             <div className="space-y-2">
                                 {convenio.faturas.map((fatura) => (
-                                    <div key={fatura.id} className="flex items-center justify-between p-3 border rounded-lg">
+                                    <div
+                                        key={fatura.id}
+                                        className="flex items-center justify-between p-3 border rounded-lg cursor-pointer hover:bg-accent/50 transition-colors"
+                                        onClick={() => handleVisualizarFatura(fatura)}
+                                    >
                                         <div>
                                             <p className="font-medium">{fatura.numero_fatura}</p>
                                             <p className="text-sm text-muted-foreground">
                                                 {fatura.periodo_referencia} • Venc: {formatarData(fatura.data_vencimento)}
                                             </p>
                                         </div>
-                                        <div className="text-right">
-                                            <p className="font-medium">{formatarValor(fatura.valor_total)}</p>
-                                            <Badge variant={fatura.status === 'paga' ? 'default' : 'secondary'}>
-                                                {fatura.status}
-                                            </Badge>
+                                        <div className="flex items-center gap-3">
+                                            <div className="text-right">
+                                                <p className="font-medium">{formatarValor(fatura.valor_total)}</p>
+                                                <Badge variant={fatura.status === 'paga' ? 'default' : 'secondary'}>
+                                                    {fatura.status}
+                                                </Badge>
+                                            </div>
+                                            <Button
+                                                size="sm"
+                                                variant="outline"
+                                                onClick={(e) => {
+                                                    e.stopPropagation(); // Prevent opening preview when clicking download
+                                                    handleDownloadFatura(fatura);
+                                                }}
+                                                title="Baixar PDF da fatura"
+                                            >
+                                                <Download className="h-4 w-4" />
+                                            </Button>
                                         </div>
                                     </div>
                                 ))}
@@ -812,71 +847,41 @@ export function ConvenioDetailPanel({ convenioId, onClose }: ConvenioDetailPanel
                     </TabsContent>
 
                     {/* Aba 5: Movimentações */}
-                    <TabsContent value="movimentacoes" className="space-y-4">
-                        <div className="flex justify-between items-center">
-                            <h3 className="font-semibold">Últimas Movimentações</h3>
-                            {/* Filtros poderiam vir aqui */}
+                    <TabsContent value="movimentacoes" className="space-y-6">
+                        {/* Tabela 1: Histórico de Movimentações do Contrato */}
+                        <div className="space-y-3">
+                            <div className="flex items-center gap-2">
+                                <TrendingUp className="h-5 w-5 text-primary" />
+                                <h3 className="font-semibold text-lg">Histórico de Movimentações</h3>
+                            </div>
+                            <p className="text-sm text-muted-foreground">
+                                Todas as entradas e saídas de veículos do convênio
+                            </p>
+                            <MovimentacoesContratoTab convenioId={convenioId} />
                         </div>
 
-                        {loadingMovimentacoes ? (
-                            <div className="text-center py-8 text-muted-foreground">Carregando movimentações...</div>
-                        ) : movimentacoes && movimentacoes.length > 0 ? (
-                            <div className="border rounded-lg overflow-hidden">
-                                <table className="w-full text-sm">
-                                    <thead className="bg-muted">
-                                        <tr>
-                                            <th className="p-3 text-left">Data/Hora</th>
-                                            <th className="p-3 text-left">Placa</th>
-                                            <th className="p-3 text-left">Tipo</th>
-                                            <th className="p-3 text-left">Tempo</th>
-                                            <th className="p-3 text-right">Valor</th>
-                                            <th className="p-3 text-center">Faturado</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {movimentacoes.map((mov) => {
-                                            const isSaida = !!mov.data_saida;
-                                            return (
-                                                <tr key={mov.id} className="border-t hover:bg-muted/50">
-                                                    <td className="p-3">
-                                                        <div>{formatarData(mov.data_entrada)}</div>
-                                                        <div className="text-muted-foreground text-xs">{mov.hora_entrada.slice(0, 5)}</div>
-                                                    </td>
-                                                    <td className="p-3 font-medium">{mov.placa}</td>
-                                                    <td className="p-3">
-                                                        {isSaida ? (
-                                                            <Badge variant="outline" className="text-red-600 border-red-200 bg-red-50">Saída</Badge>
-                                                        ) : (
-                                                            <Badge variant="outline" className="text-green-600 border-green-200 bg-green-50">Entrada</Badge>
-                                                        )}
-                                                    </td>
-                                                    <td className="p-3 text-muted-foreground">
-                                                        {mov.tempo_permanencia ? mov.tempo_permanencia.replace('hours', 'h').replace('minutes', 'min') : '-'}
-                                                    </td>
-                                                    <td className="p-3 text-right font-medium">
-                                                        {mov.valor_calculado ? formatarValor(Number(mov.valor_calculado)) : '-'}
-                                                    </td>
-                                                    <td className="p-3 text-center">
-                                                        {mov.faturado ? (
-                                                            <Badge variant="default" className="bg-green-600">Sim</Badge>
-                                                        ) : (
-                                                            <Badge variant="outline">Não</Badge>
-                                                        )}
-                                                    </td>
-                                                </tr>
-                                            );
-                                        })}
-                                    </tbody>
-                                </table>
+                        {/* Divisor */}
+                        <div className="border-t" />
+
+                        {/* Tabela 2: Vagas Extras */}
+                        <div className="space-y-3">
+                            <div className="flex items-center gap-2">
+                                <ParkingSquare className="h-5 w-5 text-primary" />
+                                <h3 className="font-semibold text-lg">Vagas Extras</h3>
                             </div>
-                        ) : (
-                            <div className="text-center py-8 text-muted-foreground">
-                                Nenhuma movimentação registrada no período
-                            </div>
-                        )}
+                            <p className="text-sm text-muted-foreground">
+                                Vagas extras utilizadas (cortesias e pagas)
+                            </p>
+                            <VagasExtrasTab convenioId={convenioId} />
+                        </div>
                     </TabsContent>
 
-                    {/* Aba 6: Documentos */}
+                    {/* Aba 6: Vagas Extras */}
+                    <TabsContent value="vagas-extras" className="space-y-4">
+                        <VagasExtrasTab convenioId={convenioId} />
+                    </TabsContent>
+
+                    {/* Aba 7: Documentos */}
                     <TabsContent value="documentos" className="space-y-4">
                         <div className="flex justify-between items-center">
                             <h3 className="font-semibold">Documentos Anexados ({documentos.length})</h3>
@@ -973,7 +978,6 @@ export function ConvenioDetailPanel({ convenioId, onClose }: ConvenioDetailPanel
                             razao_social: convenio.razao_social,
                             cnpj: convenio.cnpj || '',
                             categoria: convenio.categoria,
-                            tipo_convenio: convenio.tipo_convenio as 'pre-pago' | 'pos-pago',
                             contato_nome: convenio.contato_nome,
                             contato_email: convenio.contato_email,
                             contato_telefone: convenio.contato_telefone,
@@ -986,11 +990,10 @@ export function ConvenioDetailPanel({ convenioId, onClose }: ConvenioDetailPanel
                                 num_vagas_reservadas: planoAtivo.num_vagas_reservadas || 0,
                                 valor_por_vaga: (planoAtivo as any).valor_por_vaga,
                                 valor_mensal: planoAtivo.valor_mensal,
-                                dia_vencimento_pagamento: planoAtivo.dia_vencimento_pagamento,
+                                dia_vencimento: planoAtivo.dia_vencimento
+                                    || (planoAtivo as any).dia_vencimento_pos_pago
+                                    || planoAtivo.dia_vencimento_pagamento,
                                 dia_fechamento: (planoAtivo as any).dia_fechamento,
-                                // Temporary fallback: use dia_fechamento if vencimento_pos_pago is null
-                                dia_vencimento_pos_pago: (planoAtivo as any).dia_vencimento_pos_pago
-                                    || (planoAtivo as any).dia_fechamento,
                                 permite_vagas_extras: planoAtivo.permite_vagas_extras,
                                 valor_vaga_extra: (planoAtivo as any).valor_vaga_extra,
                                 porcentagem_desconto: (planoAtivo as any).porcentagem_desconto,
@@ -1009,7 +1012,6 @@ export function ConvenioDetailPanel({ convenioId, onClose }: ConvenioDetailPanel
                         open={dialogAlterarPlano}
                         onOpenChange={setDialogAlterarPlano}
                         convenioId={convenioId}
-                        tipoConvenio={convenio.tipo_convenio}
                         planoAtual={planoAtivo}
                         onSuccess={() => {
                             fetchConvenioDetalhes();
@@ -1039,7 +1041,6 @@ export function ConvenioDetailPanel({ convenioId, onClose }: ConvenioDetailPanel
                             onOpenChange={setDialogGerarFatura}
                             convenioId={convenioId}
                             convenioNome={convenio.nome_empresa}
-                            tipoConvenio={convenio.tipo_convenio}
                             valorMensal={planoAtivo.valor_mensal}
                             onSuccess={() => {
                                 fetchConvenioDetalhes();
@@ -1050,6 +1051,30 @@ export function ConvenioDetailPanel({ convenioId, onClose }: ConvenioDetailPanel
                             }}
                         />
                     )}
+
+                    {/* New Preview Dialog */}
+                    <DialogPreviewFatura
+                        open={dialogPreviewFatura}
+                        onOpenChange={setDialogPreviewFatura}
+                        convenioId={convenioId}
+                        convenioNome={convenio.nome_empresa}
+                        onSuccess={() => {
+                            fetchConvenioDetalhes();
+                            toast({
+                                title: 'Fatura gerada com sucesso!',
+                                description: 'A fatura foi criada e o PDF está pronto para download.',
+                            });
+                        }}
+                    />
+
+                    {/* Dialog Visualizar Fatura */}
+                    <DialogVisualizarFatura
+                        open={dialogVisualizarFatura}
+                        onOpenChange={setDialogVisualizarFatura}
+                        fatura={selectedFatura}
+                        convenio={convenio}
+                        convenioId={convenioId}
+                    />
                 </>
             )}
         </Card>

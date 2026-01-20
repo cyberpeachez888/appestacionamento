@@ -27,13 +27,15 @@ import {
     Search,
     Filter,
     Play,
-    Pause
+    Pause,
+    Settings
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { ConvenioDetailPanel } from '@/components/convenios/ConvenioDetailPanel';
 import { ConveniosRelatoriosPanel } from '@/components/convenios/ConveniosRelatoriosPanel';
 import { DialogNovoConvenio } from '@/components/convenios/dialogs/DialogNovoConvenio';
 import { DialogAdicionarVeiculo } from '@/components/convenios/dialogs/DialogAdicionarVeiculo';
+import { DialogConfigurarTemplate } from '@/components/convenios/dialogs/DialogConfigurarTemplate';
 import { api } from '@/lib/api';
 
 interface ConvenioStats {
@@ -48,7 +50,6 @@ interface Convenio {
     id: string;
     nome_empresa: string;
     cnpj: string;
-    tipo_convenio: 'pre-pago' | 'pos-pago';
     categoria: string;
     status: 'ativo' | 'suspenso' | 'cancelado' | 'inadimplente';
     vagas_ocupadas: number;
@@ -83,13 +84,13 @@ export default function ConveniosPage() {
 
     // Filtros
     const [filtroStatus, setFiltroStatus] = useState('todos');
-    const [filtroTipo, setFiltroTipo] = useState('todos');
     const [filtroCategoria, setFiltroCategoria] = useState('todos');
     const [busca, setBusca] = useState('');
 
     // Diálogos
     const [dialogNovoConvenio, setDialogNovoConvenio] = useState(false);
     const [dialogAdicionarVeiculo, setDialogAdicionarVeiculo] = useState(false);
+    const [dialogConfigurarTemplate, setDialogConfigurarTemplate] = useState(false);
 
     // Buscar estatísticas
     useEffect(() => {
@@ -102,7 +103,7 @@ export default function ConveniosPage() {
             fetchConvenios();
         }, 300);
         return () => clearTimeout(timeoutId);
-    }, [filtroStatus, filtroTipo, filtroCategoria, busca]);
+    }, [filtroStatus, filtroCategoria, busca]);
 
     const fetchStats = async () => {
         try {
@@ -118,7 +119,6 @@ export default function ConveniosPage() {
             setLoading(true);
             const data = await api.getConvenios({
                 status: filtroStatus,
-                tipo: filtroTipo,
                 categoria: filtroCategoria,
                 busca: busca
             });
@@ -219,6 +219,13 @@ export default function ConveniosPage() {
                     <Button onClick={() => setDialogNovoConvenio(true)}>
                         <Plus className="h-4 w-4 mr-2" />
                         Novo Convênio
+                    </Button>
+                    <Button
+                        variant="outline"
+                        onClick={() => setDialogConfigurarTemplate(true)}
+                    >
+                        <Settings className="h-4 w-4 mr-2" />
+                        Configurar Template de Fatura
                     </Button>
                 </div>
             </div>
@@ -332,7 +339,6 @@ export default function ConveniosPage() {
                                                 <TableHead>Status</TableHead>
                                                 <TableHead>Empresa</TableHead>
                                                 <TableHead>CNPJ</TableHead>
-                                                <TableHead>Tipo</TableHead>
                                                 <TableHead>Vagas</TableHead>
                                                 <TableHead>Valor Mensal</TableHead>
                                                 <TableHead>Vencimento</TableHead>
@@ -373,32 +379,28 @@ export default function ConveniosPage() {
                                                         <TableCell className="text-muted-foreground">
                                                             {formatarCNPJ(convenio.cnpj)}
                                                         </TableCell>
-                                                        <TableCell className="capitalize">{convenio.tipo_convenio}</TableCell>
                                                         <TableCell>
                                                             {(() => {
                                                                 const plano = getActivePlan(convenio.plano_ativo);
-                                                                return `${plano?.vagas_ocupadas || convenio.vagas_ocupadas || 0} / ${plano?.num_vagas_contratadas || 0}`;
+                                                                return plano?.num_vagas_contratadas || 0;
                                                             })()}
-                                                            <span className="text-xs text-muted-foreground ml-1">
-                                                                ({convenio.taxa_ocupacao.toFixed(0)}%)
-                                                            </span>
                                                         </TableCell>
                                                         <TableCell className="font-medium">
                                                             {(() => {
                                                                 const plano = getActivePlan(convenio.plano_ativo);
-                                                                // Pós-pago: show valor_por_vaga, Pré-pago: show valor_mensal
-                                                                if (convenio.tipo_convenio === 'pos-pago') {
-                                                                    return plano?.valor_por_vaga
-                                                                        ? `${formatarValor(plano.valor_por_vaga)}/vaga`
-                                                                        : 'R$ 0,00';
-                                                                }
-                                                                return formatarValor(plano?.valor_mensal || 0);
+                                                                // Sempre mostra valor por vaga se disponível
+                                                                return plano?.valor_por_vaga
+                                                                    ? `${formatarValor(plano.valor_por_vaga)}/vaga`
+                                                                    : formatarValor(plano?.valor_mensal || 0);
                                                             })()}
                                                         </TableCell>
                                                         <TableCell>
                                                             {(() => {
                                                                 const plano = getActivePlan(convenio.plano_ativo);
-                                                                return `Dia ${plano?.dia_vencimento_pagamento || '-'}`;
+                                                                const diaVencimento = (plano as any)?.dia_vencimento
+                                                                    || (plano as any)?.dia_vencimento_pos_pago
+                                                                    || plano?.dia_vencimento_pagamento;
+                                                                return diaVencimento ? `Dia ${diaVencimento}` : '-';
                                                             })()}
                                                         </TableCell>
                                                         <TableCell
@@ -467,6 +469,11 @@ export default function ConveniosPage() {
                 onSuccess={() => {
                     // Update detail panel if needed
                 }}
+            />
+
+            <DialogConfigurarTemplate
+                open={dialogConfigurarTemplate}
+                onOpenChange={setDialogConfigurarTemplate}
             />
         </div>
     );

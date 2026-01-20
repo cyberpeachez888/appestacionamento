@@ -27,7 +27,7 @@ export default {
      */
     async list(req, res) {
         try {
-            const { status, tipo, categoria, busca } = req.query;
+            const { status, categoria, busca, permite_vagas_extras } = req.query;
 
             let query = supabase
                 .from(CONVENIOS_TABLE)
@@ -40,8 +40,7 @@ export default {
             num_vagas_reservadas,
             valor_por_vaga,
             valor_mensal,
-            dia_vencimento_pagamento,
-            dia_vencimento_pos_pago,
+            dia_vencimento,
             dia_fechamento,
             permite_vagas_extras,
             valor_vaga_extra,
@@ -55,10 +54,6 @@ export default {
             // Filtros
             if (status) {
                 query = query.eq('status', status);
-            }
-
-            if (tipo) {
-                query = query.eq('tipo_convenio', tipo);
             }
 
             if (categoria) {
@@ -103,8 +98,12 @@ export default {
                     return {
                         ...convenio,
                         vagas_ocupadas: vagasOcupadas,
+                        vagas_contratadas: vagasContratadas,
                         taxa_ocupacao: calcularTaxaOcupacao(vagasOcupadas, vagasContratadas),
                         inadimplente: verificarInadimplencia(convenio, faturas || []),
+                        // Flatten plano ativo fields to root for easier access
+                        permite_vagas_extras: planoAtivo?.permite_vagas_extras || false,
+                        valor_vaga_extra: planoAtivo?.valor_vaga_extra || null,
                         plano_ativo: planoAtivo
                     };
                 })
@@ -181,7 +180,6 @@ export default {
                 nome_empresa,
                 cnpj,
                 razao_social,
-                tipo_convenio,
                 categoria,
                 data_inicio,
                 data_vencimento_contrato,
@@ -195,9 +193,9 @@ export default {
             } = req.body;
 
             // Validações
-            if (!nome_empresa || !cnpj || !razao_social || !tipo_convenio) {
+            if (!nome_empresa || !cnpj || !razao_social) {
                 return res.status(400).json({
-                    error: 'Campos obrigatórios: nome_empresa, cnpj, razao_social, tipo_convenio'
+                    error: 'Campos obrigatórios: nome_empresa, cnpj, razao_social'
                 });
             }
 
@@ -219,13 +217,12 @@ export default {
 
             const convenioId = uuid();
 
-            // Criar convênio
+            // Criar convênio (Convênio Corporativo unificado)
             const convenioData = {
                 id: convenioId,
                 nome_empresa,
                 cnpj: cnpj.replace(/[^\d]/g, ''), // Armazenar apenas números
                 razao_social,
-                tipo_convenio,
                 categoria,
                 data_inicio,
                 data_vencimento_contrato: data_vencimento_contrato || null,
@@ -268,8 +265,7 @@ export default {
                     num_vagas_reservadas: plano.num_vagas_reservadas || 0,
                     valor_por_vaga: plano.valor_por_vaga || null,
                     valor_mensal: plano.valor_mensal || null,
-                    dia_vencimento_pagamento: plano.dia_vencimento_pagamento || null,
-                    dia_vencimento_pos_pago: plano.dia_vencimento_pos_pago || null,
+                    dia_vencimento: plano.dia_vencimento || plano.dia_vencimento_pos_pago || null,
                     dia_fechamento: plano.dia_fechamento || null,
                     permite_vagas_extras: plano.permite_vagas_extras || false,
                     valor_vaga_extra: plano.valor_vaga_extra || null,
@@ -437,13 +433,10 @@ export default {
                 // CRITICAL: Preserve financial fields from old plan
                 valor_por_vaga: planoData.valor_por_vaga !== undefined ? planoData.valor_por_vaga : planoAtual.valor_por_vaga,
                 valor_mensal: planoData.valor_mensal !== undefined ? planoData.valor_mensal : planoAtual.valor_mensal,
-                // CRITICAL: Preserve date fields from old plan
-                dia_vencimento_pagamento: planoData.dia_vencimento_pagamento !== undefined
-                    ? planoData.dia_vencimento_pagamento
-                    : planoAtual.dia_vencimento_pagamento,
-                dia_vencimento_pos_pago: planoData.dia_vencimento_pos_pago !== undefined
-                    ? planoData.dia_vencimento_pos_pago
-                    : planoAtual.dia_vencimento_pos_pago,
+                // CRITICAL: Unified date fields (migrated from old dual fields)
+                dia_vencimento: planoData.dia_vencimento !== undefined
+                    ? planoData.dia_vencimento
+                    : (planoAtual.dia_vencimento || planoAtual.dia_vencimento_pos_pago || planoAtual.dia_vencimento_pagamento),
                 dia_fechamento: planoData.dia_fechamento !== undefined
                     ? planoData.dia_fechamento
                     : planoAtual.dia_fechamento,
@@ -460,11 +453,12 @@ export default {
             console.log('💾 [updatePlano] Saving new plan:', {
                 id: novoPlano.id,
                 convenio_id: novoPlano.convenio_id,
-                dia_vencimento_pagamento: novoPlano.dia_vencimento_pagamento,
-                dia_vencimento_pos_pago: novoPlano.dia_vencimento_pos_pago,
+                dia_vencimento: novoPlano.dia_vencimento,
                 dia_fechamento: novoPlano.dia_fechamento,
                 valor_mensal: novoPlano.valor_mensal,
-                num_vagas_contratadas: novoPlano.num_vagas_contratadas
+                num_vagas_contratadas: novoPlano.num_vagas_contratadas,
+                permite_vagas_extras: novoPlano.permite_vagas_extras,
+                valor_vaga_extra: novoPlano.valor_vaga_extra
             });
 
             const { data: plano, error } = await supabase

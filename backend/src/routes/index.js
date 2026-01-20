@@ -6,6 +6,7 @@ import paymentsController from '../controllers/paymentsController.js';
 import reportsController from '../controllers/reportsController.js';
 import monthlyReportsController from '../controllers/monthlyReportsController.js';
 import vehiclesController from '../controllers/vehiclesController.js';
+import vehiclesVincularController from '../controllers/vehiclesVincularController.js';
 import receiptsController from '../controllers/receiptsController.js';
 import * as vehicleTypesController from '../controllers/vehicleTypesController.js';
 import rateTimeWindowsController from '../controllers/rateTimeWindowsController.js';
@@ -29,6 +30,7 @@ import pricingRulesRoutes from './pricingRules.js';
 
 import conveniosRoutes from './convenios.js';
 import notificacoesRoutes from './notificacoes.js';
+import templateFaturaController from '../controllers/templateFaturaController.js';
 import testCleanupController from '../controllers/testCleanupController.js';
 import { requireAuth, requireAdmin, requirePermission } from '../middleware/auth.js';
 import { loginLimiter, apiLimiter, strictLimiter } from '../middleware/rateLimiter.js';
@@ -126,6 +128,13 @@ router.delete(
   requireAuth,
   requirePermission('openCloseCash'),
   vehiclesController.remove
+);
+// Vincular veículo a convênio (vaga extra)
+router.patch(
+  '/vehicles/:id/vincular-convenio',
+  requireAuth,
+  requirePermission('openCloseCash'),
+  vehiclesVincularController.vincularConvenio
 );
 
 // Monthly customers (listing needs viewReports OR manageMonthlyCustomers? We'll allow list to those with either; modifications require manageMonthlyCustomers)
@@ -789,6 +798,11 @@ router.get(
 
 // Convenios (Corporate Agreements Management)
 router.use('/convenios', conveniosRoutes);
+
+// Configurações - Template de Fatura
+router.get('/configuracoes/template-fatura', requireAuth, templateFaturaController.getTemplateAtivo);
+router.put('/configuracoes/template-fatura', requireAuth, requirePermission('manageCompanyConfig'), templateFaturaController.atualizarTemplate);
+router.post('/configuracoes/template-fatura/restaurar-padrao', requireAuth, requirePermission('manageCompanyConfig'), templateFaturaController.restaurarPadrao);
 
 // Notificações
 router.use('/notificacoes', notificacoesRoutes);

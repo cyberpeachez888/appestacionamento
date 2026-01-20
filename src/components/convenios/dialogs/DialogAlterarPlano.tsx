@@ -28,7 +28,6 @@ interface DialogAlterarPlanoProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
     convenioId: string;
-    tipoConvenio: 'pre-pago' | 'pos-pago';
     planoAtual: {
         num_vagas_contratadas: number;
         num_vagas_reservadas: number;
@@ -45,15 +44,12 @@ export function DialogAlterarPlano({
     open,
     onOpenChange,
     convenioId,
-    tipoConvenio,
     planoAtual,
     onSuccess,
 }: DialogAlterarPlanoProps) {
     const [loading, setLoading] = useState(false);
-    const isPrePago = tipoConvenio === 'pre-pago';
 
-    // Form fields
-    const [tipoPlanoSelecionado, setTipoPlanoSelecionado] = useState<'pre-pago' | 'pos-pago'>(tipoConvenio);
+    // Form fields - Unified Convênio Corporativo
     const [numVagas, setNumVagas] = useState('');
     const [numVagasReservadas, setNumVagasReservadas] = useState('');
     const [valorMensal, setValorMensal] = useState('');
@@ -67,7 +63,6 @@ export function DialogAlterarPlano({
     // Pre-populate form when dialog opens
     useEffect(() => {
         if (open && planoAtual) {
-            setTipoPlanoSelecionado(tipoConvenio);
             setNumVagas(planoAtual.num_vagas_contratadas?.toString() || '');
             setNumVagasReservadas(planoAtual.num_vagas_reservadas?.toString() || '0');
             setValorMensal(planoAtual.valor_mensal?.toString() || '');
@@ -86,18 +81,8 @@ export function DialogAlterarPlano({
     }, [open, planoAtual]);
 
     const handleSubmit = async () => {
-        if (!numVagas || !diaVencimento) {
+        if (!numVagas || !diaVencimento || !diaFechamento) {
             alert('Preencha todos os campos obrigatórios');
-            return;
-        }
-
-        if (isPrePago && !valorMensal) {
-            alert('Valor mensal é obrigatório para convênios pré-pagos');
-            return;
-        }
-
-        if (!isPrePago && !diaFechamento) {
-            alert('Dia de fechamento é obrigatório para convênios pós-pagos');
             return;
         }
 
@@ -113,13 +98,12 @@ export function DialogAlterarPlano({
             setLoading(true);
 
             const planoData = {
-                tipo_plano: 'padrao',
+                tipo_plano: 'corporativo',
                 num_vagas_contratadas: vagasContratadas,
                 num_vagas_reservadas: vagasReservadas,
-                valor_mensal: isPrePago ? parseFloat(valorMensal) : null,
-                dia_vencimento_pagamento: isPrePago ? parseInt(diaVencimento) : undefined,
-                dia_vencimento_pos_pago: !isPrePago ? parseInt(diaVencimento) : undefined,
-                dia_fechamento: !isPrePago ? parseInt(diaFechamento) : undefined,
+                valor_mensal: valorMensal ? parseFloat(valorMensal) : null,
+                dia_vencimento: parseInt(diaVencimento),
+                dia_fechamento: parseInt(diaFechamento),
                 permite_vagas_extras: permiteVagasExtras,
                 valor_vaga_extra: permiteVagasExtras && cobrancaVagaExtra === 'paga' && valorVagaExtra ? parseFloat(valorVagaExtra) : (permiteVagasExtras && cobrancaVagaExtra === 'gratis' ? 0 : undefined),
                 porcentagem_desconto: porcentagemDesconto ? parseFloat(porcentagemDesconto) : undefined,
@@ -149,28 +133,6 @@ export function DialogAlterarPlano({
 
 
                 <div className="grid gap-4 py-4">
-                    {/* Tipo de Plano Selector */}
-                    <div className="grid gap-2">
-                        <Label htmlFor="tipo_plano">
-                            Tipo de Plano <span className="text-red-500">*</span>
-                        </Label>
-                        <Select value={tipoPlanoSelecionado} onValueChange={(value) => setTipoPlanoSelecionado(value as 'pre-pago' | 'pos-pago')}>
-                            <SelectTrigger>
-                                <SelectValue placeholder="Selecione o tipo" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="pre-pago">Pré-pago (Mensalidade Fixa)</SelectItem>
-                                <SelectItem value="pos-pago">Pós-pago (Por Uso)</SelectItem>
-                            </SelectContent>
-                        </Select>
-                        <p className="text-xs text-muted-foreground">
-                            {tipoPlanoSelecionado === tipoConvenio
-                                ? '✓ Mantendo tipo de plano atual'
-                                : `⚠️ Alterando de ${tipoConvenio === 'pre-pago' ? 'Pré-pago' : 'Pós-pago'} para ${tipoPlanoSelecionado === 'pre-pago' ? 'Pré-pago' : 'Pós-pago'}`
-                            }
-                        </p>
-                    </div>
-
                     <div className="grid grid-cols-2 gap-4">
                         <div className="grid gap-2">
                             <Label htmlFor="num_vagas">
@@ -197,73 +159,37 @@ export function DialogAlterarPlano({
                         </div>
                     </div>
 
-                    {tipoPlanoSelecionado === 'pre-pago' ? (
-                        <div className="grid grid-cols-2 gap-4">
-                            <div className="grid gap-2">
-                                <Label htmlFor="valor_mensal">
-                                    Valor Mensal <span className="text-red-500">*</span>
-                                </Label>
-                                <Input
-                                    id="valor_mensal"
-                                    type="number"
-                                    step="0.01"
-                                    value={valorMensal}
-                                    onChange={(e) => setValorMensal(e.target.value)}
-                                    placeholder="0.00"
-                                />
-                            </div>
-                            <div className="grid gap-2">
-                                <Label htmlFor="dia_vencimento">
-                                    Dia de Vencimento <span className="text-red-500">*</span>
-                                </Label>
-                                <Input
-                                    id="dia_vencimento"
-                                    type="number"
-                                    min="1"
-                                    max="28"
-                                    value={diaVencimento}
-                                    onChange={(e) => setDiaVencimento(e.target.value)}
-                                    placeholder="1-28"
-                                />
-                            </div>
+                    {/* Datas - Convênio Corporativo Unificado */}
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="grid gap-2">
+                            <Label htmlFor="dia_fechamento">
+                                Dia de Fechamento <span className="text-red-500">*</span>
+                            </Label>
+                            <Input
+                                id="dia_fechamento"
+                                type="number"
+                                min="1"
+                                max="31"
+                                value={diaFechamento}
+                                onChange={(e) => setDiaFechamento(e.target.value)}
+                                placeholder="1-31"
+                            />
                         </div>
-                    ) : (
-                        <>
-                            <div className="bg-blue-50 text-blue-700 p-3 rounded-md text-sm border border-blue-200">
-                                ℹ️ Valor calculado mensalmente baseado no uso real
-                            </div>
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="grid gap-2">
-                                    <Label htmlFor="dia_fechamento">
-                                        Dia de Fechamento <span className="text-red-500">*</span>
-                                    </Label>
-                                    <Input
-                                        id="dia_fechamento"
-                                        type="number"
-                                        min="1"
-                                        max="28"
-                                        value={diaFechamento}
-                                        onChange={(e) => setDiaFechamento(e.target.value)}
-                                        placeholder="1-28"
-                                    />
-                                </div>
-                                <div className="grid gap-2">
-                                    <Label htmlFor="dia_vencimento">
-                                        Dia de Vencimento <span className="text-red-500">*</span>
-                                    </Label>
-                                    <Input
-                                        id="dia_vencimento"
-                                        type="number"
-                                        min="1"
-                                        max="28"
-                                        value={diaVencimento}
-                                        onChange={(e) => setDiaVencimento(e.target.value)}
-                                        placeholder="1-28"
-                                    />
-                                </div>
-                            </div>
-                        </>
-                    )}
+                        <div className="grid gap-2">
+                            <Label htmlFor="dia_vencimento">
+                                Dia de Vencimento <span className="text-red-500">*</span>
+                            </Label>
+                            <Input
+                                id="dia_vencimento"
+                                type="number"
+                                min="1"
+                                max="31"
+                                value={diaVencimento}
+                                onChange={(e) => setDiaVencimento(e.target.value)}
+                                placeholder="1-31"
+                            />
+                        </div>
+                    </div>
 
                     <div className="grid gap-2">
                         <Label htmlFor="porcentagem_desconto">
@@ -352,6 +278,6 @@ export function DialogAlterarPlano({
                     </Button>
                 </DialogFooter>
             </DialogContent>
-        </Dialog>
+        </Dialog >
     );
 }

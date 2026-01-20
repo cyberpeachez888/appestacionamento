@@ -33,6 +33,7 @@ export default {
         contractedDays: ticket.metadata?.contractedDays,
         contractedEndDate: ticket.metadata?.contractedEndDate,
         contractedEndTime: ticket.metadata?.contractedEndTime,
+        metadata: ticket.metadata || {}, // ✅ ADICIONADO: incluir metadata completo
       }));
 
       res.json(vehicles);

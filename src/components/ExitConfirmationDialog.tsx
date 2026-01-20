@@ -22,7 +22,9 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { PaymentMethod } from '@/contexts/ParkingContext';
 import { useAuth } from '@/contexts/AuthContext';
-import { Printer, Calculator } from 'lucide-react';
+import { Printer, Calculator, AlertCircle, Check, DollarSign } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import {
   generateThermalPreview,
   FALLBACK_COMPANY,
@@ -63,6 +65,7 @@ const API_URL = apiBase;
 
 // Professional: Define explicit types for vehicle, rate, and receiptData
 interface Vehicle {
+  id?: string;
   plate: string;
   vehicleType: string;
   entryDate: string;
@@ -95,6 +98,8 @@ interface ExitConfirmationDialogProps {
   companyConfig?: CompanyConfig;
   operatorName?: string;
   isMonthlyVehicle?: boolean;
+  isConvenioVagaExtra?: boolean;
+  tipoVagaExtra?: 'paga' | 'cortesia';
 }
 
 export const ExitConfirmationDialog = ({
@@ -107,6 +112,8 @@ export const ExitConfirmationDialog = ({
   companyConfig,
   operatorName = 'Operador',
   isMonthlyVehicle = false,
+  isConvenioVagaExtra = false,
+  tipoVagaExtra,
 }: ExitConfirmationDialogProps) => {
   const { toast } = useToast();
   const { token } = useAuth();
@@ -114,6 +121,11 @@ export const ExitConfirmationDialog = ({
   const [amountPaid, setAmountPaid] = useState('');
   const [change, setChange] = useState(0);
   const [showReceipt, setShowReceipt] = useState(false);
+
+  // Detect vaga extra types
+  const isVagaExtraPaga = isConvenioVagaExtra && tipoVagaExtra === 'paga';
+  const isVagaExtraCortesia = isConvenioVagaExtra && tipoVagaExtra === 'cortesia';
+  const requiresPayment = !isMonthlyVehicle && !isVagaExtraPaga && !isVagaExtraCortesia;
 
   // Receipt options
   const [receiptType, setReceiptType] = useState<'none' | 'simple'>('simple');
@@ -152,17 +164,17 @@ export const ExitConfirmationDialog = ({
       try {
         const url = `${API_URL}/receipt-templates/default/parking_ticket`;
         console.log('[ExitConfirmationDialog] Loading template from:', url, { hasToken: !!token });
-        
+
         const response = await fetch(url, {
           headers: token ? { Authorization: `Bearer ${token}` } : undefined,
         });
-        
+
         console.log('[ExitConfirmationDialog] Template response:', {
           status: response.status,
           ok: response.ok,
           contentType: response.headers.get('content-type'),
         });
-        
+
         if (!ignore) {
           if (response.ok) {
             const data = await response.json();
@@ -218,10 +230,9 @@ export const ExitConfirmationDialog = ({
     const entryDateTimeValue =
       vehicle.entryDate && (isEditingEntryTime ? editedEntryTime : vehicle.entryTime)
         ? new Date(
-            `${vehicle.entryDate}T${
-              isEditingEntryTime ? editedEntryTime : vehicle.entryTime
-            }`
-          )
+          `${vehicle.entryDate}T${isEditingEntryTime ? editedEntryTime : vehicle.entryTime
+          }`
+        )
         : null;
     const exitDateTimeValue = now;
     const durationMinutes =
@@ -312,7 +323,9 @@ export const ExitConfirmationDialog = ({
   }, [ticketTemplate, ticketSampleData, companyConfig, isMonthlyVehicle]);
 
   const handleConfirmAndPrint = () => {
-    if (!isMonthlyVehicle && paymentMethod === 'Dinheiro') {
+    // 🔴 CORREÇÃO CRÍTICA: Validar pagamento APENAS para veículos AVULSOS
+    // Vagas extras (paga/cortesia) e mensalistas NÃO devem validar pagamento
+    if (requiresPayment && paymentMethod === 'Dinheiro') {
       const paid = parseFloat(amountPaid);
       if (isNaN(paid) || paid < calculatedValue) {
         toast({
@@ -325,7 +338,8 @@ export const ExitConfirmationDialog = ({
     }
 
     // Validate reimbursement receipt fields
-    if (isMonthlyVehicle || receiptType === 'none') {
+    // Vagas extras, mensalistas e 'none' não emitem ticket
+    if (isMonthlyVehicle || isVagaExtraPaga || isVagaExtraCortesia || receiptType === 'none') {
       onConfirm(paymentMethod, null);
       onOpenChange(false);
       return;
@@ -384,8 +398,8 @@ export const ExitConfirmationDialog = ({
             <Button variant="outline" onClick={() => setShowReceipt(false)}>
               Voltar
             </Button>
-            <Button 
-              onClick={handlePrint} 
+            <Button
+              onClick={handlePrint}
               disabled={isTemplateLoading}
               title={isTemplateLoading ? 'Carregando template...' : thermalPreview ? 'Imprimir e confirmar saída' : 'Template não disponível, mas você pode continuar'}
             >
@@ -402,7 +416,23 @@ export const ExitConfirmationDialog = ({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>Confirmar Saída do Veículo</DialogTitle>
+          <DialogTitle className="flex items-center gap-2">
+            {isVagaExtraCortesia && (
+              <Badge className="bg-green-500 hover:bg-green-600">
+                <Check className="h-3 w-3 mr-1" />
+                CORTESIA
+              </Badge>
+            )}
+            {isVagaExtraPaga && (
+              <Badge className="bg-yellow-500 hover:bg-yellow-600 text-black">
+                <DollarSign className="h-3 w-3 mr-1" />
+                EXTRA
+              </Badge>
+            )}
+            {isVagaExtraPaga ? 'Finalizar Saída - Vaga Extra' :
+              isVagaExtraCortesia ? 'Finalizar Saída - Cortesia' :
+                'Confirmar Saída do Veículo'}
+          </DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4 py-4">
@@ -452,7 +482,30 @@ export const ExitConfirmationDialog = ({
             </div>
           </div>
 
-          {!isMonthlyVehicle && (
+          {/* Vaga Extra Paga - Notice */}
+          {isVagaExtraPaga && (
+            <Alert className="bg-blue-50 border-blue-200">
+              <AlertCircle className="h-4 w-4 text-blue-600" />
+              <AlertDescription className="text-blue-800">
+                <strong>Valor calculado:</strong> R$ {calculatedValue.toFixed(2)}<br />
+                Este valor será incluído na fatura do convênio.<br />
+                <span className="font-semibold">Cliente NÃO efetua pagamento agora.</span>
+              </AlertDescription>
+            </Alert>
+          )}
+
+          {/* Vaga Extra Cortesia - Notice */}
+          {isVagaExtraCortesia && (
+            <Alert className="bg-green-50 border-green-200">
+              <Check className="h-4 w-4 text-green-600" />
+              <AlertDescription className="text-green-800">
+                <strong>Cortesia (R$ 0,00)</strong><br />
+                Finalizar sem cobrança.
+              </AlertDescription>
+            </Alert>
+          )}
+
+          {!isMonthlyVehicle && requiresPayment && (
             <>
               {/* Payment Method */}
               <div>
@@ -503,15 +556,10 @@ export const ExitConfirmationDialog = ({
             </>
           )}
 
-          {/* Receipt Options */}
-          <div className="space-y-3 p-4 border rounded-lg bg-muted/20">
-            <Label className="text-base font-semibold">Emitir ticket de saída:</Label>
-            {isMonthlyVehicle ? (
-              <div className="rounded bg-muted px-3 py-2 text-sm text-muted-foreground">
-                Clientes mensalistas não necessitam de ticket na saída. Um recibo será emitido no dia
-                do pagamento.
-              </div>
-            ) : (
+          {/* Receipt Options - Only for regular vehicles */}
+          {requiresPayment && (
+            <div className="space-y-3 p-4 border rounded-lg bg-muted/20">
+              <Label className="text-base font-semibold">Emitir ticket de saída:</Label>
               <RadioGroup
                 value={receiptType}
                 onValueChange={(v) => setReceiptType(v as 'none' | 'simple')}
@@ -529,8 +577,8 @@ export const ExitConfirmationDialog = ({
                   </Label>
                 </div>
               </RadioGroup>
-            )}
-          </div>
+            </div>
+          )}
         </div>
 
         <DialogFooter>
@@ -538,7 +586,11 @@ export const ExitConfirmationDialog = ({
             Cancelar
           </Button>
           <Button onClick={handleConfirmAndPrint}>
-            {isMonthlyVehicle || receiptType === 'none' ? (
+            {isVagaExtraPaga ? (
+              'Finalizar e Faturar'
+            ) : isVagaExtraCortesia ? (
+              'Finalizar Cortesia'
+            ) : isMonthlyVehicle || receiptType === 'none' ? (
               'Confirmar'
             ) : (
               <>
