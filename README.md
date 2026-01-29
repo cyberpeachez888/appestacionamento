@@ -123,16 +123,6 @@ Outros parâmetros (SMS/WhatsApp, backups automáticos) também são lidos do Su
 
 ---
 
-## Integração com Lovable (opcional)
-
-O projeto foi originalmente criado no Lovable. Você ainda pode:
-
-- Abrir o [Lovable Project](https://lovable.dev/projects/21c797df-ffb2-41a2-8f2b-0897f99d7ffb) e trabalhar por prompts.
-- Editar arquivos diretamente no GitHub ou em qualquer IDE local.
-
-Commits feitos em qualquer uma das plataformas serão refletidos no repositório principal.
-
-````
 
 **Edit a file directly in GitHub**
 
